@@ -3,6 +3,6 @@ deployment:
   tasks:
     - export DEPLOYPATH=/home/smacon/public_html/accademics
     - /bin/mkdir -p $DEPLOYPATH/backend
-    - /bin/cp -R backend/. $DEPLOYPATH/backend/
+    - rsync -a --exclude='config/Database.php' backend/. $DEPLOYPATH/backend/
     - /bin/cp -R dist/. $DEPLOYPATH/
     - /bin/cp -f .htaccess $DEPLOYPATH/.htaccess
