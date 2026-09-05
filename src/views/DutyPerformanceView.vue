@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-6">
+  <div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-blue-100 p-6">
     <div class="mb-6">
-      <button @click="goBack" class="flex items-center gap-2 text-slate-600 hover:text-indigo-600 transition-colors font-medium">
+      <button @click="goBack" class="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors font-medium">
         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
@@ -19,22 +19,22 @@
 
     <div v-else-if="evaluationData" class="space-y-8">
       <!-- Header Info -->
-      <div class="rounded-3xl border border-white/20 bg-gradient-to-br from-white via-blue-50 to-indigo-100 p-8 shadow-2xl backdrop-blur-sm">
+      <div class="rounded-3xl border border-white/20 bg-gradient-to-br from-white via-blue-50 to-blue-100 p-8 shadow-2xl backdrop-blur-sm">
         <div class="grid gap-8 sm:grid-cols-4">
           <div class="text-center">
-            <div class="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 text-4xl font-bold text-white shadow-2xl mx-auto ring-4 ring-white/50">
+            <div class="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 via-blue-500 to-blue-400 text-4xl font-bold text-white shadow-2xl mx-auto ring-4 ring-white/50">
               {{ evaluationData.teacher_name?.charAt(0) || '?' }}
             </div>
             <div class="font-bold text-slate-900 text-xl mt-4">{{ evaluationData.teacher_name }}</div>
             <div class="text-slate-500">Teacher</div>
           </div>
           <div class="text-center">
-            <div class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{{ evaluationData.total_score }}</div>
+            <div class="text-5xl font-bold bg-gradient-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent">{{ evaluationData.total_score }}</div>
             <div class="text-slate-500 text-lg mt-2">Total Score</div>
             <div class="text-slate-400">/100</div>
           </div>
           <div class="text-center">
-            <div class="text-5xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{{ evaluationData.percentage }}%</div>
+            <div class="text-5xl font-bold bg-gradient-to-r from-blue-700 to-blue-600 bg-clip-text text-transparent">{{ evaluationData.percentage }}%</div>
             <div class="text-slate-500 text-lg mt-2">Percentage</div>
           </div>
           <div class="text-center">
@@ -50,16 +50,16 @@
       <div class="rounded-2xl border border-white/20 bg-gradient-to-br from-white to-blue-50 p-6 shadow-lg backdrop-blur-sm">
         <h3 class="text-lg font-bold text-slate-900 mb-4">Evaluation Information</h3>
         <div class="grid gap-4 sm:grid-cols-3">
-          <div class="rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 p-4 border border-blue-100">
+          <div class="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-4 border border-blue-100">
             <label class="text-xs font-semibold text-blue-600 uppercase tracking-wider">Year</label>
             <div class="font-semibold text-slate-900 text-lg mt-1">{{ evaluationData.year }}</div>
           </div>
-          <div class="rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 p-4 border border-indigo-100">
-            <label class="text-xs font-semibold text-indigo-600 uppercase tracking-wider">Term</label>
+          <div class="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-4 border border-blue-100">
+            <label class="text-xs font-semibold text-blue-600 uppercase tracking-wider">Term</label>
             <div class="font-semibold text-slate-900 text-lg mt-1">Term {{ evaluationData.term }}</div>
           </div>
-          <div class="rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 p-4 border border-purple-100">
-            <label class="text-xs font-semibold text-purple-600 uppercase tracking-wider">Week</label>
+          <div class="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-4 border border-blue-100">
+            <label class="text-xs font-semibold text-blue-600 uppercase tracking-wider">Week</label>
             <div class="font-semibold text-slate-900 text-lg mt-1">Week {{ evaluationData.week_number }}</div>
           </div>
         </div>
@@ -70,7 +70,7 @@
         <h3 class="text-2xl font-bold text-slate-900 mb-6">Performance Breakdown</h3>
         <div class="rounded-2xl border border-white/20 bg-white overflow-hidden shadow-2xl backdrop-blur-sm">
           <table class="w-full">
-            <thead class="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500">
+            <thead class="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400">
               <tr>
                 <th class="text-left py-5 px-8 font-bold text-white text-sm uppercase tracking-wider">Category</th>
                 <th class="text-center py-5 px-8 font-bold text-white text-sm uppercase tracking-wider w-40">Score</th>
@@ -90,14 +90,14 @@
                   </div>
                 </td>
                 <td class="py-6 px-8 text-center">
-                  <span class="inline-flex items-center rounded-xl bg-indigo-100 px-6 py-3 font-bold text-indigo-700 text-xl">{{ evaluationData.punctuality }}/20</span>
+                  <span class="inline-flex items-center rounded-xl bg-blue-100 px-6 py-3 font-bold text-blue-700 text-xl">{{ evaluationData.punctuality }}/20</span>
                 </td>
                 <td class="py-6 px-8 text-center">
                   <span class="font-semibold text-slate-700 text-lg">{{ ((evaluationData.punctuality / 20) * 100).toFixed(0) }}%</span>
                 </td>
                 <td class="py-6 px-8 text-center">
                   <div class="w-full bg-slate-200 rounded-full h-3">
-                    <div class="bg-indigo-600 h-3 rounded-full" :style="{ width: ((evaluationData.punctuality / 20) * 100) + '%' }"></div>
+                    <div class="bg-blue-600 h-3 rounded-full" :style="{ width: ((evaluationData.punctuality / 20) * 100) + '%' }"></div>
                   </div>
                 </td>
               </tr>
@@ -109,14 +109,14 @@
                   </div>
                 </td>
                 <td class="py-6 px-8 text-center">
-                  <span class="inline-flex items-center rounded-xl bg-indigo-100 px-6 py-3 font-bold text-indigo-700 text-xl">{{ evaluationData.supervision }}/20</span>
+                  <span class="inline-flex items-center rounded-xl bg-blue-100 px-6 py-3 font-bold text-blue-700 text-xl">{{ evaluationData.supervision }}/20</span>
                 </td>
                 <td class="py-6 px-8 text-center">
                   <span class="font-semibold text-slate-700 text-lg">{{ ((evaluationData.supervision / 20) * 100).toFixed(0) }}%</span>
                 </td>
                 <td class="py-6 px-8 text-center">
                   <div class="w-full bg-slate-200 rounded-full h-3">
-                    <div class="bg-indigo-600 h-3 rounded-full" :style="{ width: ((evaluationData.supervision / 20) * 100) + '%' }"></div>
+                    <div class="bg-blue-600 h-3 rounded-full" :style="{ width: ((evaluationData.supervision / 20) * 100) + '%' }"></div>
                   </div>
                 </td>
               </tr>
@@ -128,14 +128,14 @@
                   </div>
                 </td>
                 <td class="py-6 px-8 text-center">
-                  <span class="inline-flex items-center rounded-xl bg-indigo-100 px-6 py-3 font-bold text-indigo-700 text-xl">{{ evaluationData.cleanliness }}/20</span>
+                  <span class="inline-flex items-center rounded-xl bg-blue-100 px-6 py-3 font-bold text-blue-700 text-xl">{{ evaluationData.cleanliness }}/20</span>
                 </td>
                 <td class="py-6 px-8 text-center">
                   <span class="font-semibold text-slate-700 text-lg">{{ ((evaluationData.cleanliness / 20) * 100).toFixed(0) }}%</span>
                 </td>
                 <td class="py-6 px-8 text-center">
                   <div class="w-full bg-slate-200 rounded-full h-3">
-                    <div class="bg-indigo-600 h-3 rounded-full" :style="{ width: ((evaluationData.cleanliness / 20) * 100) + '%' }"></div>
+                    <div class="bg-blue-600 h-3 rounded-full" :style="{ width: ((evaluationData.cleanliness / 20) * 100) + '%' }"></div>
                   </div>
                 </td>
               </tr>
@@ -150,14 +150,14 @@
                   </div>
                 </td>
                 <td class="py-6 px-8 text-center">
-                  <span class="inline-flex items-center rounded-xl bg-indigo-100 px-6 py-3 font-bold text-indigo-700 text-xl">{{ evaluationData.time_keeping }}/20</span>
+                  <span class="inline-flex items-center rounded-xl bg-blue-100 px-6 py-3 font-bold text-blue-700 text-xl">{{ evaluationData.time_keeping }}/20</span>
                 </td>
                 <td class="py-6 px-8 text-center">
                   <span class="font-semibold text-slate-700 text-lg">{{ ((evaluationData.time_keeping / 20) * 100).toFixed(0) }}%</span>
                 </td>
                 <td class="py-6 px-8 text-center">
                   <div class="w-full bg-slate-200 rounded-full h-3">
-                    <div class="bg-indigo-600 h-3 rounded-full" :style="{ width: ((evaluationData.time_keeping / 20) * 100) + '%' }"></div>
+                    <div class="bg-blue-600 h-3 rounded-full" :style="{ width: ((evaluationData.time_keeping / 20) * 100) + '%' }"></div>
                   </div>
                 </td>
               </tr>
@@ -172,14 +172,14 @@
                   </div>
                 </td>
                 <td class="py-6 px-8 text-center">
-                  <span class="inline-flex items-center rounded-xl bg-indigo-100 px-6 py-3 font-bold text-indigo-700 text-xl">{{ evaluationData.participation }}/20</span>
+                  <span class="inline-flex items-center rounded-xl bg-blue-100 px-6 py-3 font-bold text-blue-700 text-xl">{{ evaluationData.participation }}/20</span>
                 </td>
                 <td class="py-6 px-8 text-center">
                   <span class="font-semibold text-slate-700 text-lg">{{ ((evaluationData.participation / 20) * 100).toFixed(0) }}%</span>
                 </td>
                 <td class="py-6 px-8 text-center">
                   <div class="w-full bg-slate-200 rounded-full h-3">
-                    <div class="bg-indigo-600 h-3 rounded-full" :style="{ width: ((evaluationData.participation / 20) * 100) + '%' }"></div>
+                    <div class="bg-blue-600 h-3 rounded-full" :style="{ width: ((evaluationData.participation / 20) * 100) + '%' }"></div>
                   </div>
                 </td>
               </tr>
@@ -192,9 +192,9 @@
       <div>
         <h3 class="text-2xl font-bold text-slate-900 mb-6">Remarks & Feedback</h3>
         <div class="grid gap-6 sm:grid-cols-2">
-          <div v-if="evaluationData.comment" class="rounded-2xl border border-white/20 bg-gradient-to-br from-white to-indigo-50 p-6 shadow-lg backdrop-blur-sm ring-1 ring-indigo-100">
+          <div v-if="evaluationData.comment" class="rounded-2xl border border-white/20 bg-gradient-to-br from-white to-blue-50 p-6 shadow-lg backdrop-blur-sm ring-1 ring-blue-100">
             <h4 class="font-bold text-slate-900 mb-4 flex items-center gap-2 text-lg">
-              <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
               </svg>
               Admin Remarks
@@ -219,9 +219,9 @@
             </h4>
             <p class="text-slate-700 leading-relaxed text-base">{{ evaluationData.general_remarks }}</p>
           </div>
-          <div v-if="evaluationData.supervisor" class="rounded-2xl border border-white/20 bg-gradient-to-br from-white to-purple-50 p-6 shadow-lg backdrop-blur-sm ring-1 ring-purple-100">
+          <div v-if="evaluationData.supervisor" class="rounded-2xl border border-white/20 bg-gradient-to-br from-white to-blue-50 p-6 shadow-lg backdrop-blur-sm ring-1 ring-blue-100">
             <h4 class="font-bold text-slate-900 mb-4 flex items-center gap-2 text-lg">
-              <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
               Supervisor
@@ -244,7 +244,7 @@
         </button>
         <button
           @click="goBack"
-          class="rounded-2xl bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 px-8 py-4 text-sm font-semibold text-white shadow-2xl shadow-indigo-500/40 transition-all duration-200 hover:shadow-3xl hover:shadow-indigo-500/50 hover:scale-105 ring-2 ring-white/50"
+          class="rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400 px-8 py-4 text-sm font-semibold text-white shadow-2xl shadow-blue-500/40 transition-all duration-200 hover:shadow-3xl hover:shadow-blue-500/50 hover:scale-105 ring-2 ring-white/50"
         >
           Back to List
         </button>

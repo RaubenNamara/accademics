@@ -141,50 +141,57 @@ function createRequirement(PDO $db, array $data): void
         hr_respond(false, 'Session, class, subject, and teacher are required', null, 400);
     }
     
+    $stream = trim((string)($data['stream'] ?? '')) ?: null;
+
     // Check for duplicate
     $check = $db->prepare("
-        SELECT id FROM lesson_requirements 
-        WHERE academic_session_id = :session_id AND class_id = :class_id 
-        AND subject_id = :subject_id AND teacher_id = :teacher_id
+        SELECT id FROM lesson_requirements
+        WHERE academic_session_id = :session_id AND class_id = :class_id
+        AND stream <=> :stream AND subject_id = :subject_id AND teacher_id = :teacher_id
     ");
     $check->execute([
         ':session_id' => $academic_session_id,
         ':class_id' => $class_id,
+        ':stream' => $stream,
         ':subject_id' => $subject_id,
         ':teacher_id' => $teacher_id
     ]);
-    
+
     if ($check->fetch()) {
         hr_respond(false, 'This lesson requirement already exists', null, 409);
     }
-    
+
     $sql = "
         INSERT INTO lesson_requirements (
-            academic_session_id, class_id, subject_id, teacher_id, room_id,
-            periods_per_week, prefer_double_lessons, require_consecutive,
-            specific_days, specific_periods, notes
+            academic_session_id, class_id, stream, subject_id, teacher_id, room_id,
+            periods_per_week, double_lesson_allowed, double_lesson_required, preferred_span,
+            preferred_days, preferred_periods, avoid_days, avoid_periods, notes
         ) VALUES (
-            :academic_session_id, :class_id, :subject_id, :teacher_id, :room_id,
-            :periods_per_week, :prefer_double_lessons, :require_consecutive,
-            :specific_days, :specific_periods, :notes
+            :academic_session_id, :class_id, :stream, :subject_id, :teacher_id, :room_id,
+            :periods_per_week, :double_lesson_allowed, :double_lesson_required, :preferred_span,
+            :preferred_days, :preferred_periods, :avoid_days, :avoid_periods, :notes
         )
     ";
-    
+
     $stmt = $db->prepare($sql);
     $stmt->execute([
         ':academic_session_id' => $academic_session_id,
         ':class_id' => $class_id,
+        ':stream' => $stream,
         ':subject_id' => $subject_id,
         ':teacher_id' => $teacher_id,
         ':room_id' => !empty($data['room_id']) ? (int)$data['room_id'] : null,
         ':periods_per_week' => (int)($data['periods_per_week'] ?? 1),
-        ':prefer_double_lessons' => !empty($data['prefer_double_lessons']),
-        ':require_consecutive' => !empty($data['require_consecutive']),
-        ':specific_days' => !empty($data['specific_days']) ? json_encode($data['specific_days']) : null,
-        ':specific_periods' => !empty($data['specific_periods']) ? json_encode($data['specific_periods']) : null,
+        ':double_lesson_allowed' => !empty($data['double_lesson_allowed']),
+        ':double_lesson_required' => !empty($data['double_lesson_required']),
+        ':preferred_span' => !empty($data['preferred_span']) ? (int)$data['preferred_span'] : null,
+        ':preferred_days' => !empty($data['preferred_days']) ? json_encode($data['preferred_days']) : null,
+        ':preferred_periods' => !empty($data['preferred_periods']) ? json_encode($data['preferred_periods']) : null,
+        ':avoid_days' => !empty($data['avoid_days']) ? json_encode($data['avoid_days']) : null,
+        ':avoid_periods' => !empty($data['avoid_periods']) ? json_encode($data['avoid_periods']) : null,
         ':notes' => $data['notes'] ?? null
     ]);
-    
+
     hr_respond(true, 'Lesson requirement created', ['id' => (int)$db->lastInsertId()], 201);
 }
 
@@ -200,24 +207,30 @@ function updateRequirement(PDO $db, array $data): void
         UPDATE lesson_requirements SET
             room_id = :room_id,
             periods_per_week = :periods_per_week,
-            prefer_double_lessons = :prefer_double_lessons,
-            require_consecutive = :require_consecutive,
-            specific_days = :specific_days,
-            specific_periods = :specific_periods,
+            double_lesson_allowed = :double_lesson_allowed,
+            double_lesson_required = :double_lesson_required,
+            preferred_span = :preferred_span,
+            preferred_days = :preferred_days,
+            preferred_periods = :preferred_periods,
+            avoid_days = :avoid_days,
+            avoid_periods = :avoid_periods,
             notes = :notes,
             updated_at = NOW()
         WHERE id = :id
     ";
-    
+
     $stmt = $db->prepare($sql);
     $stmt->execute([
         ':id' => $id,
         ':room_id' => !empty($data['room_id']) ? (int)$data['room_id'] : null,
         ':periods_per_week' => (int)($data['periods_per_week'] ?? 1),
-        ':prefer_double_lessons' => !empty($data['prefer_double_lessons']),
-        ':require_consecutive' => !empty($data['require_consecutive']),
-        ':specific_days' => !empty($data['specific_days']) ? json_encode($data['specific_days']) : null,
-        ':specific_periods' => !empty($data['specific_periods']) ? json_encode($data['specific_periods']) : null,
+        ':double_lesson_allowed' => !empty($data['double_lesson_allowed']),
+        ':double_lesson_required' => !empty($data['double_lesson_required']),
+        ':preferred_span' => !empty($data['preferred_span']) ? (int)$data['preferred_span'] : null,
+        ':preferred_days' => !empty($data['preferred_days']) ? json_encode($data['preferred_days']) : null,
+        ':preferred_periods' => !empty($data['preferred_periods']) ? json_encode($data['preferred_periods']) : null,
+        ':avoid_days' => !empty($data['avoid_days']) ? json_encode($data['avoid_days']) : null,
+        ':avoid_periods' => !empty($data['avoid_periods']) ? json_encode($data['avoid_periods']) : null,
         ':notes' => $data['notes'] ?? null
     ]);
     
@@ -250,18 +263,18 @@ function bulkCreate(PDO $db, array $data): void
         $insert = $db->prepare("
             INSERT INTO lesson_requirements (
                 academic_session_id, class_id, stream, subject_id, teacher_id, room_id,
-                periods_per_week, double_lesson_allowed, double_lesson_required,
+                periods_per_week, double_lesson_allowed, double_lesson_required, preferred_span,
                 preferred_days, preferred_periods, avoid_days, avoid_periods, notes
             ) VALUES (
                 :academic_session_id, :class_id, :stream, :subject_id, :teacher_id, :room_id,
-                :periods_per_week, :double_lesson_allowed, :double_lesson_required,
+                :periods_per_week, :double_lesson_allowed, :double_lesson_required, :preferred_span,
                 :preferred_days, :preferred_periods, :avoid_days, :avoid_periods, :notes
             )
         ");
-        
+
         $created = 0;
         $skipped = 0;
-        
+
         foreach ($requirements as $req) {
             // Check for duplicate
             $check = $db->prepare("
@@ -292,6 +305,7 @@ function bulkCreate(PDO $db, array $data): void
                 ':periods_per_week' => (int)($req['periods_per_week'] ?? 1),
                 ':double_lesson_allowed' => !empty($req['double_lesson_allowed']),
                 ':double_lesson_required' => !empty($req['double_lesson_required']),
+                ':preferred_span' => !empty($req['preferred_span']) ? (int)$req['preferred_span'] : null,
                 ':preferred_days' => !empty($req['preferred_days']) ? json_encode($req['preferred_days']) : null,
                 ':preferred_periods' => !empty($req['preferred_periods']) ? json_encode($req['preferred_periods']) : null,
                 ':avoid_days' => !empty($req['avoid_days']) ? json_encode($req['avoid_days']) : null,
@@ -332,15 +346,15 @@ function importCSV(PDO $db, array $data): void
         $insert = $db->prepare("
             INSERT INTO lesson_requirements (
                 academic_session_id, class_id, stream, subject_id, teacher_id, room_id,
-                periods_per_week, double_lesson_allowed, double_lesson_required,
+                periods_per_week, double_lesson_allowed, double_lesson_required, preferred_span,
                 preferred_days, preferred_periods, avoid_days, avoid_periods, notes
             ) VALUES (
                 :academic_session_id, :class_id, :stream, :subject_id, :teacher_id, :room_id,
-                :periods_per_week, :double_lesson_allowed, :double_lesson_required,
+                :periods_per_week, :double_lesson_allowed, :double_lesson_required, :preferred_span,
                 :preferred_days, :preferred_periods, :avoid_days, :avoid_periods, :notes
             )
         ");
-        
+
         $created = 0;
         $errors = [];
         
@@ -370,6 +384,7 @@ function importCSV(PDO $db, array $data): void
                 ':periods_per_week' => (int)($row['periods_per_week'] ?? 1),
                 ':double_lesson_allowed' => !empty($row['double_lesson_allowed']),
                 ':double_lesson_required' => !empty($row['double_lesson_required']),
+                ':preferred_span' => !empty($row['preferred_span']) ? (int)$row['preferred_span'] : null,
                 ':preferred_days' => !empty($row['preferred_days']) ? json_encode(explode(',', $row['preferred_days'])) : null,
                 ':preferred_periods' => !empty($row['preferred_periods']) ? json_encode(explode(',', $row['preferred_periods'])) : null,
                 ':avoid_days' => !empty($row['avoid_days']) ? json_encode(explode(',', $row['avoid_days'])) : null,

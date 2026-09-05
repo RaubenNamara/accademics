@@ -1,9 +1,9 @@
 <template>
   <div class="p-6 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
     <div class="mb-8">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-wrap gap-4 items-center justify-between">
         <div>
-          <h1 class="text-4xl font-bold text-gray-800 flex items-center gap-3">
+          <h1 class="text-2xl sm:text-4xl font-bold text-gray-800 flex items-center gap-3">
             <div class="bg-blue-600 text-white p-3 rounded-lg">
               <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -74,12 +74,12 @@
       </div>
     </div>
 
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-wrap gap-3 justify-between items-center mb-6">
       <div class="bg-white rounded-lg shadow px-4 py-2 border border-gray-200">
         <span class="text-sm text-gray-600">Showing <span class="font-semibold text-blue-600">{{ pagination.total }}</span> students</span>
       </div>
 
-      <div class="flex gap-3">
+      <div class="flex flex-wrap gap-3">
         <button
           @click="downloadPDF"
           :disabled="students.length === 0 || loading"
@@ -251,7 +251,7 @@
       </div>
     </div>
 
-    <div v-if="showAddModal || showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div v-if="showAddModal || showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div class="p-6 border-b flex justify-between items-center">
           <h2 class="text-xl font-bold">{{ showEditModal ? 'Edit Student' : 'Add New Student' }}</h2>

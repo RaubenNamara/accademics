@@ -116,13 +116,15 @@
       </header>
 
       <main class="p-4 sm:p-6 lg:p-8">
-        <div
-          v-if="route.query.denied === '1'"
-          class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
-        >
-          You do not have permission to access that page.
+        <div class="max-w-[1920px] mx-auto w-full">
+          <div
+            v-if="route.query.denied === '1'"
+            class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          >
+            You do not have permission to access that page.
+          </div>
+          <router-view />
         </div>
-        <router-view />
       </main>
     </div>
   </div>

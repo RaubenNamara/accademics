@@ -1,11 +1,11 @@
 <template>
-  <div class="p-6 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen">
+  <div class="p-6 bg-gradient-to-br from-slate-50 via-blue-50 to-blue-100 min-h-screen">
     <!-- Header -->
     <div class="mb-8">
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-4xl font-bold text-gray-800 flex items-center gap-3">
-            <div class="bg-gradient-to-br from-blue-600 to-indigo-600 text-white p-3 rounded-xl shadow-lg">
+            <div class="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-3 rounded-xl shadow-lg">
               <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
               </svg>
@@ -16,7 +16,7 @@
         </div>
         <button
           @click="openAddModal"
-          class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 flex items-center gap-2 shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
+          class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 flex items-center gap-2 shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -111,7 +111,7 @@
             <div class="flex items-start justify-between">
               <div class="flex-1">
                 <div class="flex items-center gap-4 mb-3">
-                  <div class="bg-gradient-to-br from-blue-600 to-indigo-600 text-white p-3 rounded-xl">
+                  <div class="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-3 rounded-xl">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                     </svg>
@@ -211,7 +211,7 @@
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl sticky top-0 z-10">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-6 rounded-t-2xl sticky top-0 z-10">
           <div class="flex justify-between items-center">
             <h2 class="text-2xl font-bold text-white">{{ showEditModal ? 'Edit Observation' : 'New Observation' }}</h2>
             <button @click="closeModal" class="text-white hover:text-blue-200 transition-colors bg-white/10 hover:bg-white/20 rounded-full p-2">
@@ -383,7 +383,7 @@
             <button type="button" @click="closeModal" class="px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 font-medium transition-all">
               Cancel
             </button>
-            <button type="submit" class="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 font-medium shadow-lg transition-all">
+            <button type="submit" class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 font-medium shadow-lg transition-all">
               Save Observation
             </button>
           </div>
@@ -394,7 +394,7 @@
     <!-- View Modal -->
     <div v-if="showViewModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl sticky top-0 z-10">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-6 rounded-t-2xl sticky top-0 z-10">
           <div class="flex justify-between items-center">
             <div>
               <h2 class="text-2xl font-bold text-white mb-2">Observation Details</h2>
@@ -417,7 +417,7 @@
 
         <div v-if="selectedRecord" class="p-6 space-y-6">
           <!-- Teacher Info -->
-          <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-100">
+          <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-6 border-2 border-blue-100">
             <h3 class="text-2xl font-bold text-gray-800 mb-2">{{ selectedRecord.teacher_name }}</h3>
             <p class="text-gray-600">Complete Observation History</p>
           </div>
@@ -452,7 +452,7 @@
 
           <!-- Observations Table -->
           <div v-if="selectedRecord.observations && selectedRecord.observations.length > 0" class="bg-white rounded-2xl shadow-lg border-2 border-gray-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-4">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-4">
               <h4 class="text-xl font-bold text-white">All Observations</h4>
             </div>
             

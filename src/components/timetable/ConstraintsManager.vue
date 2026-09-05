@@ -129,10 +129,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { timetableConstraintsAPI } from '../../services/api.js';
 import { useToast } from '../../composables/useToast.js';
 import Modal from '../hr/Modal.vue';
+
+const props = defineProps({
+  activeSession: {
+    type: Object,
+    default: null
+  }
+});
 
 const { showToast } = useToast();
 
@@ -188,7 +195,7 @@ const constraintLabels = {
 
 const loadConstraints = async () => {
   try {
-    const sessionId = getActiveSessionId();
+    const sessionId = props.activeSession?.id;
     if (!sessionId) {
       showToast('Please select an active academic session first', 'warning');
       return;
@@ -206,7 +213,7 @@ const loadConstraints = async () => {
 
 const saveConstraint = async () => {
   try {
-    const sessionId = getActiveSessionId();
+    const sessionId = props.activeSession?.id;
     if (!sessionId) {
       showToast('Please select an active academic session first', 'warning');
       return;
@@ -277,9 +284,9 @@ const formatConstraintValue = (value) => {
   return String(value);
 };
 
-const getActiveSessionId = () => {
-  return localStorage.getItem('activeSessionId');
-};
+watch(() => props.activeSession, () => {
+  loadConstraints();
+});
 
 onMounted(() => {
   loadConstraints();

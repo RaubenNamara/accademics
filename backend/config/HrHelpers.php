@@ -139,6 +139,37 @@ function hr_split_name(string $fullName): array
     return ['first' => $first, 'last' => $last];
 }
 
+/**
+ * Derives O-Level/A-Level from a class name like "S1".."S6" (S1-S4 = O-Level,
+ * S5-S6 = A-Level). Classes carry no explicit level column, so this is the
+ * single source of truth used both for lesson-length validation and for
+ * filtering the length options shown in the UI.
+ */
+function tt_class_level(string $className): string
+{
+    if (preg_match('/(\d+)/', $className, $m)) {
+        return ((int)$m[1]) >= 5 ? 'A-Level' : 'O-Level';
+    }
+    return 'O-Level';
+}
+
+/**
+ * Allowed consecutive-period spans (lesson lengths) for a level, each with a
+ * human label and total minutes (periods are a fixed 40-minute grid).
+ */
+function tt_span_options(string $level): array
+{
+    $options = [
+        1 => ['label' => 'Single', 'minutes' => 40],
+        2 => ['label' => 'Double', 'minutes' => 80],
+    ];
+    if ($level === 'A-Level') {
+        $options[3] = ['label' => 'Triple', 'minutes' => 120];
+        $options[4] = ['label' => 'Quadruple', 'minutes' => 160];
+    }
+    return $options;
+}
+
 function hr_sync_employee_for_teacher(PDO $db, int $teacherId, array $teacherRow): ?int
 {
     try {

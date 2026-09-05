@@ -1,7 +1,7 @@
 <template>
-  <div class="p-6 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+  <div class="p-6 bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen">
     <!-- Header with Gradient Background -->
-    <div class="rounded-3xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 p-8 text-white shadow-2xl mb-8">
+    <div class="rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-8 text-white shadow-2xl mb-8">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div class="flex items-center gap-3 mb-3">
@@ -176,7 +176,7 @@
 
     <!-- Results Table -->
     <div class="rounded-3xl border border-gray-200 bg-white shadow-lg overflow-hidden">
-      <div class="border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
+      <div class="border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
         <div class="flex items-center gap-3">
           <div class="bg-white/20 p-2 rounded-lg backdrop-blur">
             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -389,7 +389,7 @@
         </div>
         <div class="overflow-y-auto px-6 py-6">
           <!-- Student Info -->
-          <div class="mb-6 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
+          <div class="mb-6 rounded-2xl bg-gradient-to-r from-blue-50 to-blue-100 p-6">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
                 <p class="text-sm text-slate-500">Student Name</p>

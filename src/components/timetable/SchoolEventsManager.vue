@@ -6,7 +6,7 @@
     </div>
     
     <!-- Events List -->
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <div class="bg-white rounded-xl border border-slate-200 overflow-x-auto">
       <table class="w-full">
         <thead class="bg-slate-50 border-b border-slate-200">
           <tr>
@@ -68,7 +68,7 @@
             <option value="custom">Custom</option>
           </select>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-2">Duration (minutes)</label>
             <input v-model.number="form.duration_minutes" type="number" class="input w-full" value="40">

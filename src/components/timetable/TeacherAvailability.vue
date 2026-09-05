@@ -62,9 +62,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { teacherAvailabilityAPI, teachersAPI } from '../../services/api.js';
 import { useToast } from '../../composables/useToast.js';
+
+const props = defineProps({
+  activeSession: {
+    type: Object,
+    default: null
+  }
+});
 
 const { showToast } = useToast();
 
@@ -93,7 +100,7 @@ const loadTeachers = async () => {
 const loadTeacherAvailability = async () => {
   if (!selectedTeacherId.value) return;
   
-  const sessionId = getActiveSessionId();
+  const sessionId = props.activeSession?.id;
   if (!sessionId) {
     showToast('Please select an active academic session first', 'warning');
     return;
@@ -129,7 +136,7 @@ const saveAvailability = async () => {
     return;
   }
   
-  const sessionId = getActiveSessionId();
+  const sessionId = props.activeSession?.id;
   if (!sessionId) {
     showToast('Please select an active academic session first', 'warning');
     return;
@@ -162,9 +169,9 @@ const saveAvailability = async () => {
   }
 };
 
-const getActiveSessionId = () => {
-  return localStorage.getItem('activeSessionId');
-};
+watch(() => props.activeSession, () => {
+  if (selectedTeacherId.value) loadTeacherAvailability();
+});
 
 onMounted(() => {
   loadTeachers();

@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-8">
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-8 text-white shadow-2xl">
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-8 text-white shadow-2xl">
       <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
       <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
       <div class="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
@@ -40,7 +40,7 @@
 
           <button
             @click="openAddModal"
-            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 px-5 py-2.5 text-sm font-medium text-white shadow-xl shadow-blue-500/25 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/40"
+            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-2.5 text-sm font-medium text-white shadow-xl shadow-blue-500/25 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/40"
           >
             <span class="relative z-10 flex items-center gap-2">
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,7 +60,7 @@
           <select
             v-model="filterYear"
             @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
           >
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
@@ -71,7 +71,7 @@
           <select
             v-model="filterTerm"
             @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
           >
             <option value="">All Terms</option>
             <option :value="1">Term 1</option>
@@ -81,10 +81,10 @@
         </div>
 
         <div class="flex items-end">
-          <div class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-3">
-            <div class="h-2 w-2 animate-pulse rounded-full bg-indigo-500"></div>
+          <div class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3">
+            <div class="h-2 w-2 animate-pulse rounded-full bg-blue-500"></div>
             <span class="text-sm font-medium text-slate-600">
-              <span class="font-bold text-indigo-600">{{ records.length }}</span> records found
+              <span class="font-bold text-blue-600">{{ records.length }}</span> records found
             </span>
           </div>
         </div>
@@ -128,12 +128,12 @@
             <tr
               v-for="record in records"
               :key="record.id"
-              class="transition-all duration-200 hover:bg-gradient-to-r hover:from-indigo-50/30 hover:to-purple-50/30"
+              class="transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-blue-100/30"
             >
               <template v-for="column in tableColumns" :key="column.key">
                 <td v-if="column.kind === 'teacher'" class="px-6 py-4">
                   <div class="flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 text-sm font-bold text-white shadow-lg shadow-indigo-500/30">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-500/30">
                       {{ record.teacher_name?.charAt(0) || '?' }}
                     </div>
                     <div class="font-semibold text-slate-900">{{ record.teacher_name || '-' }}</div>
@@ -141,7 +141,7 @@
                 </td>
 
                 <td v-else-if="column.kind === 'subject'" class="px-6 py-4">
-                  <span class="inline-flex items-center rounded-xl bg-gradient-to-r from-indigo-50 to-blue-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm">
+                  <span class="inline-flex items-center rounded-xl bg-gradient-to-r from-blue-50 to-blue-100 px-3 py-1.5 text-xs font-semibold text-blue-700 shadow-sm">
                     {{ record.subject || '-' }}
                   </span>
                 </td>
@@ -180,7 +180,7 @@
                   <div class="flex justify-end gap-2">
                     <button
                       @click="editRecord(record)"
-                      class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-blue-50 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-indigo-500/20"
+                      class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-blue-500/20"
                     >
                       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -211,7 +211,7 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm"
     >
       <div class="relative flex max-h-[90vh] w-full max-w-4xl flex-col rounded-3xl bg-white shadow-2xl ring-1 ring-white/20">
-        <div class="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/5 to-purple-500/5"></div>
+        <div class="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/5 to-blue-600/5"></div>
 
         <div class="relative flex-shrink-0 border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-white px-6 py-6">
           <h3 class="text-xl font-bold text-slate-900">
@@ -277,7 +277,7 @@
             </div>
 
             <!-- Term 1 Section -->
-            <div class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-blue-50 to-indigo-50 p-5 shadow-sm">
+            <div class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-blue-50 to-blue-100 p-5 shadow-sm">
               <h4 class="mb-4 font-bold text-slate-900">Term 1 Performance</h4>
               <div class="grid gap-5 md:grid-cols-4">
                 <div>
@@ -318,7 +318,7 @@
                   type="button"
                   @click="saveTerm1"
                   :disabled="savingTerm1"
-                  class="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+                  class="rounded-2xl bg-gradient-to-r from-blue-700 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
                 >
                   {{ savingTerm1 ? 'Saving...' : 'Save Term 1' }}
                 </button>
@@ -400,7 +400,7 @@
             </div>
 
             <!-- Final Calculations Section -->
-            <div class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-purple-50 to-pink-50 p-5 shadow-sm">
+            <div class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-blue-50 to-blue-100 p-5 shadow-sm">
               <h4 class="mb-4 font-bold text-slate-900">Final Calculations (AGP)</h4>
               <div class="grid gap-5 md:grid-cols-2">
                 <div>
@@ -416,7 +416,7 @@
                 <button
                   type="button"
                   @click="calculateAGP"
-                  class="rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-purple-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/40"
+                  class="rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/40"
                 >
                   Calculate AGP
                 </button>

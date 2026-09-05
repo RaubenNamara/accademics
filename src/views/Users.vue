@@ -33,10 +33,10 @@
     </transition>
 
     <!-- Header -->
-    <div class="rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-purple-900 p-5 text-white shadow-xl">
+    <div class="rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-5 text-white shadow-xl">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p class="text-xs uppercase tracking-[0.22em] text-purple-200">User Management</p>
+          <p class="text-xs uppercase tracking-[0.22em] text-blue-200">User Management</p>
           <h1 class="mt-2 text-2xl font-semibold sm:text-3xl">Manage Users</h1>
           <p class="mt-2 max-w-2xl text-sm text-slate-300">
             Add, edit, and manage admin users. Control access and roles for the system.
@@ -55,7 +55,7 @@
           </button>
           <button
             @click="openAddModal"
-            class="inline-flex items-center gap-2 rounded-xl bg-purple-500 px-3.5 py-2 text-xs font-medium text-white shadow-lg shadow-purple-500/20 transition-all hover:bg-purple-600 hover:shadow-purple-500/30 sm:text-sm"
+            class="inline-flex items-center gap-2 rounded-xl bg-blue-500 px-3.5 py-2 text-xs font-medium text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-600 hover:shadow-blue-500/30 sm:text-sm"
           >
             ➕ Add User
           </button>
@@ -79,7 +79,7 @@
       </div>
       <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
         <p class="text-sm text-slate-500">Admins</p>
-        <p class="mt-2 text-2xl font-semibold text-purple-600">{{ adminCount }}</p>
+        <p class="mt-2 text-2xl font-semibold text-blue-600">{{ adminCount }}</p>
       </div>
     </div>
 
@@ -92,7 +92,7 @@
             v-model="filters.search"
             type="text"
             placeholder="Search name, email, role..."
-            class="w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none ring-0 transition-all focus:border-purple-500 focus:ring-4 focus:ring-purple-100"
+            class="w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none ring-0 transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
             @input="debouncedLoad"
           />
         </div>
@@ -102,7 +102,7 @@
           <select
             v-model="filters.role"
             @change="loadUsers"
-            class="w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none transition-all focus:border-purple-500 focus:ring-4 focus:ring-purple-100"
+            class="w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
           >
             <option value="">All</option>
             <option value="admin">Admin</option>
@@ -117,7 +117,7 @@
           <select
             v-model="filters.is_active"
             @change="loadUsers"
-            class="w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none transition-all focus:border-purple-500 focus:ring-4 focus:ring-purple-100"
+            class="w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
           >
             <option value="">All</option>
             <option value="1">Active</option>
@@ -312,7 +312,7 @@
             <button
               type="submit"
               :disabled="saving"
-              class="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-purple-500/20 transition-all hover:bg-purple-700 hover:shadow-purple-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+              class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-700 hover:shadow-blue-500/30 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span v-if="saving">⏳</span>
               <span v-else>💾</span>

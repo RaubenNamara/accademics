@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-5">
-    <div class="rounded-3xl bg-gradient-to-r from-indigo-950 via-blue-900 to-slate-900 p-6 text-white shadow-xl">
+    <div class="rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-6 text-white shadow-xl">
       <h1 class="text-2xl font-bold">Teaching Analytics</h1>
       <p class="mt-1 text-sm text-blue-200">Workload, class allocation & lesson attendance</p>
       <div class="mt-4 flex flex-wrap gap-3">

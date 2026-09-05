@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-8">
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-8 text-white shadow-2xl">
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-8 text-white shadow-2xl">
       <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
       <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
       <div class="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
@@ -38,7 +38,7 @@
 
           <button
             @click="openAddModal()"
-            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 px-5 py-2.5 text-sm font-medium text-white shadow-xl shadow-blue-500/25 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/40"
+            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 to-blue-500 px-5 py-2.5 text-sm font-medium text-white shadow-xl shadow-blue-500/25 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/40"
           >
             <span class="relative z-10 flex items-center gap-2">
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,7 +58,7 @@
           <select
             v-model="filterYear"
             @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
           >
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
@@ -69,7 +69,7 @@
           <select
             v-model="filterTerm"
             @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
           >
             <option value="all">All Terms</option>
             <option :value="1">Term 1</option>
@@ -83,7 +83,7 @@
           <select
             v-model="filterClass"
             @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
           >
             <option value="">All Classes</option>
             <option v-for="c in classes" :key="c" :value="c">{{ c }}</option>
@@ -95,7 +95,7 @@
           <select
             v-model="filterStream"
             @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
           >
             <option value="">All Streams</option>
             <option v-for="s in streams" :key="s" :value="s">{{ s }}</option>
@@ -109,15 +109,15 @@
             @input="loadData"
             type="text"
             placeholder="Search by name..."
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
           />
         </div>
 
         <div class="flex items-end">
-          <div class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-3">
-            <div class="h-2 w-2 animate-pulse rounded-full bg-indigo-500"></div>
+          <div class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3">
+            <div class="h-2 w-2 animate-pulse rounded-full bg-blue-500"></div>
             <span class="text-sm font-medium text-slate-600">
-              <span class="font-bold text-indigo-600">{{ records.length }}</span> observations found
+              <span class="font-bold text-blue-600">{{ records.length }}</span> observations found
             </span>
           </div>
         </div>
@@ -162,18 +162,18 @@
             <tr
               v-for="group in groupedRecords"
               :key="group.teacher_id"
-              class="transition-all duration-200 hover:bg-gradient-to-r hover:from-indigo-50/30 hover:to-purple-50/30"
+              class="transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-blue-100/30"
             >
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                  <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 text-sm font-bold text-white shadow-lg shadow-indigo-500/30">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-500/30">
                     {{ group.teacher_name?.charAt(0) || '?' }}
                   </div>
                   <div class="font-semibold text-slate-900">{{ group.teacher_name }}</div>
                 </div>
               </td>
               <td class="px-6 py-4">
-                <span class="inline-flex items-center rounded-xl bg-gradient-to-r from-indigo-50 to-blue-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm">
+                <span class="inline-flex items-center rounded-xl bg-gradient-to-r from-blue-50 to-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 shadow-sm">
                   {{ group.subject }}
                 </span>
               </td>
@@ -187,7 +187,7 @@
                 </div>
               </td>
               <td class="px-6 py-4 text-sm font-bold text-slate-700">{{ group.avg_score || 0 }}</td>
-              <td class="px-6 py-4 text-sm font-bold text-purple-600">{{ group.avg_rating || 0 }}</td>
+              <td class="px-6 py-4 text-sm font-bold text-blue-600">{{ group.avg_rating || 0 }}</td>
               <td class="px-6 py-4">
                 <span
                   class="inline-flex items-center rounded-xl px-3 py-1.5 text-xs font-bold shadow-sm"
@@ -221,7 +221,7 @@
 
                   <button
                     @click="editRecord(group.observations[0])"
-                    class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-blue-50 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-indigo-500/20"
+                    class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-blue-500/20"
                   >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -252,7 +252,7 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm"
     >
       <div class="relative flex max-h-[90vh] w-full max-w-4xl flex-col rounded-3xl bg-white shadow-2xl ring-1 ring-white/20">
-        <div class="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/5 to-purple-500/5"></div>
+        <div class="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/5 to-blue-600/5"></div>
 
         <div class="relative flex-shrink-0 border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-white px-6 py-6">
           <h3 class="text-xl font-bold text-slate-900">
@@ -327,9 +327,9 @@
               </div>
             </div>
 
-            <div class="rounded-2xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-purple-50 p-6 shadow-lg">
+            <div class="rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 p-6 shadow-lg">
               <div class="mb-4 flex items-center gap-3">
-                <div class="rounded-xl bg-indigo-500 p-2">
+                <div class="rounded-xl bg-blue-500 p-2">
                   <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                   </svg>
@@ -367,9 +367,9 @@
               </div>
             </div>
 
-            <div class="rounded-2xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 p-6 shadow-lg">
+            <div class="rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 p-6 shadow-lg">
               <div class="mb-4 flex items-center gap-3">
-                <div class="rounded-xl bg-purple-500 p-2">
+                <div class="rounded-xl bg-blue-500 p-2">
                   <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                   </svg>
@@ -377,7 +377,7 @@
                 <h3 class="text-lg font-bold text-slate-900">Automated Score Conversion</h3>
               </div>
               <div class="text-center">
-                <div class="mb-2 text-4xl font-bold text-purple-600">{{ calculatedRating }} / 4.0</div>
+                <div class="mb-2 text-4xl font-bold text-blue-600">{{ calculatedRating }} / 4.0</div>
                 <div class="text-sm text-slate-600">Final Rating</div>
               </div>
             </div>
@@ -463,7 +463,7 @@
               <button
                 type="submit"
                 :disabled="saving"
-                class="rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+                class="rounded-2xl bg-gradient-to-r from-blue-700 to-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
               >
                 {{ saving ? 'Saving...' : 'Save' }}
               </button>
@@ -479,9 +479,9 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/75 p-3 backdrop-blur-md sm:p-4"
     >
       <div class="relative flex h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-[0_30px_80px_rgba(15,23,42,0.35)] ring-1 ring-white/20">
-        <div class="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-indigo-50"></div>
-        <div class="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-indigo-200/30 blur-3xl"></div>
-        <div class="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-purple-200/30 blur-3xl"></div>
+        <div class="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-blue-50"></div>
+        <div class="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-blue-200/30 blur-3xl"></div>
+        <div class="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-blue-200/30 blur-3xl"></div>
 
         <div class="relative border-b border-slate-200/70 px-5 py-5 sm:px-6">
           <div class="flex items-start justify-between gap-4">
@@ -511,7 +511,7 @@
             <div class="rounded-[1.75rem] border border-white/80 bg-white/80 p-5 shadow-lg shadow-slate-200/40 backdrop-blur-sm sm:p-6">
               <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div class="flex min-w-0 items-center gap-4">
-                  <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 text-xl font-bold text-white shadow-lg shadow-indigo-500/30">
+                  <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-xl font-bold text-white shadow-lg shadow-blue-500/30">
                     {{ selectedRecord.teacher_name?.charAt(0) || '?' }}
                   </div>
                   <div class="min-w-0">
@@ -522,13 +522,13 @@
                 </div>
 
                 <div class="flex flex-wrap gap-2">
-                  <span class="rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700">
+                  <span class="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
                     Total {{ selectedRecord.totalObservations || 0 }} Observations
                   </span>
                   <span class="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">
                     Avg Score {{ selectedRecord.averageScore || 0 }}
                   </span>
-                  <span class="rounded-full bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700">
+                  <span class="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
                     Avg Rating {{ selectedRecord.averageRating || 0 }}
                   </span>
                   <span
@@ -554,7 +554,7 @@
 
               <div class="rounded-3xl border border-white/80 bg-white/85 p-5 shadow-lg shadow-slate-200/40 backdrop-blur-sm">
                 <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Average Rating</p>
-                <p class="mt-3 text-2xl font-bold text-purple-600">{{ selectedRecord.averageRating || 0 }}</p>
+                <p class="mt-3 text-2xl font-bold text-blue-600">{{ selectedRecord.averageRating || 0 }}</p>
               </div>
 
               <div class="rounded-3xl border border-white/80 bg-white/85 p-5 shadow-lg shadow-slate-200/40 backdrop-blur-sm">
@@ -601,7 +601,7 @@
                       <td class="px-4 py-3 text-sm font-medium text-slate-800">{{ obs.year || '-' }}</td>
                       <td class="px-4 py-3 text-sm font-medium text-slate-800">Round {{ obs.round || 1 }}</td>
                       <td class="px-4 py-3 text-sm font-bold text-slate-800">{{ Number(obs.total_score || 0).toFixed(2) }}</td>
-                      <td class="px-4 py-3 text-sm font-bold text-purple-600">{{ Number(obs.calculated_rating || 0).toFixed(2) }}</td>
+                      <td class="px-4 py-3 text-sm font-bold text-blue-600">{{ Number(obs.calculated_rating || 0).toFixed(2) }}</td>
                       <td class="px-4 py-3">
                         <span class="inline-flex rounded-xl px-3 py-1.5 text-xs font-bold" :class="getCategoryBadgeClass(obs.performance_category)">
                           {{ obs.performance_category || '-' }}

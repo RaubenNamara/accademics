@@ -30,7 +30,7 @@
     </Teleport>
 
     <!-- Header -->
-    <header class="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-blue-800 p-5 text-white shadow-xl shadow-blue-900/20 sm:p-6">
+    <header class="overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-5 text-white shadow-xl shadow-blue-900/20 sm:p-6">
       <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-200/90">HR · Teaching Staff</p>

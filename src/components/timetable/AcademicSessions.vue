@@ -6,7 +6,7 @@
     </div>
     
     <!-- Sessions List -->
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <div class="bg-white rounded-xl border border-slate-200 overflow-x-auto">
       <table class="w-full">
         <thead class="bg-slate-50 border-b border-slate-200">
           <tr>
@@ -48,7 +48,7 @@
           <label class="block text-sm font-medium text-slate-700 mb-2">Session Name</label>
           <input v-model="form.session_name" type="text" class="input w-full" placeholder="e.g., 2025 Term 1" required>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-2">Academic Year</label>
             <input v-model.number="form.academic_year" type="number" class="input w-full" required>
@@ -62,7 +62,7 @@
             </select>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-2">Start Date</label>
             <input v-model="form.start_date" type="date" class="input w-full" required>

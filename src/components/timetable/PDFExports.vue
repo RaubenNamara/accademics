@@ -90,6 +90,13 @@ import { ref, onMounted } from 'vue';
 import { classesAPI, teachersAPI, roomsAPI, timetablePDFAPI } from '../../services/api.js';
 import { useToast } from '../../composables/useToast.js';
 
+const props = defineProps({
+  activeSession: {
+    type: Object,
+    default: null
+  }
+});
+
 const { showToast } = useToast();
 
 const classes = ref([]);
@@ -123,7 +130,7 @@ const loadDropdownData = async () => {
 };
 
 const exportClassPDF = async () => {
-  const sessionId = getActiveSessionId();
+  const sessionId = props.activeSession?.id;
   if (!sessionId) {
     showToast('Please select an active academic session first', 'warning');
     return;
@@ -148,7 +155,7 @@ const exportClassPDF = async () => {
 };
 
 const exportTeacherPDF = async () => {
-  const sessionId = getActiveSessionId();
+  const sessionId = props.activeSession?.id;
   if (!sessionId) {
     showToast('Please select an active academic session first', 'warning');
     return;
@@ -173,7 +180,7 @@ const exportTeacherPDF = async () => {
 };
 
 const exportRoomPDF = async () => {
-  const sessionId = getActiveSessionId();
+  const sessionId = props.activeSession?.id;
   if (!sessionId) {
     showToast('Please select an active academic session first', 'warning');
     return;
@@ -198,7 +205,7 @@ const exportRoomPDF = async () => {
 };
 
 const exportMasterPDF = async () => {
-  const sessionId = getActiveSessionId();
+  const sessionId = props.activeSession?.id;
   if (!sessionId) {
     showToast('Please select an active academic session first', 'warning');
     return;
@@ -243,10 +250,6 @@ const addToHistory = (type, entity, status) => {
 
 const formatDate = (date) => {
   return new Date(date).toLocaleString();
-};
-
-const getActiveSessionId = () => {
-  return localStorage.getItem('activeSessionId');
 };
 
 onMounted(() => {

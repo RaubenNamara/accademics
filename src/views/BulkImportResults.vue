@@ -102,7 +102,7 @@
 
     <div v-if="importResult" class="mt-6 p-6 rounded-lg" :class="importResult.success ? 'bg-green-50' : 'bg-red-50'">
       <h3 class="text-lg font-semibold mb-4">{{ importResult.success ? 'Import Completed' : 'Import Failed' }}</h3>
-      <div class="grid grid-cols-4 gap-4 mb-4">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
         <div class="bg-white rounded p-3">
           <div class="text-2xl font-bold">{{ importResult.data.total }}</div>
           <div class="text-sm text-gray-600">Total</div>

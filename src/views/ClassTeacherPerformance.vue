@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-8">
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-8 text-white shadow-2xl">
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-8 text-white shadow-2xl">
       <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
       <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
       <div class="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
@@ -35,7 +35,7 @@
           </button>
           <button
             @click="openAddModal"
-            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 px-5 py-2.5 text-sm font-medium text-white shadow-xl shadow-blue-500/25 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/40"
+            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-2.5 text-sm font-medium text-white shadow-xl shadow-blue-500/25 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/40"
           >
             <span class="relative z-10 flex items-center gap-2">
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,7 +55,7 @@
           <select
             v-model="filterYear"
             @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
           >
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
@@ -66,7 +66,7 @@
           <select
             v-model="filterTerm"
             @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
           >
             <option :value="1">Term 1</option>
             <option :value="2">Term 2</option>
@@ -79,7 +79,7 @@
           <select
             v-model="filterWeek"
             @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
           >
             <option value="">All Weeks</option>
             <option v-for="week in 13" :key="week" :value="week">Week {{ week }}</option>
@@ -87,10 +87,10 @@
         </div>
 
         <div class="flex items-end">
-          <div class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-3">
-            <div class="h-2 w-2 animate-pulse rounded-full bg-indigo-500"></div>
+          <div class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3">
+            <div class="h-2 w-2 animate-pulse rounded-full bg-blue-500"></div>
             <span class="text-sm font-medium text-slate-600">
-              <span class="font-bold text-indigo-600">{{ records.length }}</span> records found
+              <span class="font-bold text-blue-600">{{ records.length }}</span> records found
             </span>
           </div>
         </div>
@@ -143,10 +143,10 @@
             </tr>
 
             <template v-for="group in groupedRecords" :key="`${group.teacher_id}-${group.class}-${group.stream}-${group.year}-${group.term}`">
-              <tr class="bg-gradient-to-r from-indigo-50/50 to-purple-50/50">
+              <tr class="bg-gradient-to-r from-blue-50/50 to-blue-100/50">
                 <td class="border-r border-slate-100 px-6 py-4">
                   <div class="flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 text-sm font-bold text-white shadow-lg shadow-indigo-500/30">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-500/30">
                       {{ group.teacher_name?.charAt(0) || '?' }}
                     </div>
                     <div class="font-semibold text-slate-900">{{ group.teacher_name }}</div>
@@ -170,7 +170,7 @@
               <tr
                 v-for="record in group.weeks"
                 :key="record.id"
-                class="transition-all duration-200 hover:bg-gradient-to-r hover:from-indigo-50/30 hover:to-purple-50/30"
+                class="transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-blue-100/30"
               >
                 <td class="border-r border-slate-100 px-6 py-4 text-sm text-slate-400 pl-12">
                   Week {{ record.week }}
@@ -273,7 +273,7 @@
                   <div class="flex justify-end gap-2">
                     <button
                       @click="editRecord(record)"
-                      class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-blue-50 px-3 py-2 text-sm font-semibold text-indigo-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-indigo-500/20"
+                      class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-blue-500/20"
                     >
                       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -288,7 +288,7 @@
                     </button>
                     <button
                       @click="editTerm2(record)"
-                      class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 px-3 py-2 text-sm font-semibold text-purple-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-purple-500/20"
+                      class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-blue-500/20"
                       title="Add T2 Score"
                     >
                       T2
@@ -322,7 +322,7 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm"
     >
       <div class="relative flex max-h-[90vh] w-full max-w-5xl flex-col rounded-3xl bg-white shadow-2xl ring-1 ring-white/20">
-        <div class="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/5 to-purple-500/5 pointer-events-none"></div>
+        <div class="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/5 to-blue-600/5 pointer-events-none"></div>
 
         <div class="relative flex-shrink-0 border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-white px-6 py-6">
           <h3 class="text-xl font-bold text-slate-900">
@@ -403,12 +403,12 @@
             <div class="border-t border-slate-200/60 pt-6">
               <h4 class="mb-4 font-bold text-slate-900">Weekly Assessment (Each out of 20 marks)</h4>
 
-              <div class="mb-4 rounded-xl border border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-4">
+              <div class="mb-4 rounded-xl border border-slate-200 bg-gradient-to-r from-blue-50 to-blue-50 p-4">
                 <div class="mb-3 flex items-center justify-between">
                   <h6 class="font-medium text-slate-900">Roll Call</h6>
                   <span class="text-sm text-slate-600">Score: {{ form.roll_call_score }}/20</span>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <label class="flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors hover:bg-white/50">
                     <input type="radio" v-model="form.roll_call_score" :value="20" class="h-4 w-4 text-emerald-600 focus:ring-emerald-500" />
                     <span class="text-sm font-medium text-emerald-800">Excellent (20)</span>
@@ -428,12 +428,12 @@
                 </div>
               </div>
 
-              <div class="mb-4 rounded-xl border border-slate-200 bg-gradient-to-r from-purple-50 to-pink-50 p-4">
+              <div class="mb-4 rounded-xl border border-slate-200 bg-gradient-to-r from-blue-50 to-blue-100 p-4">
                 <div class="mb-3 flex items-center justify-between">
                   <h6 class="font-medium text-slate-900">Mentorship</h6>
                   <span class="text-sm text-slate-600">Score: {{ form.mentorship_score }}/20</span>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <label class="flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors hover:bg-white/50">
                     <input type="radio" v-model="form.mentorship_score" :value="20" class="h-4 w-4 text-emerald-600 focus:ring-emerald-500" />
                     <span class="text-sm font-medium text-emerald-800">Excellent (20)</span>
@@ -458,7 +458,7 @@
                   <h6 class="font-medium text-slate-900">Devotion</h6>
                   <span class="text-sm text-slate-600">Score: {{ form.devotion_score }}/20</span>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <label class="flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors hover:bg-white/50">
                     <input type="radio" v-model="form.devotion_score" :value="20" class="h-4 w-4 text-emerald-600 focus:ring-emerald-500" />
                     <span class="text-sm font-medium text-emerald-800">Excellent (20)</span>
@@ -483,7 +483,7 @@
                   <h6 class="font-medium text-slate-900">Cleanliness</h6>
                   <span class="text-sm text-slate-600">Score: {{ form.cleanliness_score }}/20</span>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <label class="flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors hover:bg-white/50">
                     <input type="radio" v-model="form.cleanliness_score" :value="20" class="h-4 w-4 text-emerald-600 focus:ring-emerald-500" />
                     <span class="text-sm font-medium text-emerald-800">Excellent (20)</span>
@@ -512,7 +512,7 @@
                   <input
                     type="checkbox"
                     v-model="form.parent_contacted"
-                    class="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500"
+                    class="h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
                   />
                   <span class="text-sm font-medium text-slate-700">At least one parent contacted this week</span>
                 </label>
@@ -547,7 +547,7 @@
               </div>
             </div>
 
-            <div class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-indigo-50 to-purple-50 p-5 shadow-sm">
+            <div class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-blue-50 to-blue-100 p-5 shadow-sm">
               <h4 class="mb-4 font-bold text-slate-900">Calculated Results (Auto)</h4>
 
               <div class="mb-6">
@@ -614,7 +614,7 @@
               <button
                 type="submit"
                 :disabled="saving"
-                class="rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+                class="rounded-2xl bg-gradient-to-r from-blue-700 to-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
               >
                 {{ saving ? 'Saving...' : 'Save' }}
               </button>

@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <div class="rounded-3xl bg-gradient-to-r from-slate-950 via-blue-950 to-indigo-900 p-6 text-white shadow-2xl">
+    <div class="rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-6 text-white shadow-2xl">
       <p class="text-xs font-semibold uppercase tracking-[0.25em] text-blue-200">School HR Management</p>
       <h1 class="mt-2 text-3xl font-bold">Staff Overview</h1>
       <p class="mt-2 text-sm text-slate-300">Teaching & non-teaching staff, payroll, leave, and departments</p>
@@ -101,7 +101,7 @@ const stats = ref({});
 const kpiCards = computed(() => [
   { label: 'Total Staff', value: stats.value.total_staff || 0, color: 'text-slate-900' },
   { label: 'Teaching Staff', value: stats.value.teaching_staff || 0, color: 'text-blue-600' },
-  { label: 'Non-Teaching', value: stats.value.non_teaching_staff || 0, color: 'text-indigo-600' },
+  { label: 'Non-Teaching', value: stats.value.non_teaching_staff || 0, color: 'text-blue-600' },
   { label: 'Active Staff', value: stats.value.active_staff || 0, color: 'text-emerald-600' }
 ]);
 

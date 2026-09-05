@@ -17,7 +17,7 @@
         <div class="flex flex-wrap items-center gap-3">
           <button
             @click="openImportModal"
-            class="px-4 py-2.5 bg-white border-2 border-purple-200 text-purple-700 rounded-xl font-semibold hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
+            class="px-4 py-2.5 bg-white border-2 border-blue-200 text-blue-700 rounded-xl font-semibold hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -866,10 +866,10 @@
 
                 <div v-else>
                   <!-- Profile Header -->
-                  <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-6">
+                  <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-6 mb-6">
                     <div class="flex items-center gap-6">
                       <div class="relative">
-                        <div class="w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                        <div class="w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
                           <img
                             v-if="selectedStaff.passport_photo"
                             :src="selectedStaff.passport_photo"
@@ -1083,7 +1083,7 @@
 
             <div class="relative inline-block w-full max-w-2xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl">
               <!-- Modal Header -->
-              <div class="bg-gradient-to-r from-purple-900 via-purple-800 to-purple-900 px-8 py-6">
+              <div class="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 px-8 py-6">
                 <div class="flex items-center justify-between">
                   <h3 class="text-2xl font-bold text-white">Import Staff Data</h3>
                   <button
@@ -1100,15 +1100,15 @@
               <!-- Modal Body -->
               <div class="p-8">
                 <div class="text-center mb-6">
-                  <div class="w-20 h-20 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div class="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
                   </div>
                   <p class="text-slate-600">Upload CSV or JSON file to import staff data</p>
                 </div>
 
-                <div class="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:border-purple-400 transition-colors duration-200">
+                <div class="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:border-blue-400 transition-colors duration-200">
                   <input
                     type="file"
                     ref="fileInput"
@@ -1118,17 +1118,17 @@
                   />
                   <button
                     @click="$refs.fileInput.click()"
-                    class="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     Choose File
                   </button>
                   <p class="mt-4 text-sm text-slate-500">Supported formats: CSV, JSON</p>
                 </div>
 
-                <div v-if="importFile" class="mt-6 bg-purple-50 rounded-2xl p-4 border border-purple-200">
+                <div v-if="importFile" class="mt-6 bg-blue-50 rounded-2xl p-4 border border-blue-200">
                   <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                      <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                       <div>
@@ -1160,7 +1160,7 @@
                   <button
                     @click="processImport"
                     :disabled="!importFile || importing"
-                    class="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     <svg v-if="importing" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

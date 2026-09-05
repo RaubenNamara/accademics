@@ -23,23 +23,6 @@
     
     <!-- Content Area -->
     <div class="p-6">
-      <!-- Setup Wizard View -->
-      <div v-if="activeView === 'setup-wizard'" class="space-y-6">
-        <SetupWizard 
-          :classes-count="stats.totalClasses"
-          :subjects-count="stats.totalSubjects"
-          :teachers-count="stats.totalTeachers"
-          :rooms-count="stats.totalRooms"
-          :events-count="schoolEvents.length"
-          :requirements-count="lessonRequirements.length"
-          :availability-count="0"
-          :constraints-count="0"
-          @navigate="handleViewChange"
-          @complete="handleWizardComplete"
-          @generate="handleGenerateFromWizard"
-        />
-      </div>
-      
       <!-- Dashboard View -->
       <div v-if="activeView === 'dashboard'" class="space-y-6">
         <!-- Summary Cards -->
@@ -156,7 +139,7 @@
       
       <!-- Lesson Requirements View -->
       <div v-else-if="activeView === 'lesson-requirements'" class="space-y-6">
-        <LessonRequirementsManager />
+        <LessonRequirementsManager :active-session="activeSession" />
       </div>
       
       <!-- Class Timetable View -->
@@ -168,13 +151,14 @@
               <option value="">Select Class</option>
               <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.class_name }}</option>
             </select>
+            <button v-if="selectedClassId" @click="openTimetableForm({ day: 'Monday', period: 1 })" class="btn-primary">+ Add Lesson</button>
             <button @click="exportClassPdf" class="btn-secondary">Export PDF</button>
           </div>
         </div>
-        
-        <div v-if="selectedClassId && classTimetable.length > 0" class="bg-white rounded-xl border border-slate-200 p-6">
-          <TimetableGrid 
-            :entries="classTimetable" 
+
+        <div v-if="selectedClassId" class="bg-white rounded-xl border border-slate-200 p-6">
+          <TimetableGrid
+            :entries="classTimetable"
             :editable="true"
             @add="openTimetableForm"
             @remove="removeTimetableEntry"
@@ -183,6 +167,18 @@
         <div v-else class="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-600">
           Select a class to view its timetable
         </div>
+
+        <LessonEntryModal
+          v-if="showLessonModal"
+          :class-id="selectedClassId"
+          :class-name="selectedClassName"
+          :day="lessonModalContext.day"
+          :period="lessonModalContext.period"
+          :teachers="teachersList"
+          :active-session="activeSession"
+          @close="showLessonModal = false"
+          @saved="onLessonSaved"
+        />
       </div>
       
       <!-- Teacher Timetable View -->
@@ -265,64 +261,9 @@
         <ConflictSummary :conflicts="conflicts" @refresh="loadConflicts" />
       </div>
       
-      <!-- Classes View -->
-      <div v-else-if="activeView === 'classes'" class="space-y-6">
-        <IntegratedClasses @navigate="handleViewChange" />
-      </div>
-      
-      <!-- Subjects View -->
-      <div v-else-if="activeView === 'subjects'" class="space-y-6">
-        <IntegratedSubjects @navigate="handleViewChange" />
-      </div>
-      
-      <!-- Teachers View -->
-      <div v-else-if="activeView === 'teachers'" class="space-y-6">
-        <IntegratedTeachers @navigate="handleViewChange" />
-      </div>
-      
-      <!-- Rooms View -->
-      <div v-else-if="activeView === 'rooms'" class="space-y-6">
-        <IntegratedRooms @navigate="handleViewChange" />
-      </div>
-      
-      <!-- School Events View -->
-      <div v-else-if="activeView === 'events'" class="space-y-6">
-        <SchoolEventsManager />
-      </div>
-      
       <!-- Teacher Availability View -->
       <div v-else-if="activeView === 'availability'" class="space-y-6">
-        <TeacherAvailability />
-      </div>
-      
-      <!-- Constraints View -->
-      <div v-else-if="activeView === 'constraints'" class="space-y-6">
-        <ConstraintsManager />
-      </div>
-      
-      <!-- Room Timetables View -->
-      <div v-else-if="activeView === 'room-timetables'" class="space-y-6">
-        <RoomTimetables />
-      </div>
-      
-      <!-- Master Timetable View -->
-      <div v-else-if="activeView === 'master-timetable'" class="space-y-6">
-        <MasterTimetable />
-      </div>
-      
-      <!-- Analytics View -->
-      <div v-else-if="activeView === 'analytics'" class="space-y-6">
-        <AnalyticsDashboard />
-      </div>
-      
-      <!-- PDF Exports View -->
-      <div v-else-if="activeView === 'exports'" class="space-y-6">
-        <PDFExports />
-      </div>
-      
-      <!-- Settings View -->
-      <div v-else-if="activeView === 'settings'" class="space-y-6">
-        <Settings />
+        <TeacherAvailability :active-session="activeSession" />
       </div>
       
       <!-- Placeholder for other views -->
@@ -356,21 +297,11 @@ import TimetableMenu from '../components/timetable/TimetableMenu.vue';
 import SetupProgress from '../components/timetable/SetupProgress.vue';
 import ConflictSummary from '../components/timetable/ConflictSummary.vue';
 import TimetableGrid from '../components/timetable/TimetableGrid.vue';
+import LessonEntryModal from '../components/timetable/LessonEntryModal.vue';
 import AcademicSessions from '../components/timetable/AcademicSessions.vue';
 import BellSchedule from '../components/timetable/BellSchedule.vue';
 import LessonRequirementsManager from '../components/timetable/LessonRequirementsManager.vue';
-import IntegratedClasses from '../components/timetable/IntegratedClasses.vue';
-import IntegratedSubjects from '../components/timetable/IntegratedSubjects.vue';
-import IntegratedTeachers from '../components/timetable/IntegratedTeachers.vue';
-import IntegratedRooms from '../components/timetable/IntegratedRooms.vue';
-import SchoolEventsManager from '../components/timetable/SchoolEventsManager.vue';
 import TeacherAvailability from '../components/timetable/TeacherAvailability.vue';
-import ConstraintsManager from '../components/timetable/ConstraintsManager.vue';
-import RoomTimetables from '../components/timetable/RoomTimetables.vue';
-import MasterTimetable from '../components/timetable/MasterTimetable.vue';
-import AnalyticsDashboard from '../components/timetable/AnalyticsDashboard.vue';
-import PDFExports from '../components/timetable/PDFExports.vue';
-import Settings from '../components/timetable/Settings.vue';
 
 const { showToast } = useToast();
 
@@ -448,6 +379,13 @@ const selectedClassId = ref('');
 const selectedTeacherId = ref('');
 const classTimetable = ref([]);
 const teacherTimetable = ref([]);
+const showLessonModal = ref(false);
+const lessonModalContext = ref({ day: 'Monday', period: 1 });
+
+const selectedClassName = computed(() => {
+  const cls = classes.value.find(c => c.id === selectedClassId.value);
+  return cls ? cls.class_name : '';
+});
 
 // Generation
 const generationSessionId = ref('');
@@ -727,8 +665,18 @@ const deleteRequirement = async (id) => {
 
 // Timetable management
 const openTimetableForm = (data) => {
-  // Open form to add/edit timetable entry
-  console.log('Open timetable form for:', data);
+  if (!selectedClassId.value) {
+    showToast('Select a class first', 'warning');
+    return;
+  }
+  lessonModalContext.value = { day: data.day, period: data.period };
+  showLessonModal.value = true;
+};
+
+const onLessonSaved = () => {
+  showLessonModal.value = false;
+  showToast('Lesson saved');
+  loadClassTimetable();
 };
 
 const removeTimetableEntry = async (id) => {

@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-8">
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-8 text-white shadow-2xl">
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-8 text-white shadow-2xl">
       <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
       <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
       <div class="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
@@ -23,7 +23,7 @@
           </button>
           <button
             @click="openAddModal"
-            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 px-5 py-2.5 text-sm font-medium text-white shadow-xl shadow-blue-500/25 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/40 hover:scale-105"
+            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 to-blue-500 px-5 py-2.5 text-sm font-medium text-white shadow-xl shadow-blue-500/25 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/40 hover:scale-105"
           >
             <span class="relative z-10 flex items-center gap-2">
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,13 +40,13 @@
       <div class="grid gap-5 xl:grid-cols-5">
         <div>
           <label class="mb-2.5 block text-sm font-semibold text-slate-700">Year</label>
-          <select v-model="filterYear" @change="loadData" class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50">
+          <select v-model="filterYear" @change="loadData" class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50">
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
         </div>
         <div>
           <label class="mb-2.5 block text-sm font-semibold text-slate-700">Term</label>
-          <select v-model="filterTerm" @change="loadData" class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50">
+          <select v-model="filterTerm" @change="loadData" class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50">
             <option :value="1">Term 1</option>
             <option :value="2">Term 2</option>
             <option :value="3">Term 3</option>
@@ -54,7 +54,7 @@
         </div>
         <div>
           <label class="mb-2.5 block text-sm font-semibold text-slate-700">Week</label>
-          <select v-model="filterWeek" @change="loadData" class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50">
+          <select v-model="filterWeek" @change="loadData" class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50">
             <option value="">All Weeks</option>
             <option v-for="w in 13" :key="w" :value="w">Week {{ w }}</option>
           </select>
@@ -65,15 +65,15 @@
             v-model="searchQuery"
             type="text"
             placeholder="Search by name..."
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
             @input="filterRecords"
           >
         </div>
         <div class="flex items-end">
-          <div class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-3">
-            <div class="h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></div>
+          <div class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3">
+            <div class="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
             <span class="text-sm font-medium text-slate-600">
-              <span class="font-bold text-indigo-600">{{ filteredRecords.length }}</span> records found
+              <span class="font-bold text-blue-600">{{ filteredRecords.length }}</span> records found
             </span>
           </div>
         </div>
@@ -119,7 +119,7 @@
             <tr v-if="loading">
               <td colspan="8" class="px-6 py-16 text-center text-slate-500">
                 <div class="flex items-center justify-center gap-3">
-                  <div class="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"></div>
+                  <div class="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
                   <span class="text-sm font-medium">Loading...</span>
                 </div>
               </td>
@@ -139,7 +139,7 @@
             <tr
               v-for="(record, index) in filteredRecords"
               :key="record.id"
-              class="transition-all duration-200 hover:bg-gradient-to-r hover:from-indigo-50/30 hover:to-purple-50/30"
+              class="transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-blue-100/30"
             >
               <td class="px-6 py-4">
                 <span v-if="index === 0" class="text-3xl">🥇</span>
@@ -149,7 +149,7 @@
               </td>
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                  <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 text-sm font-bold text-white shadow-lg shadow-indigo-500/30">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-500/30">
                     {{ record.teacher_name?.charAt(0) || '?' }}
                   </div>
                   <div class="font-semibold text-slate-900">{{ record.teacher_name }}</div>
@@ -188,7 +188,7 @@
                   </button>
                   <button
                     @click="editRecord(record)"
-                    class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-blue-50 px-3 py-2 text-sm font-semibold text-indigo-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-indigo-500/20"
+                    class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-blue-500/20"
                     title="Edit"
                   >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -197,7 +197,7 @@
                   </button>
                   <button
                     @click="printRecord(record)"
-                    class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 px-3 py-2 text-sm font-semibold text-purple-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-purple-500/20"
+                    class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-blue-500/20"
                     title="Print"
                   >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,7 +227,7 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm"
     >
       <div class="relative w-full max-w-4xl rounded-3xl bg-white shadow-2xl flex flex-col max-h-[90vh] ring-1 ring-white/20">
-        <div class="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/5 to-purple-500/5 pointer-events-none"></div>
+        <div class="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/5 to-blue-600/5 pointer-events-none"></div>
         <div class="relative border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-white px-6 py-6 flex-shrink-0">
           <h3 class="text-xl font-bold text-slate-900">
             {{ editingId ? 'Edit Duty Evaluation' : 'Add Duty Evaluation' }}
@@ -279,7 +279,7 @@
             <!-- Performance Scoring Section -->
             <div class="border-t border-slate-200/60 pt-6">
               <h4 class="mb-5 font-bold text-slate-900 text-lg">Performance Scoring (Enter marks out of 20 for each category)</h4>
-              <div class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-indigo-50 p-6 shadow-sm">
+              <div class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-blue-50 p-6 shadow-sm">
                 <div class="overflow-x-auto">
                   <table class="w-full">
                     <thead>
@@ -306,7 +306,7 @@
                             min="0" 
                             max="20" 
                             @input="autoCalculate"
-                            class="w-full text-center rounded-xl border-2 border-slate-300 bg-white px-4 py-3 font-bold text-slate-900 outline-none transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+                            class="w-full text-center rounded-xl border-2 border-slate-300 bg-white px-4 py-3 font-bold text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
                           >
                         </td>
                       </tr>
@@ -326,7 +326,7 @@
                             min="0" 
                             max="20" 
                             @input="autoCalculate"
-                            class="w-full text-center rounded-xl border-2 border-slate-300 bg-white px-4 py-3 font-bold text-slate-900 outline-none transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+                            class="w-full text-center rounded-xl border-2 border-slate-300 bg-white px-4 py-3 font-bold text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
                           >
                         </td>
                       </tr>
@@ -346,7 +346,7 @@
                             min="0" 
                             max="20" 
                             @input="autoCalculate"
-                            class="w-full text-center rounded-xl border-2 border-slate-300 bg-white px-4 py-3 font-bold text-slate-900 outline-none transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+                            class="w-full text-center rounded-xl border-2 border-slate-300 bg-white px-4 py-3 font-bold text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
                           >
                         </td>
                       </tr>
@@ -367,7 +367,7 @@
                             min="0" 
                             max="20" 
                             @input="autoCalculate"
-                            class="w-full text-center rounded-xl border-2 border-slate-300 bg-white px-4 py-3 font-bold text-slate-900 outline-none transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+                            class="w-full text-center rounded-xl border-2 border-slate-300 bg-white px-4 py-3 font-bold text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
                           >
                         </td>
                       </tr>
@@ -388,7 +388,7 @@
                             min="0" 
                             max="20" 
                             @input="autoCalculate"
-                            class="w-full text-center rounded-xl border-2 border-slate-300 bg-white px-4 py-3 font-bold text-slate-900 outline-none transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100/50"
+                            class="w-full text-center rounded-xl border-2 border-slate-300 bg-white px-4 py-3 font-bold text-slate-900 outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
                           >
                         </td>
                       </tr>
@@ -399,7 +399,7 @@
             </div>
 
             <!-- Summary Card -->
-            <div class="rounded-3xl border-2 border-slate-200/60 bg-gradient-to-br from-indigo-50 to-purple-50 p-6 shadow-sm">
+            <div class="rounded-3xl border-2 border-slate-200/60 bg-gradient-to-br from-blue-50 to-blue-100 p-6 shadow-sm">
               <h4 class="mb-5 font-bold text-slate-900 text-lg">Summary</h4>
               <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <div class="rounded-2xl bg-white p-5 shadow-md">
@@ -486,7 +486,7 @@
                 type="submit"
                 @click="saveRecord"
                 :disabled="saving"
-                class="rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-500/40 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+                class="rounded-2xl bg-gradient-to-r from-blue-700 to-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
               >
                 {{ saving ? 'Saving...' : 'Save Evaluation' }}
               </button>
@@ -499,7 +499,7 @@
     <!-- View Modal -->
     <div v-if="showViewModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm">
       <div class="relative w-full max-w-4xl rounded-3xl bg-white shadow-2xl flex flex-col max-h-[90vh] ring-1 ring-white/20">
-        <div class="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/5 to-purple-500/5 pointer-events-none"></div>
+        <div class="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/5 to-blue-600/5 pointer-events-none"></div>
         <div class="relative border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-white px-8 py-6 flex-shrink-0">
           <div class="flex items-center justify-between">
             <div>
@@ -516,17 +516,17 @@
         <div class="flex-1 overflow-y-auto px-8 py-6">
           <div v-if="viewData" class="space-y-8">
             <!-- Header Info -->
-            <div class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-indigo-50 to-purple-50 p-6">
+            <div class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-blue-50 to-blue-100 p-6">
               <div class="grid gap-6 sm:grid-cols-4">
                 <div class="text-center">
-                  <div class="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-2xl font-bold text-white shadow-lg mx-auto">
+                  <div class="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-2xl font-bold text-white shadow-lg mx-auto">
                     {{ viewData.teacher_name?.charAt(0) || '?' }}
                   </div>
                   <div class="font-bold text-slate-900 mt-3">{{ viewData.teacher_name }}</div>
                   <div class="text-sm text-slate-500">Teacher</div>
                 </div>
                 <div class="text-center">
-                  <div class="text-3xl font-bold text-indigo-600">{{ viewData.total_score }}</div>
+                  <div class="text-3xl font-bold text-blue-600">{{ viewData.total_score }}</div>
                   <div class="text-sm text-slate-500">Total Score</div>
                   <div class="text-xs text-slate-400">/100</div>
                 </div>
@@ -548,7 +548,7 @@
               <h4 class="text-lg font-bold text-slate-900 mb-4">Performance Breakdown</h4>
               <div class="rounded-2xl border border-slate-200/60 bg-white overflow-hidden shadow-sm">
                 <table class="w-full">
-                  <thead class="bg-gradient-to-r from-slate-50 to-indigo-50">
+                  <thead class="bg-gradient-to-r from-slate-50 to-blue-50">
                     <tr>
                       <th class="text-left py-4 px-6 font-bold text-slate-700 text-sm uppercase tracking-wider">Category</th>
                       <th class="text-center py-4 px-6 font-bold text-slate-700 text-sm uppercase tracking-wider w-32">Score</th>
@@ -567,7 +567,7 @@
                         </div>
                       </td>
                       <td class="py-4 px-6 text-center">
-                        <span class="inline-flex items-center rounded-xl bg-indigo-100 px-4 py-2 font-bold text-indigo-700">{{ viewData.punctuality }}/20</span>
+                        <span class="inline-flex items-center rounded-xl bg-blue-100 px-4 py-2 font-bold text-blue-700">{{ viewData.punctuality }}/20</span>
                       </td>
                       <td class="py-4 px-6 text-center">
                         <span class="font-semibold text-slate-700">{{ ((viewData.punctuality / 20) * 100).toFixed(0) }}%</span>
@@ -581,7 +581,7 @@
                         </div>
                       </td>
                       <td class="py-4 px-6 text-center">
-                        <span class="inline-flex items-center rounded-xl bg-indigo-100 px-4 py-2 font-bold text-indigo-700">{{ viewData.supervision }}/20</span>
+                        <span class="inline-flex items-center rounded-xl bg-blue-100 px-4 py-2 font-bold text-blue-700">{{ viewData.supervision }}/20</span>
                       </td>
                       <td class="py-4 px-6 text-center">
                         <span class="font-semibold text-slate-700">{{ ((viewData.supervision / 20) * 100).toFixed(0) }}%</span>
@@ -595,7 +595,7 @@
                         </div>
                       </td>
                       <td class="py-4 px-6 text-center">
-                        <span class="inline-flex items-center rounded-xl bg-indigo-100 px-4 py-2 font-bold text-indigo-700">{{ viewData.cleanliness }}/20</span>
+                        <span class="inline-flex items-center rounded-xl bg-blue-100 px-4 py-2 font-bold text-blue-700">{{ viewData.cleanliness }}/20</span>
                       </td>
                       <td class="py-4 px-6 text-center">
                         <span class="font-semibold text-slate-700">{{ ((viewData.cleanliness / 20) * 100).toFixed(0) }}%</span>
@@ -612,7 +612,7 @@
                         </div>
                       </td>
                       <td class="py-4 px-6 text-center">
-                        <span class="inline-flex items-center rounded-xl bg-indigo-100 px-4 py-2 font-bold text-indigo-700">{{ viewData.time_keeping }}/20</span>
+                        <span class="inline-flex items-center rounded-xl bg-blue-100 px-4 py-2 font-bold text-blue-700">{{ viewData.time_keeping }}/20</span>
                       </td>
                       <td class="py-4 px-6 text-center">
                         <span class="font-semibold text-slate-700">{{ ((viewData.time_keeping / 20) * 100).toFixed(0) }}%</span>
@@ -629,7 +629,7 @@
                         </div>
                       </td>
                       <td class="py-4 px-6 text-center">
-                        <span class="inline-flex items-center rounded-xl bg-indigo-100 px-4 py-2 font-bold text-indigo-700">{{ viewData.participation }}/20</span>
+                        <span class="inline-flex items-center rounded-xl bg-blue-100 px-4 py-2 font-bold text-blue-700">{{ viewData.participation }}/20</span>
                       </td>
                       <td class="py-4 px-6 text-center">
                         <span class="font-semibold text-slate-700">{{ ((viewData.participation / 20) * 100).toFixed(0) }}%</span>
@@ -642,9 +642,9 @@
 
             <!-- Remarks Section -->
             <div class="grid gap-6 sm:grid-cols-2">
-              <div v-if="viewData.comment" class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-indigo-50 p-6">
+              <div v-if="viewData.comment" class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-blue-50 p-6">
                 <h4 class="font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <svg class="h-5 w-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                   </svg>
                   Admin Remarks
@@ -669,9 +669,9 @@
                 </h4>
                 <p class="text-slate-700 leading-relaxed">{{ viewData.general_remarks }}</p>
               </div>
-              <div v-if="viewData.supervisor" class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-purple-50 p-6">
+              <div v-if="viewData.supervisor" class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-blue-50 p-6">
                 <h4 class="font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <svg class="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                   Supervisor
@@ -694,7 +694,7 @@
             </button>
             <button
               @click="showViewModal = false"
-              class="rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-500/40 hover:scale-105"
+              class="rounded-2xl bg-gradient-to-r from-blue-700 to-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105"
             >
               Close
             </button>

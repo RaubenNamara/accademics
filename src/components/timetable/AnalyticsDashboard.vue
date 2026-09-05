@@ -52,8 +52,8 @@
             <p class="text-sm text-slate-600">Room Utilization</p>
             <p class="text-2xl font-bold text-slate-900">{{ dashboard.total_rooms }}</p>
           </div>
-          <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path>
             </svg>
           </div>
@@ -159,9 +159,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { timetableAnalyticsAPI } from '../../services/api.js';
 import { useToast } from '../../composables/useToast.js';
+
+const props = defineProps({
+  activeSession: {
+    type: Object,
+    default: null
+  }
+});
 
 const { showToast } = useToast();
 
@@ -178,7 +185,7 @@ const classCoverage = ref([]);
 const roomUtilization = ref([]);
 
 const loadAnalytics = async () => {
-  const sessionId = getActiveSessionId();
+  const sessionId = props.activeSession?.id;
   if (!sessionId) {
     showToast('Please select an active academic session first', 'warning');
     return;
@@ -214,9 +221,9 @@ const loadAnalytics = async () => {
   }
 };
 
-const getActiveSessionId = () => {
-  return localStorage.getItem('activeSessionId');
-};
+watch(() => props.activeSession, () => {
+  loadAnalytics();
+});
 
 onMounted(() => {
   loadAnalytics();

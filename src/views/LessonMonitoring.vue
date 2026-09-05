@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-8">
-    <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 p-5 text-white shadow-2xl sm:p-7">
+    <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-5 text-white shadow-2xl sm:p-7">
       <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_28%)]"></div>
 
       <div class="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
@@ -36,7 +36,7 @@
 
           <button
             @click="openAddModal"
-            class="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-extrabold text-indigo-700 shadow-xl shadow-black/10 transition hover:bg-indigo-50"
+            class="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-extrabold text-blue-700 shadow-xl shadow-black/10 transition hover:bg-blue-50"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -46,7 +46,7 @@
 
           <button
             @click="showReports = !showReports"
-            :class="showReports ? 'bg-white text-indigo-700' : 'bg-white/10 text-white border border-white/20'"
+            :class="showReports ? 'bg-white text-blue-700' : 'bg-white/10 text-white border border-white/20'"
             class="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold backdrop-blur transition hover:bg-white/20"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,7 +71,7 @@
 
       <div class="summary-card">
         <div class="summary-label">Single Lessons</div>
-        <div class="summary-value text-indigo-600">{{ summary.equivalent_single_lessons }}</div>
+        <div class="summary-value text-blue-600">{{ summary.equivalent_single_lessons }}</div>
       </div>
 
       <div class="summary-card">
@@ -369,7 +369,7 @@
         class="rounded-[2rem] border border-slate-200 bg-white shadow-xl shadow-slate-200/50 overflow-hidden"
       >
         <!-- Horizontal Teacher Info Card -->
-        <div class="bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 px-6 py-5 sm:px-8 sm:py-6">
+        <div class="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500 px-6 py-5 sm:px-8 sm:py-6">
           <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex items-center gap-4">
               <div class="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-white/20 text-2xl font-bold text-white shadow-xl ring-2 ring-white/30">
@@ -445,13 +445,13 @@
                 :key="subjectClass.key"
                 class="overflow-hidden rounded-2xl border border-slate-200 bg-white"
               >
-                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-blue-50 px-4 py-3">
                   <div class="flex items-center gap-3">
-                    <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-xs font-bold text-white">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-xs font-bold text-white">
                       {{ subjectClass.subject?.charAt(0) || 'S' }}
                     </div>
                     <div>
-                      <div class="text-sm font-bold text-indigo-700">{{ subjectClass.subject || '-' }}</div>
+                      <div class="text-sm font-bold text-blue-700">{{ subjectClass.subject || '-' }}</div>
                       <div class="text-[11px] text-slate-500">{{ subjectClass.class || '-' }} {{ subjectClass.stream ? `(${subjectClass.stream})` : '' }} • {{ subjectClass.total_lessons }} lesson(s)</div>
                     </div>
                   </div>
@@ -469,11 +469,11 @@
                   >
                     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 py-2">
                       <div class="flex items-center gap-2">
-                        <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500 text-[10px] font-bold text-white">
+                        <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500 text-[10px] font-bold text-white">
                           {{ week.week_number }}
                         </div>
                         <div>
-                          <div class="text-xs font-bold text-indigo-600">Week {{ week.week_number }}</div>
+                          <div class="text-xs font-bold text-blue-600">Week {{ week.week_number }}</div>
                           <div class="text-[10px] text-slate-500">{{ week.entries.length }} record(s)</div>
                         </div>
                       </div>
@@ -502,7 +502,7 @@
                         <tbody class="divide-y divide-slate-100">
                           <tr v-for="entry in week.entries" :key="entry.id" class="hover:bg-slate-50">
                             <td class="px-3 py-2 text-xs font-semibold text-slate-700">{{ entry.attendance_date }}</td>
-                            <td class="px-3 py-2 text-xs font-bold text-indigo-600">{{ entry.day_of_week || '-' }}</td>
+                            <td class="px-3 py-2 text-xs font-bold text-blue-600">{{ entry.day_of_week || '-' }}</td>
                             <td class="px-3 py-2 text-xs text-slate-700">{{ entry.time_in }}</td>
                             <td class="px-3 py-2 text-xs text-slate-700">{{ entry.time_out }}</td>
                             <td class="px-3 py-2 text-xs text-slate-700">{{ entry.expected_minutes }}</td>
@@ -547,7 +547,7 @@
 
                                 <button
                                   @click="editRecord(entry)"
-                                  class="table-icon-btn border-indigo-200 bg-indigo-50 text-indigo-700"
+                                  class="table-icon-btn border-blue-200 bg-blue-50 text-blue-700"
                                   title="Edit record"
                                   aria-label="Edit record"
                                 >
@@ -632,7 +632,7 @@
 
               <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div class="text-xs font-semibold text-slate-500">Expected Minutes</div>
-                <div class="mt-1 text-2xl font-extrabold text-indigo-600">{{ viewingTeacherSummary.total_expected_minutes }}</div>
+                <div class="mt-1 text-2xl font-extrabold text-blue-600">{{ viewingTeacherSummary.total_expected_minutes }}</div>
               </div>
 
               <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -678,7 +678,7 @@
                     <tr v-for="r in viewingTeacherRecords" :key="r.id" class="hover:bg-slate-50">
                       <td class="px-6 py-4 text-sm font-semibold text-slate-700">Week {{ r.week_number }}</td>
                       <td class="px-6 py-4 text-sm font-semibold text-slate-700">{{ r.attendance_date }}</td>
-                      <td class="px-6 py-4 text-sm font-bold text-indigo-600">{{ r.day_of_week || '-' }}</td>
+                      <td class="px-6 py-4 text-sm font-bold text-blue-600">{{ r.day_of_week || '-' }}</td>
                       <td class="px-6 py-4 text-sm font-semibold text-slate-700">{{ r.subject }}</td>
                       <td class="px-6 py-4 text-sm font-semibold text-slate-700">{{ r.class }}</td>
                       <td class="px-6 py-4 text-sm font-semibold text-slate-700">{{ r.stream }}</td>
@@ -725,7 +725,7 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm"
     >
       <div class="flex max-h-[90vh] w-full max-w-6xl flex-col rounded-3xl border border-slate-200/60 bg-white shadow-2xl">
-        <div class="flex-shrink-0 border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-indigo-50 px-6 py-5 sm:px-8 sm:py-6">
+        <div class="flex-shrink-0 border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-5 sm:px-8 sm:py-6">
           <h3 class="text-lg font-bold text-slate-900 sm:text-xl">
             {{ formMode === 'quick' ? 'Add Attendance for Existing Teacher' : (editingId ? 'Edit Monitoring Record' : 'Add Monitoring Record') }}
           </h3>
@@ -757,7 +757,7 @@
                 </div>
                 <div>
                   <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Status</div>
-                  <div class="mt-1 font-bold text-indigo-600">Quick Add Mode</div>
+                  <div class="mt-1 font-bold text-blue-600">Quick Add Mode</div>
                 </div>
               </div>
               <div class="mt-3 text-sm text-slate-600">
@@ -824,7 +824,7 @@
 
               <div>
                 <label class="mb-2.5 block text-sm font-semibold text-slate-700">Day</label>
-                <input v-model="form.day_of_week" type="text" readonly class="input bg-slate-100 font-bold text-indigo-600" />
+                <input v-model="form.day_of_week" type="text" readonly class="input bg-slate-100 font-bold text-blue-600" />
               </div>
 
               <div>
@@ -887,7 +887,7 @@
               <button
                 type="submit"
                 :disabled="saving"
-                class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:shadow-indigo-500/35 disabled:cursor-not-allowed disabled:opacity-60"
+                class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-700 to-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition hover:shadow-blue-500/35 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <svg v-if="!saving" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -942,7 +942,7 @@
             <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               <div>
                 <label class="mb-2.5 block text-sm font-semibold text-slate-700">Original Day</label>
-                <input v-model="compensationForm.original_day" type="text" readonly class="input bg-slate-100 font-bold text-indigo-600" />
+                <input v-model="compensationForm.original_day" type="text" readonly class="input bg-slate-100 font-bold text-blue-600" />
               </div>
 
               <div>
@@ -952,7 +952,7 @@
 
               <div>
                 <label class="mb-2.5 block text-sm font-semibold text-slate-700">Compensation Day</label>
-                <input v-model="compensationForm.compensation_day" type="text" readonly class="input bg-slate-100 font-bold text-indigo-600" />
+                <input v-model="compensationForm.compensation_day" type="text" readonly class="input bg-slate-100 font-bold text-blue-600" />
               </div>
 
               <div>

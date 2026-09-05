@@ -46,7 +46,7 @@
                   <span v-else class="text-gray-400">-</span>
                   <button 
                     @click="openAddRoleModal(department)" 
-                    class="ml-2 px-2 py-1 bg-red-500 text-white text-[10px] font-medium rounded-full hover:bg-red-600 flex items-center transition shadow-sm hover:shadow"
+                    class="ml-2 px-2 py-1 bg-blue-500 text-white text-[10px] font-medium rounded-full hover:bg-blue-600 flex items-center transition shadow-sm hover:shadow"
                   >
                     <Plus class="w-2.5 h-2.5 mr-0.5" />
                     Add Role

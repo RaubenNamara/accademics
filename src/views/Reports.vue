@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <!-- Header with Gradient Background -->
-    <div class="rounded-2xl bg-gradient-to-r from-slate-800 via-slate-900 to-black p-6 shadow-lg text-white">
+    <div class="rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-6 shadow-lg text-white">
       <h2 class="text-2xl font-bold">Reports</h2>
       <p class="text-sm opacity-80 mt-1">Generate and view performance reports for teachers and modules</p>
     </div>
@@ -120,7 +120,7 @@
                   <td class="px-4 py-3">{{ record.class }}</td>
                   <td class="px-4 py-3">{{ record.stream }}</td>
                   <td class="px-4 py-3">{{ record.attendance_date }}</td>
-                  <td class="px-4 py-3 font-bold text-indigo-600">{{ record.day_of_week || '-' }}</td>
+                  <td class="px-4 py-3 font-bold text-blue-600">{{ record.day_of_week || '-' }}</td>
                   <td class="px-4 py-3">{{ record.total_minutes_lost }}</td>
                   <td class="px-4 py-3">{{ record.equivalent_single_lessons }}</td>
                   <td class="px-4 py-3">{{ record.equivalent_double_lessons }}</td>
@@ -256,7 +256,7 @@
           <div class="space-y-6">
             <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <h4 class="mb-3 font-semibold text-slate-900">Teacher Information</h4>
-              <div class="grid grid-cols-2 gap-4 text-sm">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div><span class="font-medium">Name:</span> {{ reportData.teacher.full_name }}</div>
                 <div><span class="font-medium">Subject:</span> {{ reportData.teacher.subject }}</div>
                 <div><span class="font-medium">Class:</span> {{ reportData.teacher.class }}</div>
