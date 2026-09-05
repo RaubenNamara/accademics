@@ -1,0 +1,8 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/stmarksc/public_html/accademics
+    - /bin/mkdir -p $DEPLOYPATH/backend
+    - /bin/cp -R backend/. $DEPLOYPATH/backend/
+    - /bin/cp -R dist/. $DEPLOYPATH/
+    - /bin/cp -f .htaccess $DEPLOYPATH/.htaccess
