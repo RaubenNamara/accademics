@@ -1,0 +1,14 @@
+RewriteEngine On
+
+RewriteBase /accademics/
+
+# Exclude backend API
+RewriteRule ^backend/ - [L]
+
+# Existing files/directories
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Vue SPA
+RewriteRule . /accademics/index.html [L]

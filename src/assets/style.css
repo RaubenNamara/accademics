@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[v-cloak] { display: none; }
+
+@layer components {
+  .input {
+    @apply w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100;
+  }
+  .btn-primary {
+    @apply rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50;
+  }
+  .data-table {
+    @apply w-full min-w-[640px] text-left text-sm;
+  }
+  .data-table thead {
+    @apply border-b border-slate-200 text-slate-500;
+  }
+  .data-table th {
+    @apply px-4 py-3 font-medium;
+  }
+  .data-table td {
+    @apply px-4 py-3;
+  }
+  .data-table tbody tr {
+    @apply border-b border-slate-50 transition hover:bg-slate-50/80;
+  }
+  .code-badge {
+    @apply rounded-lg bg-blue-50 px-2 py-0.5 font-mono text-xs font-semibold text-blue-700;
+  }
+  .link-btn {
+    @apply text-sm font-medium text-blue-600 hover:underline;
+  }
+}
