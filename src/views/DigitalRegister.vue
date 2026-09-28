@@ -500,6 +500,32 @@
             </div>
 
             <div class="md:col-span-2 mt-6">
+              <h3 class="text-lg font-semibold mb-4 text-gray-700">Academic Summary</h3>
+            </div>
+
+            <template v-if="formData.level === 'A-Level'">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Grade</label>
+                <input v-model="formData.division" type="text" placeholder="e.g. A" class="w-full border rounded-lg px-3 py-2">
+              </div>
+            </template>
+            <template v-else>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Aggregate</label>
+                <input v-model="formData.aggregate" type="text" placeholder="e.g. 8" class="w-full border rounded-lg px-3 py-2">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Division</label>
+                <select v-model="formData.division" class="w-full border rounded-lg px-3 py-2">
+                  <option value="">Select division</option>
+                  <option v-if="formData.division && !divisionOptions.includes(formData.division)" :value="formData.division">{{ formData.division }} (current)</option>
+                  <option v-for="option in divisionOptions" :key="option" :value="option">{{ option }}</option>
+                </select>
+              </div>
+            </template>
+
+            <div class="md:col-span-2 mt-6">
               <h3 class="text-lg font-semibold mb-4 text-gray-700">Parent/Guardian Information</h3>
             </div>
 
@@ -818,6 +844,31 @@
             <div v-else class="text-gray-500 text-center py-4 bg-gray-50 rounded-lg">No parent/guardian information available</div>
           </div>
 
+          <!-- Academic Summary (Aggregate/Division) -->
+          <div class="bg-gradient-to-br from-amber-50 to-white rounded-xl p-6 border border-amber-200 shadow-sm">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <Award class="w-5 h-5 text-amber-600" />
+              Academic Summary
+            </h3>
+            <div v-if="viewData.student.aggregate || viewData.student.division" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div v-if="viewData.student.level !== 'A-Level'" class="bg-white rounded-lg p-4 border border-amber-100 shadow-sm">
+                <div class="flex items-center gap-2 text-gray-500 text-sm mb-1">
+                  <Award class="w-4 h-4" />
+                  Aggregate
+                </div>
+                <p class="font-semibold text-gray-900">{{ viewData.student.aggregate || 'N/A' }}</p>
+              </div>
+              <div class="bg-white rounded-lg p-4 border border-amber-100 shadow-sm">
+                <div class="flex items-center gap-2 text-gray-500 text-sm mb-1">
+                  <Award class="w-4 h-4" />
+                  {{ viewData.student.level === 'A-Level' ? 'Grade' : 'Division' }}
+                </div>
+                <p class="font-semibold text-gray-900">{{ viewData.student.division || 'N/A' }}</p>
+              </div>
+            </div>
+            <div v-else class="text-gray-500 text-center py-4 bg-gray-50 rounded-lg">No aggregate recorded yet</div>
+          </div>
+
           <!-- Academic Results -->
           <div class="bg-gradient-to-br from-purple-50 to-white rounded-xl p-6 border border-purple-200 shadow-sm">
             <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -941,6 +992,8 @@ const createEmptyForm = () => ({
   behaviour_document_url: '',
   medical_notes: '',
   special_needs: '',
+  aggregate: '',
+  division: '',
   profile_picture: null,
   existing_profile_picture: null,
   profile_picture_url: '',
@@ -958,6 +1011,8 @@ const createEmptyForm = () => ({
 });
 
 const formData = ref(createEmptyForm());
+
+const divisionOptions = ['Division 1', 'Division 2', 'Division 3', 'Division 4'];
 
 const classOptions = computed(() => {
   // Get unique class names from loaded classes
@@ -982,7 +1037,7 @@ const loadClasses = async () => {
 
 const uploadsBase = import.meta.env.DEV
   ? 'http://localhost/accademics/backend/'
-  : 'https://stmark.sc.ug/accademics/backend/';
+  : '/backend/';
 
 const fileUrl = (path) => {
   if (!path) return '';
@@ -1215,6 +1270,8 @@ const saveStudent = async () => {
     payload.append('behaviour_notes', formData.value.behaviour_notes || '');
     payload.append('medical_notes', formData.value.medical_notes || '');
     payload.append('special_needs', formData.value.special_needs || '');
+    payload.append('aggregate', formData.value.aggregate || '');
+    payload.append('division', formData.value.division || '');
 
     // Handle profile picture
     if (formData.value.profile_picture && typeof formData.value.profile_picture === 'object' && 'name' in formData.value.profile_picture && 'size' in formData.value.profile_picture && 'type' in formData.value.profile_picture) {
@@ -1305,6 +1362,8 @@ const editStudent = async (student) => {
       behaviour_document_url: fullStudentData.behaviour_document || '',
       medical_notes: fullStudentData.medical_notes || '',
       special_needs: fullStudentData.special_needs || '',
+      aggregate: fullStudentData.aggregate || '',
+      division: fullStudentData.division || '',
       profile_picture: null,
       existing_profile_picture: fullStudentData.profile_picture || null,
       profile_picture_url: fullStudentData.profile_picture ? fileUrl(fullStudentData.profile_picture) : '',
@@ -1481,6 +1540,8 @@ const downloadExcel = async () => {
       'Enrollment Date': student.enrollment_date,
       'LIN': student.lin,
       'Former School': student.former_school,
+      'Aggregate': student.aggregate || '',
+      'Division': student.division || '',
       'Parents': student.parent_count || 0
     }));
 
@@ -1488,7 +1549,7 @@ const downloadExcel = async () => {
     worksheet['!cols'] = [
       { wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 10 }, { wch: 14 },
       { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 16 }, { wch: 14 },
-      { wch: 25 }, { wch: 10 }
+      { wch: 25 }, { wch: 12 }, { wch: 12 }, { wch: 10 }
     ];
 
     const workbook = XLSX.utils.book_new();

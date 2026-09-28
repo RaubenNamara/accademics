@@ -298,6 +298,8 @@ function getStudents(PDO $db): void
             s.behaviour_document,
             s.medical_notes,
             s.special_needs,
+            s.aggregate,
+            s.division,
             s.profile_picture,
             (
                 SELECT COUNT(*)
@@ -366,6 +368,8 @@ function exportStudents(PDO $db): void
             s.enrollment_date,
             s.lin,
             s.former_school,
+            s.aggregate,
+            s.division,
             (
                 SELECT COUNT(*)
                 FROM parents p
@@ -539,9 +543,11 @@ function createStudent(PDO $db): void
             behaviour_notes,
             medical_notes,
             special_needs,
+            aggregate,
+            division,
             profile_picture
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ";
 
     $stmt = $db->prepare($query);
@@ -560,6 +566,8 @@ function createStudent(PDO $db): void
         $data['behaviour_notes'] ?? '',
         $data['medical_notes'] ?? '',
         $data['special_needs'] ?? '',
+        $data['aggregate'] ?? null,
+        $data['division'] ?? null,
         $profilePicturePath
     ]);
 
@@ -735,6 +743,8 @@ function updateStudent(PDO $db): void
             behaviour_notes = ?,
             medical_notes = ?,
             special_needs = ?,
+            aggregate = ?,
+            division = ?,
             profile_picture = ?
         WHERE id = ?
     ";
@@ -754,6 +764,8 @@ function updateStudent(PDO $db): void
         $data['behaviour_notes'] ?? '',
         $data['medical_notes'] ?? '',
         $data['special_needs'] ?? '',
+        $data['aggregate'] ?? null,
+        $data['division'] ?? null,
         $profilePicturePath,
         $id
     ]);
