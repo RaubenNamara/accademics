@@ -3,16 +3,8 @@
     <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-5 text-white shadow-2xl sm:p-7">
       <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_28%)]"></div>
 
-      <div class="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-        <div class="max-w-3xl">
-         
-          <h1 class="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Teacher Attendance & Time Lost
-          </h1>
-     
-        </div>
-
-        <div class="flex flex-wrap gap-3">
+      <div class="relative z-10 flex justify-end">
+        <div class="flex flex-wrap justify-end gap-3">
           <button
             @click="loadData"
             class="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
@@ -21,17 +13,6 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8 8 0 014.582 9m0 0H9m11 11v-5h-.581m0 0A8 8 0 019.418 15m15.356 2H15" />
             </svg>
             Refresh
-          </button>
-
-          <button
-            @click="downloadPDF"
-            :disabled="records.length === 0"
-            class="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11V3m0 8l-3-3m3 3l3-3m-9 10h12a2 2 0 002-2v-3H4v3a2 2 0 002 2z" />
-            </svg>
-            PDF
           </button>
 
           <button
@@ -58,269 +39,315 @@
       </div>
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-      <div class="summary-card">
-        <div class="summary-label">Records</div>
-        <div class="summary-value text-slate-900">{{ summary.records }}</div>
+    <div class="grid gap-3 sm:grid-cols-3">
+      <div class="stat-card">
+        <div class="stat-icon bg-rose-50 text-rose-600"><i class="fas fa-hourglass-half"></i></div>
+        <div class="min-w-0">
+          <div class="stat-label">Time Lost</div>
+          <div class="stat-value text-rose-600">{{ formatMinutes(summary.total_minutes_lost) }}</div>
+          <div class="stat-sub">
+            ≈ {{ summary.equivalent_single_lessons || 0 }} single · {{ summary.equivalent_double_lessons || 0 }} double lessons
+          </div>
+        </div>
       </div>
 
-      <div class="summary-card">
-        <div class="summary-label">Minutes Lost</div>
-        <div class="summary-value text-rose-600">{{ summary.total_minutes_lost }}</div>
+      <div class="stat-card">
+        <div class="stat-icon bg-teal-50 text-teal-600"><i class="fas fa-rotate-left"></i></div>
+        <div class="min-w-0">
+          <div class="stat-label">Time Compensated</div>
+          <div class="stat-value text-teal-600">{{ formatMinutes(summary.compensated_minutes) }}</div>
+          <div class="stat-sub">
+            {{ summary.compensated_lessons || 0 }} {{ summary.compensated_lessons === 1 ? 'lesson' : 'lessons' }} compensated
+          </div>
+        </div>
       </div>
 
-      <div class="summary-card">
-        <div class="summary-label">Single Lessons</div>
-        <div class="summary-value text-blue-600">{{ summary.equivalent_single_lessons }}</div>
-      </div>
-
-      <div class="summary-card">
-        <div class="summary-label">Double Lessons</div>
-        <div class="summary-value text-emerald-600">{{ summary.equivalent_double_lessons }}</div>
-      </div>
-
-      <div class="summary-card">
-        <div class="summary-label">Compensated</div>
-        <div class="summary-value text-teal-600">{{ summary.compensated_lessons }}</div>
+      <div class="stat-card">
+        <div class="stat-icon bg-slate-100 text-slate-600"><i class="fas fa-list-check"></i></div>
+        <div class="min-w-0">
+          <div class="stat-label">Records</div>
+          <div class="stat-value text-slate-900">{{ summary.records || 0 }}</div>
+          <div class="stat-sub">lessons monitored</div>
+        </div>
       </div>
     </div>
 
-    <!-- Reports Section -->
-    <div v-if="showReports" class="rounded-[2rem] border border-slate-200 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur">
-      <div class="mb-4 flex items-center justify-between">
-        <h3 class="text-lg font-extrabold text-slate-900">Lesson Monitoring Reports</h3>
-        <div class="flex items-center gap-2">
-          <button
-            @click="printReport"
-            :disabled="getReportData().length === 0"
-            class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
-            Print
-          </button>
-          <button
-            @click="showReports = false"
-            class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-
-      <div class="mb-4">
-        <label class="filter-label">Report Type</label>
-        <select v-model="reportType" class="input">
-          <option value="top-teachers">Top 20 Teachers - Highest Minutes Lost</option>
-          <option value="few-teachers">Teachers - Few Minutes Lost</option>
-          <option value="top-classes">Classes - Most Minutes Lost</option>
-          <option value="few-classes">Classes - Few Minutes Lost</option>
-        </select>
-      </div>
-
-      <!-- Top 20 Teachers - Highest Minutes Lost -->
-      <div v-if="reportType === 'top-teachers' && topTeachersByMinutesLost.length > 0">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-rose-50">
-              <tr>
-                <th class="px-4 py-3 text-left font-semibold text-rose-700">Rank</th>
-                <th class="px-4 py-3 text-left font-semibold text-rose-700">Teacher</th>
-                <th class="px-4 py-3 text-left font-semibold text-rose-700">Total Minutes Lost</th>
-                <th class="px-4 py-3 text-left font-semibold text-rose-700">Single Lessons</th>
-                <th class="px-4 py-3 text-left font-semibold text-rose-700">Double Lessons</th>
-                <th class="px-4 py-3 text-left font-semibold text-rose-700">Total Lessons</th>
-                <th class="px-4 py-3 text-left font-semibold text-rose-700">Classes Affected</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(teacher, index) in topTeachersByMinutesLost" :key="teacher.teacher_id" class="border-t border-slate-100">
-                <td class="px-4 py-3 font-bold text-rose-600">{{ index + 1 }}</td>
-                <td class="px-4 py-3 font-semibold">{{ teacher.teacher_name }}</td>
-                <td class="px-4 py-3 font-bold text-rose-600">{{ teacher.total_minutes_lost }}</td>
-                <td class="px-4 py-3">{{ teacher.equivalent_single_lessons }}</td>
-                <td class="px-4 py-3">{{ teacher.equivalent_double_lessons }}</td>
-                <td class="px-4 py-3">{{ teacher.total_lessons }}</td>
-                <td class="px-4 py-3">
-                  <div class="text-xs text-slate-600">{{ teacher.classes_count }} classes</div>
-                  <div class="text-[10px] text-slate-400">{{ teacher.classes_list }}</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Teachers - Few Minutes Lost -->
-      <div v-if="reportType === 'few-teachers' && teachersFewMinutesLosts.length > 0">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-emerald-50">
-              <tr>
-                <th class="px-4 py-3 text-left font-semibold text-emerald-700">Teacher</th>
-                <th class="px-4 py-3 text-left font-semibold text-emerald-700">Total Minutes Lost</th>
-                <th class="px-4 py-3 text-left font-semibold text-emerald-700">Single Lessons</th>
-                <th class="px-4 py-3 text-left font-semibold text-emerald-700">Double Lessons</th>
-                <th class="px-4 py-3 text-left font-semibold text-emerald-700">Total Lessons</th>
-                <th class="px-4 py-3 text-left font-semibold text-emerald-700">Performance %</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="teacher in teachersFewMinutesLosts" :key="teacher.teacher_id" class="border-t border-slate-100">
-                <td class="px-4 py-3 font-semibold">{{ teacher.teacher_name }}</td>
-                <td class="px-4 py-3 font-bold text-emerald-600">{{ teacher.total_minutes_lost }}</td>
-                <td class="px-4 py-3">{{ teacher.equivalent_single_lessons }}</td>
-                <td class="px-4 py-3">{{ teacher.equivalent_double_lessons }}</td>
-                <td class="px-4 py-3">{{ teacher.total_lessons }}</td>
-                <td class="px-4 py-3">
-                  <span class="inline-flex rounded-full px-2 py-1 text-xs font-bold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-                    {{ teacher.performance_percentage }}%
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Classes - Most Minutes Lost -->
-      <div v-if="reportType === 'top-classes' && classesMostMinutesLost.length > 0">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-rose-50">
-              <tr>
-                <th class="px-4 py-3 text-left font-semibold text-rose-700">Rank</th>
-                <th class="px-4 py-3 text-left font-semibold text-rose-700">Class</th>
-                <th class="px-4 py-3 text-left font-semibold text-rose-700">Stream</th>
-                <th class="px-4 py-3 text-left font-semibold text-rose-700">Total Minutes Lost</th>
-                <th class="px-4 py-3 text-left font-semibold text-rose-700">Single Lessons</th>
-                <th class="px-4 py-3 text-left font-semibold text-rose-700">Double Lessons</th>
-                <th class="px-4 py-3 text-left font-semibold text-rose-700">Top 5 Teachers (Minutes)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(classData, index) in classesMostMinutesLost" :key="classData.class_key" class="border-t border-slate-100">
-                <td class="px-4 py-3 font-bold text-rose-600">{{ index + 1 }}</td>
-                <td class="px-4 py-3 font-semibold">{{ classData.class }}</td>
-                <td class="px-4 py-3">{{ classData.stream || '-' }}</td>
-                <td class="px-4 py-3 font-bold text-rose-600">{{ classData.total_minutes_lost }}</td>
-                <td class="px-4 py-3">{{ classData.equivalent_single_lessons }}</td>
-                <td class="px-4 py-3">{{ classData.equivalent_double_lessons }}</td>
-                <td class="px-4 py-3">
-                  <div class="text-xs text-slate-600">{{ classData.teachers_count }} teacher(s) total</div>
-                  <div class="mt-1 space-y-1">
-                    <div v-for="(teacher, tIndex) in classData.top_teachers" :key="teacher.teacher_id" class="text-[10px] text-slate-500">
-                      {{ tIndex + 1 }}. {{ teacher.teacher_name }} ({{ teacher.minutes_lost }} mins)
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Classes - Few Minutes Lost -->
-      <div v-if="reportType === 'few-classes' && classesFewMinutesLost.length > 0">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-emerald-50">
-              <tr>
-                <th class="px-4 py-3 text-left font-semibold text-emerald-700">Class</th>
-                <th class="px-4 py-3 text-left font-semibold text-emerald-700">Stream</th>
-                <th class="px-4 py-3 text-left font-semibold text-emerald-700">Total Minutes Lost</th>
-                <th class="px-4 py-3 text-left font-semibold text-emerald-700">Single Lessons</th>
-                <th class="px-4 py-3 text-left font-semibold text-emerald-700">Double Lessons</th>
-                <th class="px-4 py-3 text-left font-semibold text-emerald-700">Teachers Affected</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="classData in classesFewMinutesLost" :key="classData.class_key" class="border-t border-slate-100">
-                <td class="px-4 py-3 font-semibold">{{ classData.class }}</td>
-                <td class="px-4 py-3">{{ classData.stream || '-' }}</td>
-                <td class="px-4 py-3 font-bold text-emerald-600">{{ classData.total_minutes_lost }}</td>
-                <td class="px-4 py-3">{{ classData.equivalent_single_lessons }}</td>
-                <td class="px-4 py-3">{{ classData.equivalent_double_lessons }}</td>
-                <td class="px-4 py-3">
-                  <div class="text-xs text-slate-600">{{ classData.teachers_count }} teacher(s)</div>
-                  <div class="text-[10px] text-slate-400">{{ classData.teachers_list }}</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div v-if="getReportData().length === 0" class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-12 text-center">
-        <div class="text-sm text-slate-500">No data available for this report. Use the filters above to load data for the desired year/term.</div>
-      </div>
-    </div>
-
-    <!-- Top 12 Classes Analytics -->
-    <div class="rounded-[2rem] border border-slate-200 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur">
-      <div class="mb-4 flex items-center justify-between">
-        <h3 class="text-lg font-extrabold text-slate-900">Top Classes by Minutes Lost</h3>
-        <div class="flex items-center gap-3">
-          <span class="rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 ring-1 ring-rose-200">
-            {{ topClassesByMinutesLost.length }} classes
-          </span>
-          <button
-            @click="isAnalyticsCollapsed = !isAnalyticsCollapsed"
-            class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
-            :title="isAnalyticsCollapsed ? 'Expand' : 'Collapse'"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4 transition-transform duration-200"
-              :class="{ 'rotate-180': !isAnalyticsCollapsed }"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+    <!-- Reports Modal -->
+    <Teleport to="body">
+      <div
+        v-if="showReports"
+        class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 backdrop-blur-sm sm:items-center sm:p-4"
+        @click.self="showReports = false"
+      >
+        <div
+          class="flex h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-3xl"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reports-title"
+        >
+          <!-- Header -->
+          <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-4 py-4 sm:px-6">
+            <div class="min-w-0">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-blue-600">Lesson Monitoring</div>
+              <h2 id="reports-title" class="text-lg font-extrabold text-slate-900 sm:text-xl">Reports</h2>
+              <p class="mt-0.5 text-xs text-slate-500">{{ reportScope }}</p>
+            </div>
+            <button
+              type="button"
+              @click="showReports = false"
+              class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+              aria-label="Close reports"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-        </div>
-      </div>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
 
-      <div v-if="!isAnalyticsCollapsed">
-        <div v-if="topClassesByMinutesLost.length > 0" class="grid gap-3 sm:grid-cols-2">
-          <div
-            v-for="(item, index) in topClassesByMinutesLost"
-            :key="`${item.class}_${item.stream}_${index}`"
-            class="rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 transition hover:shadow-md"
-          >
-            <div class="mb-2 flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 text-xs font-bold text-white shadow-lg">
-                  {{ index + 1 }}
-                </div>
-                <div>
-                  <div class="font-bold text-slate-900 text-sm">{{ item.class }}{{ item.stream ? ` (${item.stream})` : '' }}</div>
-                  <div class="text-[11px] text-slate-500">{{ item.teachers.length }} teacher(s) • {{ item.total_lessons }} lesson(s)</div>
-                </div>
+          <!-- Report type tabs -->
+          <div class="border-b border-slate-100 px-4 py-3 sm:px-6">
+            <div class="grid grid-cols-2 gap-2 lg:grid-cols-4">
+              <button
+                v-for="(cfg, key) in reportConfig"
+                :key="key"
+                type="button"
+                @click="reportType = key"
+                class="flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition"
+                :class="reportType === key
+                  ? (cfg.tone === 'rose' ? 'border-rose-300 bg-rose-50 ring-1 ring-rose-200' : 'border-emerald-300 bg-emerald-50 ring-1 ring-emerald-200')
+                  : 'border-slate-200 bg-white hover:bg-slate-50'"
+              >
+                <span
+                  class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-sm"
+                  :class="cfg.tone === 'rose' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'"
+                >
+                  <i :class="cfg.icon"></i>
+                </span>
+                <span class="min-w-0">
+                  <span class="block truncate text-xs font-bold text-slate-900 sm:text-sm">{{ cfg.tab }}</span>
+                  <span class="block truncate text-[11px] text-slate-500">{{ cfg.tabSub }}</span>
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Body -->
+          <div class="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+            <div class="mb-4 flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <h3 class="text-base font-extrabold text-slate-900">{{ activeReport.title }}</h3>
+                <p class="text-xs text-slate-500">{{ activeReport.description }}</p>
               </div>
-              <div class="text-right">
-                <div class="text-lg font-extrabold text-rose-600">{{ item.total_minutes_lost }}</div>
-                <div class="text-[11px] font-semibold text-slate-500">mins lost</div>
+              <div v-if="reportRows.length" class="flex flex-wrap gap-2 text-xs">
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700">
+                  {{ reportRows.length }} {{ activeReport.entityPlural }}
+                </span>
+                <span class="rounded-full bg-rose-50 px-2.5 py-1 font-semibold text-rose-700">
+                  {{ formatMinutes(reportTotals.minutes) }} lost
+                </span>
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700">
+                  {{ reportTotals.lessons.toLocaleString() }} lessons
+                </span>
               </div>
             </div>
 
-            <!-- Horizontal Bar Chart -->
-            <div class="relative h-3 w-full overflow-hidden rounded-full bg-slate-200">
-              <div
-                class="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-rose-500 to-pink-600 transition-all duration-500 ease-out"
-                :style="{
-                  width: `${(item.total_minutes_lost / Math.max(...topClassesByMinutesLost.map(c => c.total_minutes_lost))) * 100}%`
-                }"
-              ></div>
+            <template v-if="reportRows.length">
+              <!-- Desktop / tablet table -->
+              <div class="hidden overflow-hidden rounded-2xl border border-slate-200 md:block">
+                <table class="w-full text-sm">
+                  <thead class="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    <tr>
+                      <th class="w-12 px-4 py-2.5">#</th>
+                      <th class="px-4 py-2.5">{{ activeReport.entity }}</th>
+                      <th class="w-56 px-4 py-2.5">Time lost</th>
+                      <th class="w-20 px-4 py-2.5 text-right">Lessons</th>
+                      <th class="w-32 px-4 py-2.5 text-right">{{ activeReport.metricLabel }}</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    <tr v-for="row in reportRows" :key="row.key" class="align-top hover:bg-slate-50">
+                      <td class="px-4 py-3">
+                        <span
+                          class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold"
+                          :class="row.rank <= 3 ? (activeReport.tone === 'rose' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white') : 'bg-slate-100 text-slate-600'"
+                        >{{ row.rank }}</span>
+                      </td>
+                      <td class="px-4 py-3">
+                        <div class="font-bold text-slate-900">{{ row.name }}</div>
+                        <div class="text-xs text-slate-500">{{ row.sub }}</div>
+                        <div v-if="row.notes" class="mt-1 text-[11px] leading-snug text-slate-400">{{ row.notes }}</div>
+                      </td>
+                      <td class="px-4 py-3">
+                        <div class="font-extrabold" :class="activeReport.tone === 'rose' ? 'text-rose-600' : 'text-emerald-600'">
+                          {{ formatMinutes(row.minutes) }}
+                        </div>
+                        <div class="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            class="h-full rounded-full"
+                            :class="activeReport.tone === 'rose' ? 'bg-rose-400' : 'bg-emerald-400'"
+                            :style="{ width: `${reportBarPct(row)}%` }"
+                          ></div>
+                        </div>
+                      </td>
+                      <td class="px-4 py-3 text-right font-semibold text-slate-700">{{ row.lessons }}</td>
+                      <td class="px-4 py-3 text-right font-semibold text-slate-700">{{ row.metric }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Phone cards -->
+              <ol class="space-y-2 md:hidden">
+                <li v-for="row in reportRows" :key="row.key" class="rounded-xl border border-slate-200 p-3">
+                  <div class="flex items-start gap-3">
+                    <span
+                      class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                      :class="row.rank <= 3 ? (activeReport.tone === 'rose' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white') : 'bg-slate-100 text-slate-600'"
+                    >{{ row.rank }}</span>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                          <div class="font-bold text-slate-900">{{ row.name }}</div>
+                          <div class="text-xs text-slate-500">{{ row.sub }} · {{ row.lessons }} lessons</div>
+                        </div>
+                        <div class="whitespace-nowrap text-right">
+                          <div class="text-sm font-extrabold" :class="activeReport.tone === 'rose' ? 'text-rose-600' : 'text-emerald-600'">
+                            {{ formatMinutes(row.minutes) }}
+                          </div>
+                          <div class="text-[11px] text-slate-500">{{ row.metric }}</div>
+                        </div>
+                      </div>
+                      <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          class="h-full rounded-full"
+                          :class="activeReport.tone === 'rose' ? 'bg-rose-400' : 'bg-emerald-400'"
+                          :style="{ width: `${reportBarPct(row)}%` }"
+                        ></div>
+                      </div>
+                      <div v-if="row.notes" class="mt-1.5 text-[11px] leading-snug text-slate-400">{{ row.notes }}</div>
+                    </div>
+                  </div>
+                </li>
+              </ol>
+            </template>
+
+            <div v-else class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center">
+              <div class="text-sm font-semibold text-slate-700">No data for this report</div>
+              <div class="mt-1 text-xs text-slate-500">{{ activeReport.emptyHint }}</div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:px-6">
+            <span class="hidden text-xs text-slate-500 sm:block">PDF includes the summary and the full ranked table.</span>
+            <div class="ml-auto flex gap-2">
+              <button
+                type="button"
+                @click="showReports = false"
+                class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                @click="printReport"
+                :disabled="reportRows.length === 0"
+                class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <i class="fas fa-file-pdf"></i>
+                Download PDF
+              </button>
             </div>
           </div>
         </div>
+      </div>
+    </Teleport>
 
-        <div v-else class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-12 text-center">
-          <div class="text-sm text-slate-500">No class data available</div>
+    <!-- Top Classes by Minutes Lost -->
+    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <button
+        type="button"
+        @click="isAnalyticsCollapsed = !isAnalyticsCollapsed"
+        class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
+        :aria-expanded="!isAnalyticsCollapsed"
+      >
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+            <i class="fas fa-chart-bar"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900">Top Classes by Minutes Lost</h3>
+            <p class="text-xs text-slate-500">
+              <template v-if="topClassesByMinutesLost.length">
+                Top {{ topClassesByMinutesLost.length }} classes · {{ formatMinutes(topClassesTotalLost) }} lost in total
+              </template>
+              <template v-else>No lost time recorded for these filters</template>
+            </p>
+          </div>
+        </div>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 flex-shrink-0 text-slate-400 transition-transform duration-200"
+          :class="{ 'rotate-180': !isAnalyticsCollapsed }"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      <div v-if="!isAnalyticsCollapsed" class="border-t border-slate-100">
+        <ol v-if="topClassesByMinutesLost.length > 0" class="divide-y divide-slate-100">
+          <li
+            v-for="(item, index) in visibleTopClasses"
+            :key="`${item.class}_${item.stream}`"
+            class="grid grid-cols-[2rem_1fr_auto] items-center gap-x-3 gap-y-2 px-5 py-3 sm:grid-cols-[2rem_12rem_1fr_7rem]"
+          >
+            <span
+              class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold"
+              :class="index < 3 ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-600'"
+            >
+              {{ index + 1 }}
+            </span>
+
+            <div class="min-w-0">
+              <div class="truncate text-sm font-bold text-slate-900">
+                {{ item.class }}<span v-if="item.stream" class="font-semibold text-slate-500"> · {{ item.stream }}</span>
+              </div>
+              <div class="text-[11px] text-slate-500">
+                {{ item.total_lessons }} {{ item.total_lessons === 1 ? 'lesson' : 'lessons' }} ·
+                {{ item.teachers.length }} {{ item.teachers.length === 1 ? 'teacher' : 'teachers' }}
+              </div>
+            </div>
+
+            <div class="col-span-3 col-start-1 row-start-2 h-2 overflow-hidden rounded-full bg-slate-100 sm:col-span-1 sm:col-start-3 sm:row-start-1">
+              <div
+                class="h-full rounded-full transition-all duration-500"
+                :class="index < 3 ? 'bg-rose-500' : 'bg-rose-300'"
+                :style="{ width: `${topClassesMaxLost ? (item.total_minutes_lost / topClassesMaxLost) * 100 : 0}%` }"
+              ></div>
+            </div>
+
+            <div class="text-right sm:col-start-4 sm:row-start-1">
+              <div class="text-sm font-extrabold text-slate-900">{{ formatMinutes(item.total_minutes_lost) }}</div>
+              <div class="text-[11px] text-slate-500">≈ {{ Math.floor(item.total_minutes_lost / 40) }} single lessons</div>
+            </div>
+          </li>
+        </ol>
+
+        <div v-else class="px-5 py-10 text-center text-sm text-slate-500">
+          No class data for the selected filters.
+        </div>
+
+        <div v-if="topClassesByMinutesLost.length > 5" class="border-t border-slate-100 px-5 py-3 text-center">
+          <button
+            type="button"
+            @click="showAllTopClasses = !showAllTopClasses"
+            class="text-sm font-semibold text-blue-700 hover:text-blue-800"
+          >
+            {{ showAllTopClasses ? 'Show top 5 only' : `Show all ${topClassesByMinutesLost.length}` }}
+          </button>
         </div>
       </div>
     </div>
@@ -366,57 +393,58 @@
       <div
         v-for="group in groupedRecords"
         :key="group.group_key"
-        class="rounded-[2rem] border border-slate-200 bg-white shadow-xl shadow-slate-200/50 overflow-hidden"
+        class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:rounded-3xl"
       >
-        <!-- Horizontal Teacher Info Card -->
-        <div class="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500 px-6 py-5 sm:px-8 sm:py-6">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div class="flex items-center gap-4">
-              <div class="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-white/20 text-2xl font-bold text-white shadow-xl ring-2 ring-white/30">
+        <!-- Teacher header strip -->
+        <div class="bg-gradient-to-r from-blue-700 to-blue-600 px-3 py-3 sm:px-5">
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+            <!-- Name -->
+            <div class="order-1 flex min-w-0 flex-1 items-center gap-3">
+              <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-white/20 text-lg font-bold text-white ring-1 ring-white/30">
                 {{ group.teacher_name?.charAt(0) || 'T' }}
               </div>
-              <div>
-                <div class="text-xs font-bold uppercase tracking-wider text-white/80">Teacher</div>
-                <div class="text-xl font-extrabold text-white">{{ group.teacher_name || '-' }}</div>
+              <div class="min-w-0">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-white/70">Teacher</div>
+                <div class="truncate text-base font-extrabold text-white sm:text-lg">{{ group.teacher_name || '-' }}</div>
               </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-6 lg:gap-8">
-              <div class="text-center">
-                <div class="text-xs font-bold uppercase tracking-wider text-white/70">Classes</div>
-                <div class="text-2xl font-extrabold text-white">{{ group.subjects_classes.length }}</div>
+            <!-- Stats: own full-width row on phones, inline from tablet up -->
+            <div class="order-3 grid w-full grid-cols-3 gap-2 md:order-2 md:w-auto">
+              <div class="teacher-stat">
+                <div class="teacher-stat-value">{{ group.subjects_classes.length }}</div>
+                <div class="teacher-stat-label">{{ group.subjects_classes.length === 1 ? 'Class' : 'Classes' }}</div>
               </div>
-
-              <div class="text-center">
-                <div class="text-xs font-bold uppercase tracking-wider text-white/70">Total Lessons</div>
-                <div class="text-2xl font-extrabold text-white">{{ group.total_lessons }}</div>
+              <div class="teacher-stat">
+                <div class="teacher-stat-value">{{ group.total_lessons }}</div>
+                <div class="teacher-stat-label">Lessons</div>
               </div>
-
-              <div class="text-center">
-                <div class="text-xs font-bold uppercase tracking-wider text-white/70">Time Lost</div>
-                <div class="text-2xl font-extrabold text-white">{{ group.total_minutes_lost }}</div>
+              <div class="teacher-stat">
+                <div class="teacher-stat-value">{{ formatMinutes(group.total_minutes_lost) }}</div>
+                <div class="teacher-stat-label">Time lost</div>
               </div>
             </div>
 
-            <div class="flex items-center gap-2">
+            <!-- Actions -->
+            <div class="order-2 flex flex-shrink-0 items-center gap-2 md:order-3">
               <button
                 @click="openTeacherView(group)"
-                class="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/20 hover:shadow-lg"
+                class="teacher-action"
                 title="View attendance"
                 aria-label="View attendance"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0A9 9 0 1112 3a9 9 0 019 9zm-9 0a3 3 0 110-6 3 3 0 010 6z" />
                 </svg>
               </button>
 
               <button
                 @click="openQuickAddModal(group)"
-                class="rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/20 hover:shadow-lg"
+                class="teacher-action"
                 title="Add attendance"
                 aria-label="Add attendance"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
               </button>
@@ -425,114 +453,185 @@
         </div>
 
         <!-- Subject & Class Details Section -->
-        <div class="p-4 sm:p-5">
-          <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h3 class="text-lg font-extrabold text-slate-900">
-              Subject & Class Details
-            </h3>
-
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="detail-badge">Year {{ group.year }}</span>
-              <span class="detail-badge">Term {{ group.term }}</span>
-              <span class="detail-badge detail-badge-rose">{{ group.total_minutes_lost }} mins lost</span>
+        <div class="p-3 sm:p-5">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h3 class="text-base font-extrabold text-slate-900">Subject & Class Details:</h3>
+              <p class="text-xs text-slate-500">
+                {{ group.subjects_classes.length }} {{ group.subjects_classes.length === 1 ? 'class' : 'classes' }} ·
+                Year {{ group.year }} ·
+                <span class="font-extrabold text-emerald-600">{{ filterTerm ? `Term ${filterTerm}` : 'All terms' }}</span>
+              </p>
             </div>
+
+            <button
+              v-if="group.subjects_classes.length > 1"
+              type="button"
+              @click="toggleAllClasses(group)"
+              class="rounded-lg px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-50"
+            >
+              {{ allClassesOpen(group) ? 'Collapse all' : 'Expand all' }}
+            </button>
           </div>
 
-          <div class="overflow-hidden rounded-[1.6rem] border border-slate-200 bg-slate-50">
-            <div class="space-y-4 p-4">
-              <div
-                v-for="subjectClass in group.subjects_classes"
-                :key="subjectClass.key"
-                class="overflow-hidden rounded-2xl border border-slate-200 bg-white"
+          <div class="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200">
+            <div v-for="subjectClass in group.subjects_classes" :key="subjectClass.key">
+              <!-- Class row (click to expand) -->
+              <button
+                type="button"
+                @click="toggleClass(group, subjectClass)"
+                class="flex w-full items-center gap-3 px-3 py-3 text-left transition hover:bg-slate-50 sm:px-4"
+                :class="{ 'bg-slate-50': isClassOpen(group, subjectClass) }"
+                :aria-expanded="isClassOpen(group, subjectClass)"
               >
-                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-blue-50 px-4 py-3">
-                  <div class="flex items-center gap-3">
-                    <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-xs font-bold text-white">
-                      {{ subjectClass.subject?.charAt(0) || 'S' }}
-                    </div>
-                    <div>
-                      <div class="text-sm font-bold text-blue-700">{{ subjectClass.subject || '-' }}</div>
-                      <div class="text-[11px] text-slate-500">{{ subjectClass.class || '-' }} {{ subjectClass.stream ? `(${subjectClass.stream})` : '' }} • {{ subjectClass.total_lessons }} lesson(s)</div>
-                    </div>
-                  </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 flex-shrink-0 text-slate-400 transition-transform duration-200"
+                  :class="{ 'rotate-90': isClassOpen(group, subjectClass) }"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
 
-                  <div class="rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 ring-1 ring-rose-200">
-                    {{ subjectClass.total_minutes_lost }} mins lost
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span class="text-base font-extrabold text-slate-900">
+                      {{ subjectClass.class || '-' }}<span v-if="subjectClass.stream" class="text-slate-500"> · {{ subjectClass.stream }}</span>
+                    </span>
+                    <span class="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                      {{ subjectClass.subject || '-' }}
+                    </span>
+                  </div>
+                  <div class="mt-0.5 text-xs text-slate-500">
+                    {{ subjectClass.total_lessons }} {{ subjectClass.total_lessons === 1 ? 'lesson' : 'lessons' }} ·
+                    {{ subjectClass.weeks.length }} {{ subjectClass.weeks.length === 1 ? 'week' : 'weeks' }}
                   </div>
                 </div>
 
-                <div class="space-y-3 p-4">
+                <div class="flex-shrink-0 text-right">
                   <div
+                    class="text-sm font-extrabold"
+                    :class="subjectClass.total_minutes_lost > 0 ? 'text-rose-600' : 'text-emerald-600'"
+                  >
+                    {{ subjectClass.total_minutes_lost > 0 ? formatMinutes(subjectClass.total_minutes_lost) : 'No time lost' }}
+                  </div>
+                  <div v-if="subjectClass.total_minutes_lost > 0" class="text-[11px] text-slate-500">lost</div>
+                </div>
+              </button>
+
+              <!-- Lessons, grouped by week -->
+              <div v-if="isClassOpen(group, subjectClass)" class="border-t border-slate-100 bg-slate-50/70 px-3 py-4 sm:px-5">
+                <!-- Class summary -->
+                <div class="mb-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+                  <div class="mini-stat">
+                    <div class="mini-stat-label">Lessons</div>
+                    <div class="mini-stat-value text-slate-900">{{ classStats(subjectClass).lessons }}</div>
+                  </div>
+                  <div class="mini-stat">
+                    <div class="mini-stat-label">Time taught</div>
+                    <div class="mini-stat-value text-slate-900">
+                      {{ classStats(subjectClass).taughtPct }}%
+                      <span class="text-xs font-medium text-slate-500">
+                        · {{ formatMinutes(classStats(subjectClass).actual) }} of {{ formatMinutes(classStats(subjectClass).expected) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="mini-stat">
+                    <div class="mini-stat-label">Time lost</div>
+                    <div
+                      class="mini-stat-value"
+                      :class="classStats(subjectClass).lost > 0 ? 'text-rose-600' : 'text-emerald-600'"
+                    >
+                      {{ classStats(subjectClass).lost > 0 ? formatMinutes(classStats(subjectClass).lost) : 'None' }}
+                    </div>
+                  </div>
+                  <div class="mini-stat">
+                    <div class="mini-stat-label">Needs compensation</div>
+                    <div
+                      class="mini-stat-value"
+                      :class="classStats(subjectClass).pending > 0 ? 'text-amber-600' : 'text-emerald-600'"
+                    >
+                      {{ classStats(subjectClass).pending > 0 ? `${classStats(subjectClass).pending} of ${classStats(subjectClass).lessons}` : 'All settled' }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Weeks -->
+                <div class="space-y-3">
+                  <section
                     v-for="week in subjectClass.weeks"
                     :key="week.week_number"
-                    class="overflow-hidden rounded-xl border border-slate-100 bg-slate-50"
+                    class="overflow-hidden rounded-xl border border-slate-200 bg-white"
                   >
-                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 py-2">
-                      <div class="flex items-center gap-2">
-                        <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500 text-[10px] font-bold text-white">
-                          {{ week.week_number }}
+                    <header class="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-2">
+                      <span class="rounded-md bg-slate-900 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">
+                        Week {{ week.week_number }}
+                      </span>
+                      <span class="text-xs text-slate-500">
+                        {{ week.entries.length }} {{ week.entries.length === 1 ? 'lesson' : 'lessons' }}
+                        <template v-if="getWeekTotalLost(week) > 0">
+                          · <span class="font-semibold text-rose-600">{{ formatMinutes(getWeekTotalLost(week)) }} lost</span>
+                        </template>
+                      </span>
+                    </header>
+
+                    <ul class="divide-y divide-slate-100">
+                      <li
+                        v-for="entry in week.entries"
+                        :key="entry.id"
+                        class="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-3 transition hover:bg-slate-50 sm:px-4"
+                      >
+                        <!-- Date tile -->
+                        <div class="w-14 flex-shrink-0 rounded-lg border border-slate-200 bg-white py-1 text-center">
+                          <div class="text-[10px] font-bold uppercase text-blue-600">{{ entry.day_of_week || '-' }}</div>
+                          <div class="text-lg font-extrabold leading-none text-slate-900">{{ dateParts(entry.attendance_date).day }}</div>
+                          <div class="text-[10px] font-semibold uppercase text-slate-500">{{ dateParts(entry.attendance_date).month }}</div>
                         </div>
-                        <div>
-                          <div class="text-xs font-bold text-blue-600">Week {{ week.week_number }}</div>
-                          <div class="text-[10px] text-slate-500">{{ week.entries.length }} record(s)</div>
+
+                        <!-- Time slot + taught bar -->
+                        <div class="min-w-0 flex-1 sm:min-w-[11rem]">
+                          <div class="text-sm font-bold text-slate-800">
+                            {{ shortTime(entry.time_in) }} – {{ shortTime(entry.time_out) }}
+                          </div>
+                          <div class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <div class="h-1.5 min-w-[6rem] max-w-[14rem] flex-1 overflow-hidden rounded-full bg-slate-100">
+                              <div
+                                class="h-full rounded-full"
+                                :class="taughtBarClass(entry)"
+                                :style="{ width: `${taughtPct(entry)}%` }"
+                              ></div>
+                            </div>
+                            <span class="whitespace-nowrap text-[11px] text-slate-500">
+                              {{ entry.actual_minutes }} of {{ entry.expected_minutes }} min taught
+                            </span>
+                          </div>
                         </div>
-                      </div>
 
-                      <div class="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 ring-1 ring-rose-200">
-                        {{ getWeekTotalLost(week) }} mins lost
-                      </div>
-                    </div>
+                        <!-- Lost, status, actions: one row under the time on phones -->
+                        <div class="flex w-full flex-wrap items-center gap-2 border-t border-dashed border-slate-100 pt-2 sm:w-auto sm:flex-nowrap sm:gap-3 sm:border-0 sm:pt-0">
+                        <!-- "4 min lost" on one line on phones, stacked from tablet up -->
+                        <div class="flex items-baseline gap-1 whitespace-nowrap sm:block sm:w-20 sm:text-right">
+                          <div
+                            class="text-sm font-extrabold"
+                            :class="entry.minutes_lost > 0 ? 'text-rose-600' : 'text-emerald-600'"
+                          >
+                            {{ entry.minutes_lost > 0 ? `${entry.minutes_lost} min` : 'Full' }}
+                          </div>
+                          <div class="text-[10px] text-slate-500">{{ entry.minutes_lost > 0 ? 'lost' : 'lesson' }}</div>
+                        </div>
 
-                    <div class="overflow-x-auto">
-                      <table class="min-w-[800px] w-full">
-                        <thead class="bg-slate-100">
-                          <tr class="text-left text-[10px] uppercase text-slate-500">
-                            <th class="px-3 py-2">Date</th>
-                            <th class="px-3 py-2">Day</th>
-                            <th class="px-3 py-2">In</th>
-                            <th class="px-3 py-2">Out</th>
-                            <th class="px-3 py-2">Expected</th>
-                            <th class="px-3 py-2">Actual</th>
-                            <th class="px-3 py-2">Lost</th>
-                            <th class="px-3 py-2">Status</th>
-                            <th class="px-3 py-2 text-right">Actions</th>
-                          </tr>
-                        </thead>
+                        <!-- Status -->
+                        <span
+                          class="inline-flex justify-center whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 sm:w-36"
+                          :class="entryStatus(entry).cls"
+                        >
+                          {{ entryStatus(entry).label }}
+                        </span>
 
-                        <tbody class="divide-y divide-slate-100">
-                          <tr v-for="entry in week.entries" :key="entry.id" class="hover:bg-slate-50">
-                            <td class="px-3 py-2 text-xs font-semibold text-slate-700">{{ entry.attendance_date }}</td>
-                            <td class="px-3 py-2 text-xs font-bold text-blue-600">{{ entry.day_of_week || '-' }}</td>
-                            <td class="px-3 py-2 text-xs text-slate-700">{{ entry.time_in }}</td>
-                            <td class="px-3 py-2 text-xs text-slate-700">{{ entry.time_out }}</td>
-                            <td class="px-3 py-2 text-xs text-slate-700">{{ entry.expected_minutes }}</td>
-                            <td class="px-3 py-2 text-xs text-slate-700">{{ entry.actual_minutes }}</td>
-                            <td class="px-3 py-2">
-                              <span
-                                class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ring-1"
-                                :class="entry.minutes_lost > 0
-                                  ? 'bg-rose-50 text-rose-700 ring-rose-200'
-                                  : 'bg-emerald-50 text-emerald-700 ring-emerald-200'"
-                              >
-                                {{ entry.minutes_lost }}
-                              </span>
-                            </td>
-                            <td class="px-3 py-2">
-                              <span
-                                class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ring-1"
-                                :class="entry.minutes_lost === 0
-                                  ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-                                  : entry.compensation_status === 'Fully Compensated'
-                                  ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-                                  : entry.compensation_status === 'Partially Compensated'
-                                  ? 'bg-amber-50 text-amber-700 ring-amber-200'
-                                  : 'bg-rose-50 text-rose-700 ring-rose-200'"
-                              >
-                                {{ entry.minutes_lost === 0 ? 'Complete' : (entry.compensation_status || 'Not Compensated') }}
-                              </span>
-                            </td>
-                            <td class="px-3 py-2">
-                              <div class="flex justify-end gap-1">
+                        <!-- Actions -->
+                        <div class="ml-auto flex gap-1">
                                 <button
                                   v-if="entry.minutes_lost > 0"
                                   @click="openCompensationModal(entry)"
@@ -566,13 +665,11 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                   </svg>
                                 </button>
-                              </div>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                        </div>
+                        </div>
+                      </li>
+                    </ul>
+                  </section>
                 </div>
               </div>
             </div>
@@ -1015,7 +1112,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { lessonMonitoringAPI, teachersAPI, classesAPI, subjectsNewAPI, lessonCompensationsAPI } from '../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -1028,7 +1125,7 @@ const allClasses = ref([]);
 const streams = ref([]);
 
 const filterYear = ref(new Date().getFullYear());
-const filterTerm = ref(2);
+const filterTerm = ref('');
 const filterWeek = ref('');
 const filterTeacher = ref('');
 
@@ -1101,26 +1198,24 @@ const normalizeSummary = (payload, rows) => {
 
   const totalLost = rows.reduce((sum, row) => sum + Number(row.minutes_lost || 0), 0);
   const compensatedLessons = rows.filter(row => row.is_compensated).length;
+  const compensatedMinutes = rows.reduce((sum, row) => sum + Number(row.minutes_compensated || 0), 0);
 
   return {
     records: rows.length,
     total_minutes_lost: totalLost,
     equivalent_single_lessons: Math.floor(totalLost / 40),
     equivalent_double_lessons: Math.floor(totalLost / 80),
-    compensated_lessons: compensatedLessons
+    compensated_lessons: compensatedLessons,
+    compensated_minutes: compensatedMinutes
   };
 };
 
 const subjects = computed(() => {
-  const result = [...new Set(allSubjects.value.map(s => s.subject_name || s.subject || s.name).filter(Boolean))].sort();
-  console.log('Subjects computed:', result);
-  return result;
+  return [...new Set(allSubjects.value.map(s => s.subject_name || s.subject || s.name).filter(Boolean))].sort();
 });
 
 const classes = computed(() => {
-  const result = [...new Set(allClasses.value.map(c => c.class_name || c.class || c.name).filter(Boolean))].sort();
-  console.log('Classes computed:', result);
-  return result;
+  return [...new Set(allClasses.value.map(c => c.class_name || c.class || c.name).filter(Boolean))].sort();
 });
 
 const groupedRecords = computed(() => {
@@ -1246,6 +1341,89 @@ const topClassesByMinutesLost = computed(() => {
     .slice(0, 12);
 });
 
+const showAllTopClasses = ref(false);
+
+const visibleTopClasses = computed(() =>
+  showAllTopClasses.value ? topClassesByMinutesLost.value : topClassesByMinutesLost.value.slice(0, 5)
+);
+
+const topClassesMaxLost = computed(() =>
+  topClassesByMinutesLost.value.reduce((max, c) => Math.max(max, c.total_minutes_lost), 0)
+);
+
+const topClassesTotalLost = computed(() =>
+  topClassesByMinutesLost.value.reduce((sum, c) => sum + c.total_minutes_lost, 0)
+);
+
+// Subject & Class Details: which class rows are expanded, keyed per teacher group.
+const openClasses = ref({});
+const classOpenKey = (group, sc) => `${group.group_key}|${sc.key}`;
+const isClassOpen = (group, sc) => !!openClasses.value[classOpenKey(group, sc)];
+const toggleClass = (group, sc) => {
+  const key = classOpenKey(group, sc);
+  openClasses.value = { ...openClasses.value, [key]: !openClasses.value[key] };
+};
+const allClassesOpen = (group) => group.subjects_classes.every(sc => isClassOpen(group, sc));
+const toggleAllClasses = (group) => {
+  const open = !allClassesOpen(group);
+  const next = { ...openClasses.value };
+  group.subjects_classes.forEach(sc => { next[classOpenKey(group, sc)] = open; });
+  openClasses.value = next;
+};
+
+const classStats = (sc) => {
+  const entries = sc.weeks.flatMap(w => w.entries);
+  const expected = entries.reduce((s, e) => s + Number(e.expected_minutes || 0), 0);
+  const actual = entries.reduce((s, e) => s + Number(e.actual_minutes || 0), 0);
+  const lost = entries.reduce((s, e) => s + Number(e.minutes_lost || 0), 0);
+  const pending = entries.filter(e => e.minutes_lost > 0 && e.compensation_status !== 'Fully Compensated').length;
+  return {
+    lessons: entries.length,
+    expected,
+    actual,
+    lost,
+    pending,
+    taughtPct: expected ? Math.min(100, Math.round((actual / expected) * 100)) : 0
+  };
+};
+
+const taughtPct = (entry) => {
+  const expected = Number(entry.expected_minutes || 0);
+  return expected ? Math.min(100, Math.round((Number(entry.actual_minutes || 0) / expected) * 100)) : 0;
+};
+
+const taughtBarClass = (entry) => {
+  const pct = taughtPct(entry);
+  if (pct >= 100) return 'bg-emerald-500';
+  if (pct >= 75) return 'bg-amber-400';
+  return 'bg-rose-500';
+};
+
+const entryStatus = (entry) => {
+  if (entry.minutes_lost === 0) return { label: 'Complete', cls: 'bg-emerald-50 text-emerald-700 ring-emerald-200' };
+  if (entry.compensation_status === 'Fully Compensated') return { label: 'Fully Compensated', cls: 'bg-emerald-50 text-emerald-700 ring-emerald-200' };
+  if (entry.compensation_status === 'Partially Compensated') return { label: 'Partially Compensated', cls: 'bg-amber-50 text-amber-700 ring-amber-200' };
+  return { label: entry.compensation_status || 'Not Compensated', cls: 'bg-rose-50 text-rose-700 ring-rose-200' };
+};
+
+// "2026-02-03" -> { day: '03', month: 'Feb' }; parsed as local date to avoid a timezone day shift
+const dateParts = (date) => {
+  if (!date) return { day: '-', month: '' };
+  const [y, m, d] = String(date).slice(0, 10).split('-').map(Number);
+  const dt = new Date(y, (m || 1) - 1, d || 1);
+  if (Number.isNaN(dt.getTime())) return { day: '-', month: '' };
+  return {
+    day: String(dt.getDate()).padStart(2, '0'),
+    month: dt.toLocaleString('en', { month: 'short' })
+  };
+};
+
+// "08:00:00" -> "08:00"
+const shortTime = (t) => (t ? String(t).slice(0, 5) : '-');
+
+// 1199 -> "1,199 min"
+const formatMinutes = (mins) => `${Number(mins || 0).toLocaleString()} min`;
+
 // Report computed properties
 const topTeachersByMinutesLost = computed(() => {
   const teacherMap = {};
@@ -1287,11 +1465,13 @@ const teachersFewMinutesLosts = computed(() => {
         teacher_id: record.teacher_id,
         teacher_name: record.teacher_name,
         total_minutes_lost: 0,
+        total_expected_minutes: 0,
         total_lessons: 0
       };
     }
 
     teacherMap[record.teacher_id].total_minutes_lost += Number(record.minutes_lost || 0);
+    teacherMap[record.teacher_id].total_expected_minutes += Number(record.expected_minutes || 0);
     teacherMap[record.teacher_id].total_lessons += 1;
   });
 
@@ -1301,8 +1481,9 @@ const teachersFewMinutesLosts = computed(() => {
       ...item,
       equivalent_single_lessons: Math.floor(item.total_minutes_lost / 40),
       equivalent_double_lessons: Math.floor(item.total_minutes_lost / 80),
-      performance_percentage: item.total_lessons > 0
-        ? Math.round((1 - (item.total_minutes_lost / (item.total_lessons * 40))) * 100)
+      // Share of scheduled lesson time actually kept (uses each lesson's real length, 40 or 80 min)
+      performance_percentage: item.total_expected_minutes > 0
+        ? Math.max(0, Math.round((1 - (item.total_minutes_lost / item.total_expected_minutes)) * 100))
         : 100
     }))
     .sort((a, b) => {
@@ -1400,111 +1581,313 @@ const classesFewMinutesLost = computed(() => {
     .slice(0, 20);
 });
 
-const getReportData = () => {
-  switch (reportType.value) {
-    case 'top-teachers':
-      return topTeachersByMinutesLost.value;
-    case 'few-teachers':
-      return teachersFewMinutesLosts.value;
-    case 'top-classes':
-      return classesMostMinutesLost.value;
-    case 'few-classes':
-      return classesFewMinutesLost.value;
-    default:
-      return [];
+const reportConfig = {
+  'top-teachers': {
+    tab: 'Teachers',
+    tabSub: 'Most time lost',
+    icon: 'fas fa-user-clock',
+    tone: 'rose',
+    title: 'Teachers with the most time lost',
+    description: 'Top 20 teachers ranked by total minutes lost.',
+    entity: 'Teacher',
+    entityPlural: 'teachers',
+    metricLabel: '≈ Single lessons',
+    emptyHint: 'No lessons match the current filters.'
+  },
+  'few-teachers': {
+    tab: 'Teachers',
+    tabSub: 'Least time lost',
+    icon: 'fas fa-user-check',
+    tone: 'emerald',
+    title: 'Teachers with the least time lost',
+    description: 'Teachers with at least 10 lessons, ranked by the share of lesson time kept.',
+    entity: 'Teacher',
+    entityPlural: 'teachers',
+    metricLabel: 'Time kept',
+    emptyHint: 'No teacher has 10 or more lessons under the current filters.'
+  },
+  'top-classes': {
+    tab: 'Classes',
+    tabSub: 'Most time lost',
+    icon: 'fas fa-school',
+    tone: 'rose',
+    title: 'Classes with the most time lost',
+    description: 'Top 20 classes ranked by total minutes lost, with the teachers who lost the most.',
+    entity: 'Class',
+    entityPlural: 'classes',
+    metricLabel: '≈ Single lessons',
+    emptyHint: 'No lessons match the current filters.'
+  },
+  'few-classes': {
+    tab: 'Classes',
+    tabSub: 'Least time lost',
+    icon: 'fas fa-medal',
+    tone: 'emerald',
+    title: 'Classes with the least time lost',
+    description: '20 classes with the fewest minutes lost.',
+    entity: 'Class',
+    entityPlural: 'classes',
+    metricLabel: '≈ Single lessons',
+    emptyHint: 'No lessons match the current filters.'
   }
 };
 
-const printReport = () => {
-  const data = getReportData();
-  if (data.length === 0) return;
+const activeReport = computed(() => reportConfig[reportType.value] || reportConfig['top-teachers']);
 
-  const doc = new jsPDF();
-  let title = '';
+const classLabel = (item) => `${item.class || '-'}${item.stream ? ` · ${item.stream}` : ''}`;
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
+// One row shape for every report type, used by both the modal and the PDF.
+const reportRows = computed(() => {
   switch (reportType.value) {
     case 'top-teachers':
-      title = 'Top 20 Teachers - Highest Minutes Lost';
-      break;
+      return topTeachersByMinutesLost.value.map((t, i) => ({
+        key: t.teacher_id,
+        rank: i + 1,
+        name: t.teacher_name || '-',
+        sub: plural(t.classes_count, 'class', 'classes'),
+        notes: t.classes_list,
+        minutes: t.total_minutes_lost,
+        lessons: t.total_lessons,
+        metric: String(t.equivalent_single_lessons)
+      }));
     case 'few-teachers':
-      title = 'Teachers - Few Minutes Lost';
-      break;
+      return teachersFewMinutesLosts.value.map((t, i) => ({
+        key: t.teacher_id,
+        rank: i + 1,
+        name: t.teacher_name || '-',
+        sub: `${plural(t.total_lessons, 'lesson', 'lessons')} monitored`,
+        notes: '',
+        minutes: t.total_minutes_lost,
+        lessons: t.total_lessons,
+        metric: `${t.performance_percentage}%`
+      }));
     case 'top-classes':
-      title = 'Classes - Most Minutes Lost';
-      break;
+      return classesMostMinutesLost.value.map((c, i) => ({
+        key: c.class_key,
+        rank: i + 1,
+        name: classLabel(c),
+        sub: plural(c.teachers_count, 'teacher', 'teachers'),
+        notes: c.top_teachers.some(t => t.minutes_lost > 0)
+          ? `Most lost: ${c.top_teachers.filter(t => t.minutes_lost > 0).map(t => `${t.teacher_name} (${t.minutes_lost} min)`).join(', ')}`
+          : '',
+        minutes: c.total_minutes_lost,
+        lessons: c.total_lessons,
+        metric: String(c.equivalent_single_lessons)
+      }));
     case 'few-classes':
-      title = 'Classes - Few Minutes Lost';
-      break;
+      return classesFewMinutesLost.value.map((c, i) => ({
+        key: c.class_key,
+        rank: i + 1,
+        name: classLabel(c),
+        sub: plural(c.teachers_count, 'teacher', 'teachers'),
+        notes: c.teachers_list,
+        minutes: c.total_minutes_lost,
+        lessons: c.total_lessons,
+        metric: String(c.equivalent_single_lessons)
+      }));
+    default:
+      return [];
   }
+});
 
-  doc.setFontSize(18);
-  doc.text(title, 14, 22);
-  doc.setFontSize(10);
-  doc.text(`Year: ${filterYear.value} | Term: ${filterTerm.value || 'All Terms'}`, 14, 30);
+const reportTotals = computed(() => ({
+  minutes: reportRows.value.reduce((s, r) => s + Number(r.minutes || 0), 0),
+  lessons: reportRows.value.reduce((s, r) => s + Number(r.lessons || 0), 0),
+  max: reportRows.value.reduce((m, r) => Math.max(m, Number(r.minutes || 0)), 0)
+}));
 
-  let columns = [];
-  let rows = [];
+const reportBarPct = (row) => (reportTotals.value.max ? Math.round((row.minutes / reportTotals.value.max) * 100) : 0);
 
-  if (reportType.value === 'top-teachers') {
-    columns = ['Rank', 'Teacher', 'Minutes Lost', 'Single Lessons', 'Double Lessons', 'Total Lessons', 'Classes'];
-    rows = data.map((item, index) => [
-      index + 1,
-      item.teacher_name,
-      item.total_minutes_lost,
-      item.equivalent_single_lessons,
-      item.equivalent_double_lessons,
-      item.total_lessons,
-      item.classes_list
-    ]);
-  } else if (reportType.value === 'few-teachers') {
-    columns = ['Teacher', 'Minutes Lost', 'Single Lessons', 'Double Lessons', 'Total Lessons', 'Performance %'];
-    rows = data.map(item => [
-      item.teacher_name,
-      item.total_minutes_lost,
-      item.equivalent_single_lessons,
-      item.equivalent_double_lessons,
-      item.total_lessons,
-      item.performance_percentage + '%'
-    ]);
-  } else if (reportType.value === 'top-classes') {
-    columns = ['Class', 'Stream', 'Minutes Lost', 'Single Lessons', 'Double Lessons', 'Top 5 Teachers'];
-    rows = data.map((item, index) => [
-      item.class,
-      item.stream || '-',
-      item.total_minutes_lost,
-      item.equivalent_single_lessons,
-      item.equivalent_double_lessons,
-      item.top_teachers.map((t, i) => `${i + 1}. ${t.teacher_name} (${t.minutes_lost})`).join('\n')
-    ]);
-  } else if (reportType.value === 'few-classes') {
-    columns = ['Class', 'Stream', 'Minutes Lost', 'Single Lessons', 'Double Lessons', 'Teachers'];
-    rows = data.map((item, index) => [
-      item.class,
-      item.stream || '-',
-      item.total_minutes_lost,
-      item.equivalent_single_lessons,
-      item.equivalent_double_lessons,
-      item.teachers_list
-    ]);
-  }
+const reportScope = computed(() => {
+  const teacherName = filterTeacher.value
+    ? teachersList.value.find(t => String(t.id) === String(filterTeacher.value))?.full_name
+    : '';
+  return [
+    `Year ${filterYear.value}`,
+    filterTerm.value ? `Term ${filterTerm.value}` : 'All terms',
+    filterWeek.value ? `Week ${filterWeek.value}` : 'All weeks',
+    teacherName ? `Teacher: ${teacherName}` : ''
+  ].filter(Boolean).join(' · ');
+});
 
+// Close on Esc and stop the page behind the modal from scrolling.
+const onReportsKeydown = (e) => { if (e.key === 'Escape') showReports.value = false; };
+watch(showReports, (open) => {
+  document.body.style.overflow = open ? 'hidden' : '';
+  if (open) window.addEventListener('keydown', onReportsKeydown);
+  else window.removeEventListener('keydown', onReportsKeydown);
+});
+onUnmounted(() => {
+  document.body.style.overflow = '';
+  window.removeEventListener('keydown', onReportsKeydown);
+});
+
+const printReport = () => {
+  const rows = reportRows.value;
+  if (rows.length === 0) return;
+
+  const cfg = activeReport.value;
+  const accent = cfg.tone === 'rose' ? [225, 29, 72] : [5, 150, 105];
+  const accentSoft = cfg.tone === 'rose' ? [255, 228, 230] : [209, 250, 229];
+  const ink = [15, 23, 42];
+  const muted = [100, 116, 139];
+  const line = [226, 232, 240];
+
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 14;
+
+  // Header band
+  doc.setFillColor(...ink);
+  doc.rect(0, 0, pageW, 34, 'F');
+  doc.setFillColor(...accent);
+  doc.rect(0, 34, pageW, 1.2, 'F');
+
+  doc.setTextColor(148, 163, 184);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.text('LESSON MONITORING REPORT', margin, 12);
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16);
+  doc.text(cfg.title, margin, 21);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(203, 213, 225);
+  doc.text(reportScope.value, margin, 28);
+
+  const generated = new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  doc.setFontSize(8);
+  doc.text(`Generated ${generated}`, pageW - margin, 12, { align: 'right' });
+
+  // Summary cards
+  const cards = [
+    { label: 'TIME LOST', value: formatMinutes(reportTotals.value.minutes), color: accent },
+    { label: 'LESSONS', value: reportTotals.value.lessons.toLocaleString(), color: ink },
+    { label: cfg.entityPlural.toUpperCase() + ' LISTED', value: String(rows.length), color: ink },
+    {
+      label: 'AVG LOST / LESSON',
+      value: `${reportTotals.value.lessons ? (reportTotals.value.minutes / reportTotals.value.lessons).toFixed(1) : '0'} min`,
+      color: ink
+    }
+  ];
+  const gap = 4;
+  const cardW = (pageW - margin * 2 - gap * (cards.length - 1)) / cards.length;
+  const cardY = 42;
+  cards.forEach((c, i) => {
+    const x = margin + i * (cardW + gap);
+    doc.setDrawColor(...line);
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(x, cardY, cardW, 18, 2.5, 2.5, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...muted);
+    doc.text(c.label, x + 4, cardY + 6);
+    doc.setFontSize(13);
+    doc.setTextColor(...c.color);
+    doc.text(c.value, x + 4, cardY + 14);
+  });
+
+  // Section heading
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...muted);
+  doc.text(cfg.description, margin, cardY + 26);
+
+  const barCol = 3;
   autoTable(doc, {
-    startY: 40,
-    head: columns,
-    body: rows,
-    theme: 'grid',
-    headStyles: {
-      fillColor: [239, 68, 68],
-      textColor: 255,
-      fontSize: 10
+    startY: cardY + 30,
+    margin: { left: margin, right: margin, bottom: 18 },
+    head: [['#', cfg.entity, 'Time lost', '', 'Lessons', cfg.metricLabel.replace('≈ ', '~ ')]],
+    body: rows.map(r => [
+      r.rank,
+      { content: r.notes ? `${r.name}\n${r.sub}\n${r.notes}` : `${r.name}\n${r.sub}`, raw: r },
+      formatMinutes(r.minutes),
+      { content: '', raw: r },
+      r.lessons,
+      r.metric
+    ]),
+    theme: 'plain',
+    rowPageBreak: 'avoid',
+    styles: { font: 'helvetica', fontSize: 8.5, textColor: ink, cellPadding: { top: 3, bottom: 3, left: 2.5, right: 2.5 }, valign: 'middle' },
+    headStyles: { fillColor: accentSoft, textColor: accent, fontStyle: 'bold', fontSize: 8 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center', fontStyle: 'bold' },
+      1: { cellWidth: 'auto' },
+      2: { cellWidth: 22, halign: 'right', fontStyle: 'bold', textColor: accent },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 17, halign: 'right' },
+      5: { cellWidth: 26, halign: 'right' }
     },
-    styles: {
-      fontSize: 9,
-      cellPadding: 3
+    // Name in bold, the class/teacher line and notes muted underneath
+    willDrawCell: (data) => {
+      if (data.section === 'body' && data.column.index === 1) data.cell.text = [];
+    },
+    didDrawCell: (data) => {
+      if (data.section !== 'body') return;
+      const { cell } = data;
+      if (data.column.index === 1) {
+        const r = cell.raw.raw;
+        const x = cell.x + 2.5;
+        let y = cell.y + 5;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(...ink);
+        doc.text(r.name, x, y);
+        y += 4;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...muted);
+        doc.text(r.sub, x, y);
+        if (r.notes) {
+          const wrapped = doc.splitTextToSize(r.notes, cell.width - 5);
+          doc.setTextColor(148, 163, 184);
+          doc.text(wrapped, x, y + 3.6);
+        }
+      }
+      if (data.column.index === barCol) {
+        const r = cell.raw.raw;
+        const w = cell.width - 5;
+        const y = cell.y + cell.height / 2 - 1;
+        doc.setFillColor(...line);
+        doc.roundedRect(cell.x + 2.5, y, w, 2, 1, 1, 'F');
+        const pct = reportBarPct(r) / 100;
+        if (pct > 0) {
+          doc.setFillColor(...accent);
+          doc.roundedRect(cell.x + 2.5, y, Math.max(2, w * pct), 2, 1, 1, 'F');
+        }
+      }
+      if (data.column.index === 0 && data.cell.raw <= 3) {
+        // Top three get an accent rank dot
+        doc.setFillColor(...accent);
+        doc.circle(cell.x + cell.width / 2, cell.y + cell.height / 2, 3, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.text(String(cell.raw), cell.x + cell.width / 2, cell.y + cell.height / 2 + 1, { align: 'center' });
+      }
     }
   });
 
-  doc.save(`${title.toLowerCase().replace(/\s+/g, '-')}-${filterYear.value}.pdf`);
+  // Footer on every page
+  const pages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p);
+    doc.setDrawColor(...line);
+    doc.line(margin, pageH - 12, pageW - margin, pageH - 12);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...muted);
+    doc.text('School HR System · Lesson Monitoring', margin, pageH - 7);
+    doc.text(`Page ${p} of ${pages}`, pageW - margin, pageH - 7, { align: 'right' });
+  }
+
+  const termPart = filterTerm.value ? `term-${filterTerm.value}` : 'all-terms';
+  doc.save(`lesson-monitoring-${reportType.value}-${filterYear.value}-${termPart}.pdf`);
 };
 
 const form = ref({
@@ -1977,80 +2360,12 @@ const getWeekTotalLost = (week) => {
   return (week?.entries || []).reduce((sum, entry) => sum + Number(entry.minutes_lost || 0), 0);
 };
 
-const downloadPDF = () => {
-  const doc = new jsPDF();
-
-  doc.setFontSize(18);
-  doc.text('Teacher Attendance and Time Lost Report', 14, 22);
-
-  doc.setFontSize(11);
-  doc.setTextColor(100);
-
-  const teacherName = filterTeacher.value
-    ? teachersList.value.find(t => String(t.id) === String(filterTeacher.value))?.full_name || ''
-    : '';
-
-  const filterInfo = [
-    `Year: ${filterYear.value}`,
-    `Term: ${filterTerm.value}`,
-    filterWeek.value ? `Week: ${filterWeek.value}` : 'Week: All',
-    teacherName ? `Teacher: ${teacherName}` : ''
-  ].filter(Boolean).join(' | ');
-
-  doc.text(filterInfo, 14, 30);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 36);
-
-  doc.setFontSize(12);
-  doc.setTextColor(40);
-  doc.text(`Total Minutes Lost: ${summary.value.total_minutes_lost}`, 14, 46);
-  doc.text(`Single Lessons: ${summary.value.equivalent_single_lessons}`, 14, 52);
-  doc.text(`Double Lessons: ${summary.value.equivalent_double_lessons}`, 14, 58);
-
-  const tableData = records.value.map(record => [
-    record.teacher_name || '',
-    record.subject || '',
-    record.class || '',
-    record.stream || '',
-    `Week ${record.week_number || ''}`,
-    record.attendance_date || '',
-    record.time_in || '',
-    record.time_out || '',
-    record.expected_minutes || 0,
-    record.actual_minutes || 0,
-    record.minutes_lost || 0,
-    record.cumulative_minutes_lost || 0
-  ]);
-
-  autoTable(doc, {
-    head: [[
-      'Teacher', 'Subject', 'Class', 'Stream', 'Week', 'Date',
-      'Time In', 'Time Out', 'Expected', 'Actual', 'Lost', 'Cumulative'
-    ]],
-    body: tableData,
-    startY: 65,
-    styles: {
-      fontSize: 8,
-      cellPadding: 3
-    },
-    headStyles: {
-      fillColor: [79, 70, 229],
-      textColor: 255,
-      fontStyle: 'bold'
-    },
-    alternateRowStyles: {
-      fillColor: [245, 245, 245]
-    },
-    margin: { top: 10, right: 10, bottom: 10, left: 10 }
-  });
-
-  doc.save(`teacher-attendance-${filterYear.value}-term-${filterTerm.value}.pdf`);
-};
-
 onMounted(() => {
+  // Records first so the table request isn't queued behind the dropdown lookups.
+  loadData();
+  loadTeachers();
   loadClasses();
   loadSubjects();
-  loadTeachers();
-  loadData();
 });
 </script>
 
@@ -2076,24 +2391,104 @@ onMounted(() => {
   border-color: rgb(203 213 225);
 }
 
-.summary-card {
-  border-radius: 1.6rem;
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  border-radius: 1.1rem;
   border: 1px solid rgb(226 232 240);
   background: white;
-  padding: 1.2rem;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  padding: 0.85rem 1rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
-.summary-label {
-  font-size: 13px;
+.stat-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+}
+
+.stat-label {
+  font-size: 12px;
   font-weight: 600;
   color: rgb(100 116 139);
 }
 
-.summary-value {
-  margin-top: 0.45rem;
-  font-size: 1.9rem;
+.stat-value {
+  font-size: 1.35rem;
   font-weight: 800;
+  line-height: 1.2;
+}
+
+.teacher-stat {
+  min-width: 4.5rem;
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 0.3rem 0.75rem;
+  text-align: center;
+}
+
+.teacher-stat-value {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: white;
+  white-space: nowrap;
+}
+
+.teacher-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.teacher-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  transition: background 0.15s;
+}
+
+.teacher-action:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.mini-stat {
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background: white;
+  padding: 0.6rem 0.8rem;
+}
+
+.mini-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: rgb(100 116 139);
+}
+
+.mini-stat-value {
+  margin-top: 0.15rem;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.stat-sub {
+  font-size: 11px;
+  color: rgb(100 116 139);
 }
 
 .filter-label {
@@ -2184,8 +2579,8 @@ onMounted(() => {
 }
 
 @media (max-width: 640px) {
-  .summary-value {
-    font-size: 1.5rem;
+  .stat-value {
+    font-size: 1.2rem;
   }
 
   .mini-value {

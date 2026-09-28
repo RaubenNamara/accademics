@@ -82,6 +82,8 @@ switch ($method) {
     case 'GET':
         $query = "SELECT a.*, t.full_name AS teacher_name,
                   (SELECT COUNT(*) FROM lesson_compensations lc WHERE lc.lesson_monitoring_id = a.id) as compensation_count,
+                  (SELECT COALESCE(SUM(lc.minutes_compensated), 0) FROM lesson_compensations lc
+                   WHERE lc.lesson_monitoring_id = a.id) as minutes_compensated,
                   (SELECT GROUP_CONCAT(CONCAT(lc.compensation_date, ' (', lc.status, ')') SEPARATOR '; ')
                    FROM lesson_compensations lc
                    WHERE lc.lesson_monitoring_id = a.id) as compensation_details,
@@ -124,8 +126,14 @@ switch ($method) {
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $summaryTotalLost = 0;
+        $summaryCompensatedMinutes = 0;
+        $summaryCompensatedLessons = 0;
         foreach ($rows as &$row) {
             $summaryTotalLost += (int)$row['minutes_lost'];
+            $summaryCompensatedMinutes += (int)$row['minutes_compensated'];
+            if ((int)$row['compensation_count'] > 0) {
+                $summaryCompensatedLessons++;
+            }
             $row['cumulative_minutes_lost'] = $summaryTotalLost;
             $row['equivalent_single_lessons'] = (int) floor(((int)$row['minutes_lost']) / 40);
             $row['equivalent_double_lessons'] = (int) floor(((int)$row['minutes_lost']) / 80);
@@ -136,7 +144,9 @@ switch ($method) {
             'total_minutes_lost' => $summaryTotalLost,
             'equivalent_single_lessons' => (int) floor($summaryTotalLost / 40),
             'equivalent_double_lessons' => (int) floor($summaryTotalLost / 80),
-            'records' => count($rows)
+            'records' => count($rows),
+            'compensated_lessons' => $summaryCompensatedLessons,
+            'compensated_minutes' => $summaryCompensatedMinutes
         ];
 
         echo json_encode([
