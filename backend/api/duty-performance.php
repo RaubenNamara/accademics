@@ -71,7 +71,7 @@ switch($method) {
             $query .= " AND dp.year = :year";
             $params[':year'] = $_GET['year'];
         }
-        if (isset($_GET['term'])) {
+        if (isset($_GET['term']) && $_GET['term'] !== '') {
             $query .= " AND dp.term = :term";
             $params[':term'] = $_GET['term'];
         }

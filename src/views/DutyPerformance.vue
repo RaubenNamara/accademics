@@ -22,6 +22,16 @@
             Refresh
           </button>
           <button
+            @click="downloadPDF"
+            :disabled="filteredRecords.length === 0"
+            class="group inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-medium text-white backdrop-blur transition-all hover:bg-white/20 hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Print PDF Report
+          </button>
+          <button
             @click="openAddModal"
             class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 to-blue-500 px-5 py-2.5 text-sm font-medium text-white shadow-xl shadow-blue-500/25 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/40 hover:scale-105"
           >
@@ -47,6 +57,7 @@
         <div>
           <label class="mb-2.5 block text-sm font-semibold text-slate-700">Term</label>
           <select v-model="filterTerm" @change="loadData" class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50">
+            <option value="">All Terms</option>
             <option :value="1">Term 1</option>
             <option :value="2">Term 2</option>
             <option :value="3">Term 3</option>
@@ -709,6 +720,8 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { dutyPerformanceAPI, teachersAPI } from '../services/api.js';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const router = useRouter();
 const records = ref([]);
@@ -804,6 +817,68 @@ const formatDate = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+const downloadPDF = () => {
+  const doc = new jsPDF();
+
+  doc.setFontSize(18);
+  doc.text('Duty Performance Evaluation Report', 14, 22);
+
+  doc.setFontSize(11);
+  doc.setTextColor(100);
+  const termLabel = filterTerm.value === '' ? 'All Terms' : `Term ${filterTerm.value}`;
+  const weekLabel = filterWeek.value ? `Week ${filterWeek.value}` : 'All Weeks';
+  doc.text(`Year: ${filterYear.value} | ${termLabel} | ${weekLabel}`, 14, 30);
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 36);
+
+  let startY = 45;
+  if (teacherOfTheWeek.value) {
+    doc.setFontSize(11);
+    doc.setTextColor(180, 130, 0);
+    doc.text(
+      `Top Performer: ${teacherOfTheWeek.value.teacher_name} - ${teacherOfTheWeek.value.total_score}/100 (${teacherOfTheWeek.value.percentage}%)`,
+      14,
+      startY
+    );
+    startY += 8;
+  }
+
+  const rankedForReport = [...filteredRecords.value].sort((a, b) => b.total_score - a.total_score);
+  const tableData = rankedForReport.map((record, index) => [
+    index + 1,
+    record.teacher_name || '',
+    record.week_number,
+    `${record.total_score}/100`,
+    `${record.percentage}%`,
+    record.status,
+    formatDate(record.created_at)
+  ]);
+
+  autoTable(doc, {
+    head: [['Rank', 'Teacher', 'Week', 'Total Score', 'Percentage', 'Status', 'Date']],
+    body: tableData,
+    startY,
+    styles: { fontSize: 9, cellPadding: 3 },
+    headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+    margin: { top: 10, right: 10, bottom: 10, left: 10 }
+  });
+
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(9);
+    doc.setTextColor(150);
+    doc.text(
+      `Page ${i} of ${pageCount}`,
+      doc.internal.pageSize.width / 2,
+      doc.internal.pageSize.height - 10,
+      { align: 'center' }
+    );
+  }
+
+  doc.save(`duty-performance-${filterYear.value}-${termLabel.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`);
 };
 
 const loadData = async () => {
