@@ -850,7 +850,7 @@ const DetailGrid = defineComponent({
 
 const uploadsBase = import.meta.env.DEV
   ? 'http://localhost/accademics/backend/'
-  : 'https://stmark.sc.ug/accademics/backend/';
+  : '/backend/';
 
 const photoUrl = (path) => {
   if (!path) return '';

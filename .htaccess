@@ -2,6 +2,15 @@ RewriteEngine On
 
 RewriteBase /accademics/
 
+# If the docroot points straight at this folder itself (a subdomain whose docroot is set to
+# public_html/accademics, rather than public_html one level up), incoming requests still carry
+# the leading "accademics/" segment baked into every URL by the frontend's build. Strip it here
+# so the rules below - which assume that segment is already gone, as it is when the docroot is
+# one level up - work the same regardless of which docroot depth this got deployed under. The
+# substitution must be absolute (leading /) - a relative one would get RewriteBase's
+# "/accademics/" prepended right back on, causing an infinite redirect loop.
+RewriteRule ^accademics/(.*)$ /$1 [L]
+
 # Exclude backend API
 RewriteRule ^backend/ - [L]
 
@@ -12,3 +21,10 @@ RewriteRule ^ - [L]
 
 # Vue SPA
 RewriteRule . /accademics/index.html [L]
+
+# Always revalidate the app shell so a new deploy (new hashed asset names) is picked up immediately.
+<IfModule mod_headers.c>
+  <FilesMatch "^index\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
