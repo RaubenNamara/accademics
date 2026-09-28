@@ -523,63 +523,125 @@
 
               <!-- Lessons, grouped by week -->
               <div v-if="isClassOpen(group, subjectClass)" class="border-t border-slate-100 bg-slate-50/70 px-3 py-4 sm:px-5">
-                <!-- Class summary -->
-                <div class="mb-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
-                  <div class="mini-stat">
-                    <div class="mini-stat-label">Lessons</div>
-                    <div class="mini-stat-value text-slate-900">{{ classStats(subjectClass).lessons }}</div>
-                  </div>
-                  <div class="mini-stat">
-                    <div class="mini-stat-label">Time taught</div>
-                    <div class="mini-stat-value text-slate-900">
-                      {{ classStats(subjectClass).taughtPct }}%
-                      <span class="text-xs font-medium text-slate-500">
-                        · {{ formatMinutes(classStats(subjectClass).actual) }} of {{ formatMinutes(classStats(subjectClass).expected) }}
-                      </span>
-                    </div>
-                  </div>
-                  <div class="mini-stat">
-                    <div class="mini-stat-label">Time lost</div>
-                    <div
-                      class="mini-stat-value"
-                      :class="classStats(subjectClass).lost > 0 ? 'text-rose-600' : 'text-emerald-600'"
-                    >
-                      {{ classStats(subjectClass).lost > 0 ? formatMinutes(classStats(subjectClass).lost) : 'None' }}
-                    </div>
-                  </div>
-                  <div class="mini-stat">
-                    <div class="mini-stat-label">Needs compensation</div>
-                    <div
-                      class="mini-stat-value"
-                      :class="classStats(subjectClass).pending > 0 ? 'text-amber-600' : 'text-emerald-600'"
-                    >
-                      {{ classStats(subjectClass).pending > 0 ? `${classStats(subjectClass).pending} of ${classStats(subjectClass).lessons}` : 'All settled' }}
-                    </div>
-                  </div>
+                <!-- One-line class summary -->
+                <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
+                  <span><span class="font-extrabold text-slate-900">{{ classStats(subjectClass).taughtPct }}%</span> of lesson time taught</span>
+                  <span v-if="classStats(subjectClass).pending > 0">
+                    <span class="font-extrabold text-amber-600">{{ classStats(subjectClass).pending }}</span>
+                    {{ classStats(subjectClass).pending === 1 ? 'lesson' : 'lessons' }} to compensate
+                  </span>
+                  <span v-else class="font-semibold text-emerald-600">All settled</span>
                 </div>
 
-                <!-- Weeks -->
-                <div class="space-y-3">
-                  <section
+                <!-- Week picker: colour shows how the week went, number is minutes lost -->
+                <div class="mb-3 flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="Weeks">
+                  <button
                     v-for="week in subjectClass.weeks"
                     :key="week.week_number"
-                    class="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                    type="button"
+                    role="tab"
+                    :aria-selected="String(selectedWeek(group, subjectClass)) === String(week.week_number)"
+                    @click="selectWeek(group, subjectClass, week.week_number)"
+                    class="flex w-14 flex-shrink-0 flex-col items-center rounded-lg border px-1 py-1 transition"
+                    :class="String(selectedWeek(group, subjectClass)) === String(week.week_number)
+                      ? 'border-slate-900 bg-slate-900 text-white shadow-sm'
+                      : weekTone(week).chip"
+                    :title="`Week ${week.week_number} · ${weekTone(week).label}${weekStats(week).lost ? ` · ${weekStats(week).lost} min lost` : ''}`"
                   >
-                    <header class="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-2">
-                      <span class="rounded-md bg-slate-900 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">
-                        Week {{ week.week_number }}
+                    <span class="text-[10px] font-semibold uppercase opacity-80">Wk {{ week.week_number }}</span>
+                    <span class="text-xs font-extrabold">{{ weekStats(week).lost > 0 ? weekStats(week).lost : '✓' }}</span>
+                  </button>
+                  <button
+                    v-if="subjectClass.weeks.length > 1"
+                    type="button"
+                    role="tab"
+                    :aria-selected="selectedWeek(group, subjectClass) === 'all'"
+                    @click="selectWeek(group, subjectClass, 'all')"
+                    class="flex flex-shrink-0 flex-col items-center justify-center rounded-lg border px-3 py-1 transition"
+                    :class="selectedWeek(group, subjectClass) === 'all'
+                      ? 'border-slate-900 bg-slate-900 text-white shadow-sm'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'"
+                    title="Overview of every week"
+                  >
+                    <span class="text-[10px] font-semibold uppercase opacity-80">All</span>
+                    <span class="text-xs font-extrabold">weeks</span>
+                  </button>
+                </div>
+
+                <!-- All weeks: one compact row per week, click to open it -->
+                <div
+                  v-if="selectedWeek(group, subjectClass) === 'all'"
+                  class="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                >
+                  <button
+                    v-for="week in subjectClass.weeks"
+                    :key="week.week_number"
+                    type="button"
+                    @click="selectWeek(group, subjectClass, week.week_number)"
+                    class="grid w-full grid-cols-[4.5rem_1fr_auto_1rem] items-center gap-3 border-b border-slate-100 px-3 py-2.5 text-left text-sm transition last:border-0 hover:bg-blue-50/50 sm:grid-cols-[5rem_4.5rem_1fr_5.5rem_9.5rem_1rem] sm:px-4"
+                  >
+                    <span class="font-bold text-slate-900">Week {{ week.week_number }}</span>
+                    <span class="hidden text-xs text-slate-500 sm:block">{{ plural(weekStats(week).lessons, 'lesson', 'lessons') }}</span>
+                    <span class="flex min-w-0 items-center gap-2">
+                      <span class="h-1.5 min-w-[3rem] flex-1 overflow-hidden rounded-full bg-slate-100">
+                        <span
+                          class="block h-full rounded-full"
+                          :class="weekStats(week).taughtPct >= 100 ? 'bg-emerald-500' : weekStats(week).taughtPct >= 90 ? 'bg-amber-400' : 'bg-rose-500'"
+                          :style="{ width: `${weekStats(week).taughtPct}%` }"
+                        ></span>
+                      </span>
+                      <span class="w-9 text-right text-xs font-semibold text-slate-600">{{ weekStats(week).taughtPct }}%</span>
+                    </span>
+                    <span class="whitespace-nowrap text-right font-extrabold" :class="weekStats(week).lost > 0 ? 'text-rose-600' : 'text-emerald-600'">
+                      {{ weekStats(week).lost > 0 ? `${weekStats(week).lost} min` : '✓' }}
+                    </span>
+                    <span class="hidden sm:block">
+                      <span class="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1" :class="weekTone(week).badge">
+                        {{ weekTone(week).label }}
+                      </span>
+                    </span>
+                    <span class="text-slate-400">›</span>
+                  </button>
+                </div>
+
+                <!-- Selected week's lessons -->
+                <section
+                  v-else-if="selectedWeekData(group, subjectClass)"
+                  class="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                >
+                  <header class="flex items-center justify-between gap-2 border-b border-slate-100 px-3 py-2 sm:px-4">
+                    <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                      <span class="text-sm font-extrabold text-slate-900">Week {{ selectedWeekData(group, subjectClass).week_number }}</span>
+                      <span class="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1" :class="weekTone(selectedWeekData(group, subjectClass)).badge">
+                        {{ weekTone(selectedWeekData(group, subjectClass)).label }}
                       </span>
                       <span class="text-xs text-slate-500">
-                        {{ week.entries.length }} {{ week.entries.length === 1 ? 'lesson' : 'lessons' }}
-                        <template v-if="getWeekTotalLost(week) > 0">
-                          · <span class="font-semibold text-rose-600">{{ formatMinutes(getWeekTotalLost(week)) }} lost</span>
-                        </template>
+                        {{ plural(weekStats(selectedWeekData(group, subjectClass)).lessons, 'lesson', 'lessons') }}
                       </span>
-                    </header>
+                    </div>
+                    <div class="flex flex-shrink-0 gap-1">
+                      <button
+                        type="button"
+                        @click="stepWeek(group, subjectClass, -1)"
+                        :disabled="!canStepWeek(group, subjectClass, -1)"
+                        class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50 disabled:opacity-30"
+                        aria-label="Previous week"
+                        title="Previous week"
+                      >‹</button>
+                      <button
+                        type="button"
+                        @click="stepWeek(group, subjectClass, 1)"
+                        :disabled="!canStepWeek(group, subjectClass, 1)"
+                        class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50 disabled:opacity-30"
+                        aria-label="Next week"
+                        title="Next week"
+                      >›</button>
+                    </div>
+                  </header>
 
                     <ul class="divide-y divide-slate-100">
                       <li
-                        v-for="entry in week.entries"
+                        v-for="entry in selectedWeekData(group, subjectClass).entries"
                         :key="entry.id"
                         class="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-3 transition hover:bg-slate-50 sm:px-4"
                       >
@@ -611,15 +673,12 @@
 
                         <!-- Lost, status, actions: one row under the time on phones -->
                         <div class="flex w-full flex-wrap items-center gap-2 border-t border-dashed border-slate-100 pt-2 sm:w-auto sm:flex-nowrap sm:gap-3 sm:border-0 sm:pt-0">
-                        <!-- "4 min lost" on one line on phones, stacked from tablet up -->
-                        <div class="flex items-baseline gap-1 whitespace-nowrap sm:block sm:w-20 sm:text-right">
-                          <div
-                            class="text-sm font-extrabold"
-                            :class="entry.minutes_lost > 0 ? 'text-rose-600' : 'text-emerald-600'"
-                          >
-                            {{ entry.minutes_lost > 0 ? `${entry.minutes_lost} min` : 'Full' }}
-                          </div>
-                          <div class="text-[10px] text-slate-500">{{ entry.minutes_lost > 0 ? 'lost' : 'lesson' }}</div>
+                        <!-- Lost minutes (blank when the lesson was fully taught; the status says Complete) -->
+                        <div class="whitespace-nowrap text-sm sm:w-24 sm:text-right">
+                          <template v-if="entry.minutes_lost > 0">
+                            <span class="font-extrabold text-rose-600">{{ entry.minutes_lost }} min</span>
+                            <span class="text-xs text-slate-500"> lost</span>
+                          </template>
                         </div>
 
                         <!-- Status -->
@@ -669,8 +728,7 @@
                         </div>
                       </li>
                     </ul>
-                  </section>
-                </div>
+                </section>
               </div>
             </div>
           </div>
@@ -1371,8 +1429,47 @@ const toggleAllClasses = (group) => {
   openClasses.value = next;
 };
 
-const classStats = (sc) => {
-  const entries = sc.weeks.flatMap(w => w.entries);
+const weekStats = (week) => entriesStats(week.entries);
+const classStats = (sc) => entriesStats(sc.weeks.flatMap(w => w.entries));
+
+// Chip / badge colours for a week: green = nothing lost, amber = lost but all compensated, red = still owed
+const weekTone = (week) => {
+  const s = weekStats(week);
+  if (s.lost === 0) {
+    return { chip: 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100', badge: 'bg-emerald-50 text-emerald-700 ring-emerald-200', label: 'Complete' };
+  }
+  if (s.pending === 0) {
+    return { chip: 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100', badge: 'bg-amber-50 text-amber-700 ring-amber-200', label: 'Compensated' };
+  }
+  return { chip: 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100', badge: 'bg-rose-50 text-rose-700 ring-rose-200', label: `${s.pending} to compensate` };
+};
+
+// Which week is open inside each expanded class. Until the user picks one, open the first
+// week that still needs compensation, otherwise the latest week.
+const selectedWeeks = ref({});
+const defaultWeek = (sc) => {
+  if (!sc.weeks.length) return null;
+  const owed = sc.weeks.find(w => weekStats(w).pending > 0);
+  return (owed || sc.weeks[sc.weeks.length - 1]).week_number;
+};
+const selectedWeek = (group, sc) => selectedWeeks.value[classOpenKey(group, sc)] ?? defaultWeek(sc);
+const selectWeek = (group, sc, weekNumber) => {
+  selectedWeeks.value = { ...selectedWeeks.value, [classOpenKey(group, sc)]: weekNumber };
+};
+const selectedWeekData = (group, sc) => {
+  const wk = selectedWeek(group, sc);
+  return wk === null ? null : sc.weeks.find(w => String(w.week_number) === String(wk)) || null;
+};
+const weekIndex = (group, sc) => sc.weeks.findIndex(w => String(w.week_number) === String(selectedWeek(group, sc)));
+const canStepWeek = (group, sc, dir) => {
+  const i = weekIndex(group, sc) + dir;
+  return i >= 0 && i < sc.weeks.length;
+};
+const stepWeek = (group, sc, dir) => {
+  if (canStepWeek(group, sc, dir)) selectWeek(group, sc, sc.weeks[weekIndex(group, sc) + dir].week_number);
+};
+
+const entriesStats = (entries) => {
   const expected = entries.reduce((s, e) => s + Number(e.expected_minutes || 0), 0);
   const actual = entries.reduce((s, e) => s + Number(e.actual_minutes || 0), 0);
   const lost = entries.reduce((s, e) => s + Number(e.minutes_lost || 0), 0);
@@ -2463,27 +2560,6 @@ onMounted(() => {
 
 .teacher-action:hover {
   background: rgba(255, 255, 255, 0.22);
-}
-
-.mini-stat {
-  border-radius: 0.75rem;
-  border: 1px solid rgb(226 232 240);
-  background: white;
-  padding: 0.6rem 0.8rem;
-}
-
-.mini-stat-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: rgb(100 116 139);
-}
-
-.mini-stat-value {
-  margin-top: 0.15rem;
-  font-size: 1rem;
-  font-weight: 800;
 }
 
 .stat-sub {
