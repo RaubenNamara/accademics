@@ -5,3 +5,6 @@ backend/uploads/*
 !backend/uploads/.gitkeep
 .DS_Store
 Thumbs.db
+
+# Per-server secrets
+backend/config/*.local.php

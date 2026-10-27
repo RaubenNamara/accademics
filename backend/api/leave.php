@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/../config/ApiGuard.php';
+api_guard();
 require_once '../config/Database.php';
 require_once '../config/HrHelpers.php';
 
@@ -37,9 +39,10 @@ try {
         }
 
         $sql = "
-            SELECT lr.*, e.hr_code, e.first_name, e.last_name, e.staff_type
+            SELECT lr.*, e.hr_code, e.first_name, e.last_name, e.staff_type, u.full_name AS approved_by_name
             FROM leave_requests lr
             INNER JOIN employees e ON e.id = lr.employee_id
+            LEFT JOIN users u ON u.id = lr.approved_by
             WHERE 1=1
         ";
         $params = [];

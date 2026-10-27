@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-5">
+  <div class="page">
     <ToastBanner />
     <PageHeader title="Event Management" subtitle="Manage school events and activities" @refresh="load" @add="openForm()" />
 
@@ -17,7 +17,7 @@
               <p class="text-sm text-slate-500 capitalize">{{ event.event_type.replace('_', ' ') }}</p>
             </div>
             <div class="flex gap-2">
-              <button class="text-blue-600 hover:text-blue-800" @click="openForm(event)">Edit</button>
+              <button class="text-brand-600 hover:text-brand-800" @click="openForm(event)">Edit</button>
               <button class="text-rose-600 hover:text-rose-800" @click="deleteEvent(event.id)">Delete</button>
             </div>
           </div>

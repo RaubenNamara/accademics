@@ -1,167 +1,234 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Header -->
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Subjects Management</h1>
-        <p class="mt-2 text-gray-600">Manage school subjects</p>
-      </div>
-
-      <!-- Add Subject Button -->
-      <div class="mb-6">
-        <button @click="showAddModal = true" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-          <Plus class="w-5 h-5 mr-2" />
-          Add New Subject
-        </button>
-      </div>
-
-      <!-- Subjects Table -->
-      <div class="bg-white shadow rounded-lg overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject Code</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject Name</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-if="loading">
-                <td colspan="4" class="px-6 py-4 text-center text-gray-500">Loading...</td>
-              </tr>
-              <tr v-else-if="subjects.length === 0">
-                <td colspan="4" class="px-6 py-4 text-center text-gray-500">No subjects found</td>
-              </tr>
-              <tr v-else v-for="subject in subjects" :key="subject.id" class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ subject.subject_code }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ subject.subject_name }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ formatDate(subject.created_at) }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button @click="editSubject(subject)" class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                  <button @click="deleteSubject(subject.id)" class="text-red-600 hover:text-red-900">Delete</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+  <div class="page">
+    <ToastBanner />
+    <div class="page-hero">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="page-hero-title">Subjects</h1>
         </div>
+        <button type="button" class="btn-hero-primary" @click="openForm()"><Plus class="h-4 w-4" />Add subject</button>
       </div>
+    </div>
 
-      <!-- Add/Edit Modal -->
-      <div v-if="showAddModal || showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">{{ showEditModal ? 'Edit Subject' : 'Add New Subject' }}</h2>
-          </div>
-          <form @submit.prevent="saveSubject" class="p-6 space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Subject Code</label>
-              <input v-model="formData.subject_code" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" placeholder="e.g., MATH" required>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Subject Name</label>
-              <input v-model="formData.subject_name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Mathematics" required>
-            </div>
-            <div v-if="errorMessage" class="text-red-600 text-sm">{{ errorMessage }}</div>
-            <div class="flex justify-end gap-3 pt-4">
-              <button type="button" @click="closeModal" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
-              <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
-            </div>
-          </form>
-        </div>
+    <StatCards :cards="stats" />
+
+    <ListToolbar v-model:search="q" placeholder="Search subject name or code" :filter-count="level ? 1 : 0" @clear="level = ''">
+      <template #filters>
+        <label class="block">
+          <span class="filter-label">Offered at</span>
+          <select v-model="level" class="input py-2">
+            <option value="">Any level</option>
+            <option value="O-Level">O-Level</option>
+            <option value="A-Level">A-Level</option>
+            <option value="none">Not offered</option>
+          </select>
+        </label>
+      </template>
+      <template #actions>
+        <RouterLink to="/academic-calendar" class="tool-btn" title="Choose the subjects each level offers"><Settings2 class="h-4 w-4" /><span class="hidden lg:inline">Levels &amp; compulsory</span></RouterLink>
+      </template>
+    </ListToolbar>
+
+    <section class="card overflow-hidden">
+      <div v-if="loading" class="px-5 py-12 text-center text-sm text-gray-500">Loading…</div>
+      <div v-else-if="!shown.length" class="px-5 py-14 text-center">
+        <BookOpen class="mx-auto h-9 w-9 text-gray-300" />
+        <p class="mt-2 text-sm font-medium text-gray-700">{{ subjects.length ? 'No subjects match' : 'No subjects yet' }}</p>
       </div>
+      <template v-else>
+        <table class="hidden w-full text-left text-sm md:table">
+          <thead class="border-b border-gray-200 bg-gray-50/70">
+            <tr class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              <th class="px-5 py-3">Subject</th>
+              <th class="px-4 py-3">O-Level</th>
+              <th class="px-4 py-3">A-Level</th>
+              <th class="px-4 py-3">Teachers</th>
+              <th class="w-12 px-3 py-3"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="s in shown" :key="s.id" class="transition hover:bg-brand-50/40">
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-3">
+                  <span class="code-badge">{{ s.subject_code }}</span>
+                  <span class="font-medium text-gray-900">{{ s.subject_name }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-3"><span class="pill" :class="levelPill(s, 'O-Level').style">{{ levelPill(s, 'O-Level').label }}</span></td>
+              <td class="px-4 py-3"><span class="pill" :class="levelPill(s, 'A-Level').style">{{ levelPill(s, 'A-Level').label }}</span></td>
+              <td class="px-4 py-3 tabular-nums" :class="teacherCount(s) ? 'text-gray-800' : 'text-amber-700'">{{ teacherCount(s) || 'None yet' }}</td>
+              <td class="px-3 py-3 text-right"><RowActionsMenu :label="`Actions for ${s.subject_name}`" :items="actions(s)" /></td>
+            </tr>
+          </tbody>
+        </table>
+        <ul class="divide-y divide-gray-100 md:hidden">
+          <li v-for="s in shown" :key="s.id" class="flex items-start gap-3 px-4 py-3">
+            <span class="code-badge mt-0.5">{{ s.subject_code }}</span>
+            <div class="min-w-0 flex-1">
+              <p class="font-medium text-gray-900">{{ s.subject_name }}</p>
+              <div class="mt-1 flex flex-wrap gap-1.5">
+                <span class="pill" :class="levelPill(s, 'O-Level').style">O: {{ levelPill(s, 'O-Level').label }}</span>
+                <span class="pill" :class="levelPill(s, 'A-Level').style">A: {{ levelPill(s, 'A-Level').label }}</span>
+                <span class="text-xs text-gray-500">{{ teacherCount(s) }} teacher(s)</span>
+              </div>
+            </div>
+            <RowActionsMenu :label="`Actions for ${s.subject_name}`" :items="actions(s)" />
+          </li>
+        </ul>
+      </template>
+    </section>
+
+    <!-- Add / edit -->
+    <div v-if="form" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="form = null">
+      <form class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" @submit.prevent="save">
+        <h2 class="text-lg font-semibold text-gray-900">{{ form.id ? 'Edit subject' : 'Add subject' }}</h2>
+        <div class="mt-4 space-y-4">
+          <label class="block">
+            <span class="field-label">Name</span>
+            <input v-model="form.subject_name" class="input" placeholder="e.g. Mathematics" required>
+          </label>
+          <label class="block">
+            <span class="field-label">Code</span>
+            <input v-model="form.subject_code" class="input uppercase" placeholder="e.g. MATHS" required>
+          </label>
+        </div>
+        <p v-if="!form.id" class="mt-3 text-xs text-gray-500">New subjects are offered at both levels; change that under Settings → Terms &amp; Years.</p>
+        <p v-if="formError" class="mt-3 text-sm text-red-600">{{ formError }}</p>
+        <div class="mt-5 flex justify-end gap-2">
+          <button type="button" class="btn-secondary" @click="form = null">Cancel</button>
+          <button type="submit" class="btn-primary" :disabled="saving">{{ saving ? 'Saving…' : 'Save' }}</button>
+        </div>
+      </form>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { Plus } from 'lucide-vue-next';
-import { subjectsNewAPI } from '../services/api';
+import { computed, onMounted, ref } from 'vue';
+import { BookOpen, GraduationCap, Pencil, Plus, Settings2, Trash2, UserX } from 'lucide-vue-next';
+import ToastBanner from '../components/hr/ToastBanner.vue';
+import StatCards from '../components/ui/StatCards.vue';
+import ListToolbar from '../components/ui/ListToolbar.vue';
+import RowActionsMenu from '../components/RowActionsMenu.vue';
+import { academicCalendarAPI, subjectDepartmentsAPI, subjectsNewAPI } from '../services/api';
+import { useToast } from '../composables/useToast.js';
 
+const { showToast } = useToast();
 const subjects = ref([]);
-const loading = ref(false);
-const showAddModal = ref(false);
-const showEditModal = ref(false);
-const editingId = ref(null);
-const errorMessage = ref('');
+const levels = ref({ offered: {}, compulsory: {} });
+const teachers = ref({});
+const loading = ref(true);
+const q = ref('');
+const level = ref('');
+const form = ref(null);
+const formError = ref('');
+const saving = ref(false);
 
-const formData = ref({
-  subject_code: '',
-  subject_name: ''
+const errorText = (e, fallback) => e?.response?.data?.error || e?.response?.data?.message || fallback;
+const idsAt = (kind, lv) => new Set((levels.value[kind]?.[lv] || []).map((s) => Number(s.id)));
+const offeredAt = (s, lv) => idsAt('offered', lv).has(Number(s.id));
+const levelPill = (s, lv) => {
+  if (idsAt('compulsory', lv).has(Number(s.id))) return { label: 'Compulsory', style: 'bg-brand-600 text-white' };
+  if (offeredAt(s, lv)) return { label: 'Offered', style: 'bg-brand-50 text-brand-800 ring-1 ring-brand-100' };
+  return { label: 'Not offered', style: 'bg-gray-100 text-gray-500' };
+};
+const teacherCount = (s) => teachers.value[Number(s.id)] || 0;
+
+const shown = computed(() => {
+  const term = q.value.trim().toLowerCase();
+  return subjects.value.filter((s) => {
+    if (term && !`${s.subject_name} ${s.subject_code}`.toLowerCase().includes(term)) return false;
+    if (level.value === 'none') return !offeredAt(s, 'O-Level') && !offeredAt(s, 'A-Level');
+    return !level.value || offeredAt(s, level.value);
+  }).sort((a, b) => a.subject_name.localeCompare(b.subject_name));
 });
+const stats = computed(() => {
+  const toggle = (v) => () => { level.value = level.value === v ? '' : v; };
+  return [
+    { label: 'Subjects', value: subjects.value.length, icon: BookOpen },
+    { label: 'O-Level offers', value: subjects.value.filter((s) => offeredAt(s, 'O-Level')).length, icon: GraduationCap, tone: 'sky', onClick: toggle('O-Level'), active: level.value === 'O-Level' },
+    { label: 'A-Level offers', value: subjects.value.filter((s) => offeredAt(s, 'A-Level')).length, icon: GraduationCap, tone: 'amber', onClick: toggle('A-Level'), active: level.value === 'A-Level' },
+    { label: 'Without teachers', value: subjects.value.filter((s) => !teacherCount(s)).length, icon: UserX, tone: 'gray' },
+  ];
+});
+const actions = (s) => [
+  { label: 'Edit', icon: Pencil, onClick: () => openForm(s) },
+  { label: 'Delete', icon: Trash2, danger: true, onClick: () => remove(s) },
+];
 
-const loadSubjects = async () => {
+async function load() {
   loading.value = true;
   try {
-    const response = await subjectsNewAPI.getAll();
-    subjects.value = response.data || [];
-  } catch (error) {
-    console.error('Error loading subjects:', error);
+    const [subs, lv, depts] = await Promise.all([
+      subjectsNewAPI.getAll(),
+      academicCalendarAPI.compulsory().catch(() => null),
+      subjectDepartmentsAPI.getAll().catch(() => null),
+    ]);
+    subjects.value = subs.data || [];
+    if (lv) levels.value = lv.data;
+    if (depts) teachers.value = Object.fromEntries(depts.data.subjects.map((s) => [Number(s.id), s.teachers.length]));
+  } catch (e) {
+    showToast(errorText(e, 'Could not load subjects'), 'error');
   } finally {
     loading.value = false;
   }
-};
-
-const saveSubject = async () => {
-  errorMessage.value = '';
+}
+function openForm(s = null) {
+  formError.value = '';
+  form.value = s ? { id: s.id, subject_name: s.subject_name, subject_code: s.subject_code } : { id: null, subject_name: '', subject_code: '' };
+}
+async function save() {
+  saving.value = true;
+  formError.value = '';
   try {
-    if (showEditModal.value) {
-      await subjectsNewAPI.update({
-        id: editingId.value,
-        ...formData.value
-      });
-    } else {
-      await subjectsNewAPI.create(formData.value);
-    }
-    closeModal();
-    await loadSubjects();
-  } catch (error) {
-    console.error('Error saving subject:', error);
-    errorMessage.value = error.response?.data?.error || 'Failed to save subject';
+    const data = { subject_name: form.value.subject_name.trim(), subject_code: form.value.subject_code.trim().toUpperCase() };
+    if (form.value.id) await subjectsNewAPI.update({ id: form.value.id, ...data });
+    else await subjectsNewAPI.create(data);
+    showToast(form.value.id ? 'Subject updated' : `${data.subject_name} added`);
+    form.value = null;
+    await load();
+  } catch (e) {
+    formError.value = errorText(e, 'Could not save the subject');
+  } finally {
+    saving.value = false;
   }
-};
-
-const editSubject = (subject) => {
-  editingId.value = subject.id;
-  formData.value = {
-    subject_code: subject.subject_code,
-    subject_name: subject.subject_name
-  };
-  showEditModal.value = true;
-};
-
-const deleteSubject = async (id) => {
-  if (!confirm('Are you sure you want to delete this subject?')) return;
-  
+}
+async function remove(s) {
+  const n = teacherCount(s);
+  if (!confirm(`Delete ${s.subject_name}?${n ? ` ${n} teacher(s) are in its department.` : ''} Marks, timetable lessons and curriculum topics for it are removed too. This cannot be undone.`)) return;
   try {
-    await subjectsNewAPI.delete(id);
-    await loadSubjects();
-  } catch (error) {
-    console.error('Error deleting subject:', error);
-    alert('Failed to delete subject');
+    await subjectsNewAPI.delete(s.id);
+    showToast(`${s.subject_name} deleted`);
+    await load();
+  } catch (e) {
+    showToast(errorText(e, 'Could not delete the subject'), 'error');
   }
-};
+}
 
-const closeModal = () => {
-  showAddModal.value = false;
-  showEditModal.value = false;
-  editingId.value = null;
-  formData.value = {
-    subject_code: '',
-    subject_name: ''
-  };
-  errorMessage.value = '';
-};
-
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString();
-};
-
-onMounted(() => {
-  loadSubjects();
-});
+onMounted(load);
 </script>
 
+<style scoped>
+.field-label { @apply mb-1 block text-sm font-medium text-gray-700; }
+.filter-label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500; }
+.pill { @apply inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold; }
+.tool-btn { @apply inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50; }
+</style>
+
+<style scoped>
+/* dark mode: generated by scripts/build-dark-overrides.cjs */
+html.dark .field-label {
+  color: var(--d-text-2);
+}
+html.dark .filter-label {
+  color: var(--d-muted);
+}
+html.dark .tool-btn {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+  color: var(--d-text-2);
+}
+html.dark .tool-btn:hover {
+  background-color: var(--d-sunken);
+}
+</style>

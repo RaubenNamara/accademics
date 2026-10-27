@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/../config/ApiGuard.php';
+api_guard();
 require_once '../config/Database.php';
 require_once '../config/JWT.php';
 
@@ -207,7 +209,9 @@ try {
     $action = $_GET['action'] ?? '';
 
     if ($method === 'GET') {
-        if ($action === 'view') {
+        if ($action === 'summary') {
+            studentSummary($db);
+        } elseif ($action === 'view') {
             getStudent($db);
         } elseif ($action === 'search') {
             searchStudents($db);
@@ -246,6 +250,36 @@ try {
     ]);
 }
 
+/**
+ * Which students a list shows (?status=…): "current" (default) = in school plus those who completed
+ * S.4 and may return for A-Level (shown greyed); or one status; or "all".
+ */
+function studentStatusCondition(): string
+{
+    $status = trim((string)($_GET['status'] ?? 'current'));
+    $known = ['active', 'completed_o_level', 'completed_a_level', 'left'];
+    if ($status === 'all') {
+        return '';
+    }
+    if (in_array($status, $known, true)) {
+        return "status = '$status'";
+    }
+    return "status IN ('active', 'completed_o_level')";
+}
+
+/** Whole-school counts for the E-files summary cards. */
+function studentSummary(PDO $db): void
+{
+    $row = $db->query("SELECT
+            SUM(status = 'active') AS active,
+            SUM(status = 'active' AND level = 'O-Level') AS o_level,
+            SUM(status = 'active' AND level = 'A-Level') AS a_level,
+            SUM(status = 'completed_o_level') AS completed_o_level,
+            SUM(status = 'completed_a_level') AS completed_a_level
+        FROM students")->fetch(PDO::FETCH_ASSOC);
+    sendJson(200, ["success" => true, "data" => array_map("intval", $row)]);
+}
+
 function getStudents(PDO $db): void
 {
     $class  = trim((string)($_GET['class'] ?? ''));
@@ -273,6 +307,11 @@ function getStudents(PDO $db): void
         $params[':level'] = $level;
     }
 
+    $statusSql = studentStatusCondition();
+    if ($statusSql !== '') {
+        $conditions[] = $statusSql;
+    }
+
     $whereSql = $conditions ? ('WHERE ' . implode(' AND ', $conditions)) : '';
 
     $countSql = "SELECT COUNT(*) AS total FROM students $whereSql";
@@ -291,6 +330,7 @@ function getStudents(PDO $db): void
             s.`class`,
             s.stream,
             s.level,
+            s.status,
             s.enrollment_date,
             s.former_school,
             s.former_school_support_doc,
@@ -308,7 +348,7 @@ function getStudents(PDO $db): void
             ) AS parent_count
         FROM students s
         $whereSql
-        ORDER BY s.full_name ASC
+        ORDER BY (s.status = 'active') DESC, s.full_name ASC
         LIMIT :limit OFFSET :offset
     ";
 
@@ -354,6 +394,11 @@ function exportStudents(PDO $db): void
         $params[':level'] = $level;
     }
 
+    $statusSql = studentStatusCondition();
+    if ($statusSql !== '') {
+        $conditions[] = $statusSql;
+    }
+
     $whereSql = $conditions ? ('WHERE ' . implode(' AND ', $conditions)) : '';
 
     $sql = "
@@ -365,6 +410,7 @@ function exportStudents(PDO $db): void
             s.`class`,
             s.stream,
             s.level,
+            s.status,
             s.enrollment_date,
             s.lin,
             s.former_school,
@@ -467,6 +513,7 @@ function searchStudents(PDO $db): void
             s.`class`,
             s.stream,
             s.level,
+            s.status,
             s.former_school,
             s.former_school_support_doc,
             s.behaviour_notes,
@@ -527,6 +574,9 @@ function createStudent(PDO $db): void
     // Handle profile picture
     $profilePicturePath = saveUploadedFile('profile_picture');
 
+    // The single-file column keeps the first former-school document (all of them go to their own table).
+    $formerSchoolDoc = $formerSchoolDocuments[0]['file_path'] ?? null;
+
     $query = "
         INSERT INTO students (
             admission_number,
@@ -555,7 +605,7 @@ function createStudent(PDO $db): void
         $data['admission_number'],
         $data['full_name'],
         $data['gender'],
-        $data['date_of_birth'],
+        $data['date_of_birth'] ?? null,
         $data['class'],
         $data['stream'],
         $data['level'],
@@ -754,7 +804,7 @@ function updateStudent(PDO $db): void
         $data['admission_number'],
         $data['full_name'],
         $data['gender'],
-        $data['date_of_birth'],
+        $data['date_of_birth'] ?? null,
         $data['class'],
         $data['stream'],
         $data['level'],

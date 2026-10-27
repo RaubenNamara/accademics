@@ -1,360 +1,132 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-4 sm:p-6 lg:p-8">
+  <div class="page">
     <!-- Toast Notifications -->
     <ToastBanner />
 
     <!-- Page Header -->
-    <div class="mb-8">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="page-hero">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-900 via-blue-700 to-blue-900 bg-clip-text text-transparent">
-            Non-Teaching Staff Management
-          </h1>
-          <p class="mt-2 text-slate-600 text-sm sm:text-base">
-            Complete HR system for managing non-teaching staff members
-          </p>
+          <h1 class="page-hero-title">Non-Teaching Staff</h1>
         </div>
-        <div class="flex flex-wrap items-center gap-3">
-          <button
-            @click="openImportModal"
-            class="px-4 py-2.5 bg-white border-2 border-blue-200 text-blue-700 rounded-xl font-semibold hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-            Import
-          </button>
-          <button
-            @click="exportToExcel"
-            class="px-4 py-2.5 bg-white border-2 border-green-200 text-green-700 rounded-xl font-semibold hover:bg-green-50 hover:border-green-300 transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Export
-          </button>
-          <button
-            @click="openModal()"
-            class="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Add Staff
-          </button>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="btn-hero" @click="openImportModal"><Upload class="h-4 w-4" />Import</button>
+          <button type="button" class="btn-hero-primary" @click="openModal()"><Plus class="h-4 w-4" />Add staff</button>
         </div>
       </div>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-      <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-slate-100">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-semibold text-slate-600 uppercase tracking-wide">Total Staff</p>
-            <p class="text-3xl font-bold text-slate-900 mt-2">{{ staff.length }}</p>
-          </div>
-          <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-          </div>
-        </div>
-      </div>
+    <StatCards :cards="statCards" />
 
-      <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-slate-100">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-semibold text-slate-600 uppercase tracking-wide">Active Staff</p>
-            <p class="text-3xl font-bold text-emerald-600 mt-2">{{ activeCount }}</p>
-          </div>
-          <div class="w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-slate-100">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-semibold text-slate-600 uppercase tracking-wide">Inactive Staff</p>
-            <p class="text-3xl font-bold text-amber-600 mt-2">{{ inactiveCount }}</p>
-          </div>
-          <div class="w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg">
-            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-slate-100">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-semibold text-slate-600 uppercase tracking-wide">Departments</p>
-            <p class="text-3xl font-bold text-purple-600 mt-2">{{ departments.length }}</p>
-          </div>
-          <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Filters Section -->
-    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-slate-100">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div class="lg:col-span-2">
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Search</label>
-          <div class="relative">
-            <input
-              v-model="filters.search"
-              type="text"
-              placeholder="Search by name, code, email, contact..."
-              class="w-full pl-11 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
-            />
-            <svg class="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Department</label>
-          <select
-            v-model="filters.department_id"
-            class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none bg-white"
-          >
-            <option value="">All Departments</option>
-            <option v-for="d in departments" :key="d.id" :value="String(d.id)">
-              {{ d.name }}
-            </option>
+    <ListToolbar
+      v-model:search="filters.search"
+      placeholder="Search name, code, email, phone…"
+      :filter-count="[filters.department_id, filters.employment_type, filters.staff_status].filter(Boolean).length"
+      @clear="filters.department_id = ''; filters.employment_type = ''; filters.staff_status = ''"
+    >
+      <template #filters>
+        <label class="block">
+          <span class="filter-label">Department</span>
+          <select v-model="filters.department_id" class="input py-2">
+            <option value="">All departments</option>
+            <option v-for="d in departments" :key="d.id" :value="String(d.id)">{{ d.name }}</option>
           </select>
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Employment Type</label>
-          <select
-            v-model="filters.employment_type"
-            class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none bg-white"
-          >
-            <option
-              v-for="option in employmentTypeOptions"
-              :key="option.value || 'all-types'"
-              :value="option.value"
-            >
-              {{ option.label }}
-            </option>
+        </label>
+        <label class="block">
+          <span class="filter-label">Employment</span>
+          <select v-model="filters.employment_type" class="input py-2">
+            <option v-for="option in employmentTypeOptions" :key="option.value || 'all-types'" :value="option.value">{{ option.label }}</option>
           </select>
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Status</label>
-          <select
-            v-model="filters.staff_status"
-            class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none bg-white"
-          >
-            <option value="">All Status</option>
+        </label>
+        <label class="block">
+          <span class="filter-label">Status</span>
+          <select v-model="filters.staff_status" class="input py-2">
+            <option value="">Any status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
-            <option value="on_leave">On Leave</option>
+            <option value="on_leave">On leave</option>
           </select>
-        </div>
-      </div>
-    </div>
+        </label>
+      </template>
+      <template #actions>
+        <button type="button" class="tool-btn" :disabled="!filteredStaff.length" title="Download Excel" @click="exportToExcel"><FileSpreadsheet class="h-4 w-4" /><span class="hidden lg:inline">Excel</span></button>
+      </template>
+    </ListToolbar>
 
-    <!-- Staff Table -->
-    <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-slate-100">
-      <div v-if="loading" class="flex items-center justify-center py-20">
-        <div class="text-center">
-          <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-          <p class="mt-4 text-slate-600 font-medium">Loading staff...</p>
-        </div>
+    <section class="card overflow-hidden">
+      <div v-if="loading" class="space-y-3 p-5">
+        <div v-for="i in 5" :key="i" class="flex animate-pulse items-center gap-3"><div class="h-10 w-10 rounded-full bg-gray-100"></div><div class="h-3 flex-1 rounded bg-gray-100"></div></div>
       </div>
-
-      <div v-else-if="filteredStaff.length === 0" class="text-center py-20">
-        <svg class="w-20 h-20 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-        </svg>
-        <p class="text-slate-600 font-medium text-lg">No staff members found</p>
-        <p class="text-slate-500 text-sm mt-2">Try adjusting your filters or add new staff</p>
+      <div v-else-if="filteredStaff.length === 0" class="px-5 py-14 text-center">
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 text-gray-400"><UsersIcon class="h-7 w-7" /></div>
+        <p class="mt-3 font-semibold text-gray-800">No staff found</p>
+        <p class="mt-1 text-sm text-gray-500">Try other filters, or add staff.</p>
       </div>
-
-      <div v-else class="overflow-x-auto">
-        <table class="w-full">
-          <thead class="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white sticky top-0 z-10">
-            <tr>
-              <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Photo</th>
-              <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Staff Code</th>
-              <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Full Name</th>
-              <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Gender</th>
-              <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Contact</th>
-              <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Email</th>
-              <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Department</th>
-              <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Position</th>
-              <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Employment</th>
-              <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Status</th>
-              <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Date Joined</th>
-              <th class="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider">Actions</th>
+      <template v-else>
+        <table class="hidden w-full text-left text-sm md:table">
+          <thead class="border-b border-gray-200 bg-gray-50/70">
+            <tr class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              <th class="px-5 py-3">Staff member</th>
+              <th class="px-4 py-3">Department &amp; role</th>
+              <th class="hidden px-4 py-3 xl:table-cell">Contact</th>
+              <th class="hidden px-4 py-3 lg:table-cell">Employment</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="hidden px-4 py-3 xl:table-cell">Joined</th>
+              <th class="w-12 px-3 py-3"><span class="sr-only">Actions</span></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr
-              v-for="s in paginatedStaff"
-              :key="s.id"
-              class="hover:bg-blue-50 transition-colors duration-150"
-            >
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 border-2 border-slate-200 flex items-center justify-center">
-                  <img
-                    v-if="s.passport_photo"
-                    :src="s.passport_photo"
-                    alt="Profile"
-                    class="w-full h-full object-cover"
-                  />
-                  <svg v-else class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="s in paginatedStaff" :key="s.id" class="transition hover:bg-brand-50/40">
+              <td class="px-5 py-3">
+                <button type="button" class="flex min-w-0 items-center gap-3 text-left" @click="viewStaff(s)">
+                  <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-50 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">
+                    <img v-if="s.passport_photo" :src="s.passport_photo" alt="" class="h-full w-full object-cover" />
+                    <template v-else>{{ initials(`${s.first_name} ${s.last_name}`) }}</template>
+                  </span>
+                  <span class="min-w-0">
+                    <span class="block truncate font-semibold text-gray-900 hover:text-brand-700">{{ s.first_name }} {{ s.last_name }}</span>
+                    <span class="flex items-center gap-1.5 text-xs text-gray-500">
+                      <span class="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[11px] text-gray-700">{{ s.hr_code || 'No code' }}</span>
+                      <span class="hidden max-w-[14rem] truncate lg:inline">{{ s.email || '' }}</span>
+                    </span>
+                  </span>
+                </button>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-3 py-1.5 bg-blue-100 text-blue-800 rounded-lg text-sm font-bold">
-                  {{ s.hr_code || 'N/A' }}
+              <td class="px-4 py-3">
+                <p class="font-medium text-gray-800">{{ s.department_name || '-' }}</p>
+                <p class="text-xs text-gray-500">{{ s.role_name || 'No role' }}</p>
+              </td>
+              <td class="hidden whitespace-nowrap px-4 py-3 text-gray-700 xl:table-cell">{{ s.phone_number || '-' }}</td>
+              <td class="hidden px-4 py-3 lg:table-cell"><span class="whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="getEmploymentTypeBadgeClass(s)">{{ getEmploymentTypeLabel(s) }}</span></td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium" :class="STATUS[statusOf(s)].text">
+                  <span class="h-2 w-2 rounded-full" :class="STATUS[statusOf(s)].dot"></span>{{ STATUS[statusOf(s)].label }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="font-semibold text-slate-900">{{ s.first_name }} {{ s.last_name }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-slate-700">
-                {{ s.gender || '—' }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-slate-700">
-                {{ s.phone_number || '—' }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-slate-700">
-                {{ s.email || '—' }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-slate-700">
-                {{ s.department_name || '—' }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-slate-700">
-                {{ s.role_name || '—' }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span
-                  class="px-2.5 py-1 rounded-lg text-xs font-semibold"
-                  :class="getEmploymentTypeBadgeClass(s)"
-                >
-                  {{ getEmploymentTypeLabel(s) }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span
-                  class="px-2.5 py-1 rounded-lg text-xs font-semibold"
-                  :class="{
-                    'bg-emerald-100 text-emerald-800': (s.staff_status || s.status) === 'active',
-                    'bg-red-100 text-red-800': (s.staff_status || s.status) === 'inactive',
-                    'bg-amber-100 text-amber-800': s.staff_status === 'on_leave'
-                  }"
-                >
-                  {{ (s.staff_status || s.status || 'N/A').toUpperCase() }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-slate-700">
-                {{ s.date_joined || '—' }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right">
-                <div class="flex items-center justify-end gap-2">
-                  <button
-                    @click="viewStaff(s)"
-                    class="p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors duration-150"
-                    title="View Details"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </button>
-                  <button
-                    @click="openModal(s)"
-                    class="p-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors duration-150"
-                    title="Edit"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                  <button
-                    @click="toggleStatus(s)"
-                    class="p-2 rounded-lg transition-colors duration-150"
-                    :class="(s.staff_status || s.status) === 'active' ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'"
-                    :title="(s.staff_status || s.status) === 'active' ? 'Deactivate' : 'Activate'"
-                  >
-                    <svg v-if="(s.staff_status || s.status) === 'active'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                    </svg>
-                    <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
-                  <button
-                    @click="deleteStaff(s)"
-                    class="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-150"
-                    title="Delete"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              </td>
+              <td class="hidden whitespace-nowrap px-4 py-3 text-gray-600 xl:table-cell">{{ s.date_joined || '-' }}</td>
+              <td class="px-3 py-3 text-right"><RowActionsMenu :label="`Actions for ${s.first_name} ${s.last_name}`" :items="rowActions(s)" /></td>
             </tr>
           </tbody>
         </table>
-      </div>
-
-      <!-- Pagination -->
-      <div v-if="filteredStaff.length > 0" class="bg-slate-50 px-6 py-4 border-t border-slate-200">
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div class="text-sm text-slate-600">
-            Showing <span class="font-semibold text-slate-900">{{ (page - 1) * perPage + 1 }}</span> to
-            <span class="font-semibold text-slate-900">{{ Math.min(page * perPage, filteredStaff.length) }}</span> of
-            <span class="font-semibold text-slate-900">{{ filteredStaff.length }}</span> results
-          </div>
-          <div class="flex items-center gap-2">
-            <button
-              @click="page--"
-              :disabled="page === 1"
-              class="px-4 py-2 bg-white border-2 border-slate-200 rounded-lg font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-            >
-              Previous
+        <ul class="divide-y divide-gray-100 md:hidden">
+          <li v-for="s in paginatedStaff" :key="s.id" class="flex items-start gap-3 px-4 py-3">
+            <span class="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-50 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">
+              <img v-if="s.passport_photo" :src="s.passport_photo" alt="" class="h-full w-full object-cover" />
+              <template v-else>{{ initials(`${s.first_name} ${s.last_name}`) }}</template>
+            </span>
+            <button type="button" class="min-w-0 flex-1 text-left" @click="viewStaff(s)">
+              <p class="truncate font-semibold text-gray-900">{{ s.first_name }} {{ s.last_name }}</p>
+              <p class="text-xs text-gray-500">{{ s.hr_code || 'No code' }} · {{ s.department_name || 'No department' }}</p>
+              <span class="mt-1 inline-flex items-center gap-1 text-[11px] font-medium" :class="STATUS[statusOf(s)].text">
+                <span class="h-1.5 w-1.5 rounded-full" :class="STATUS[statusOf(s)].dot"></span>{{ STATUS[statusOf(s)].label }}
+              </span>
             </button>
-            <div class="flex items-center gap-1">
-              <button
-                v-for="p in visiblePages"
-                :key="p"
-                @click="page = p"
-                class="w-10 h-10 rounded-lg font-semibold transition-all duration-200"
-                :class="page === p ? 'bg-blue-600 text-white shadow-lg' : 'bg-white border-2 border-slate-200 text-slate-700 hover:bg-slate-50'"
-              >
-                {{ p }}
-              </button>
-            </div>
-            <button
-              @click="page++"
-              :disabled="page === totalPages"
-              class="px-4 py-2 bg-white border-2 border-slate-200 rounded-lg font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            <RowActionsMenu :label="`Actions for ${s.first_name} ${s.last_name}`" :items="rowActions(s)" />
+          </li>
+        </ul>
+      </template>
+      <PagerBar v-model:page="page" v-model:per-page="perPage" :total="filteredStaff.length" />
+    </section>
 
     <!-- Add/Edit Modal -->
     <Teleport to="body">
@@ -367,9 +139,9 @@
           <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
             <div class="fixed inset-0 transition-opacity bg-slate-900 bg-opacity-75 backdrop-blur-sm" @click="closeModal"></div>
 
-            <div class="relative inline-block w-full max-w-5xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl">
+            <div class="relative inline-block w-full max-w-5xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl">
               <!-- Modal Header -->
-              <div class="sticky top-0 z-10 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 px-8 py-6">
+              <div class="sticky top-0 z-10 bg-brand-900 px-8 py-6">
                 <div class="flex items-center justify-between">
                   <h3 class="text-2xl font-bold text-white">
                     {{ form.id ? 'Edit Staff Member' : 'Add New Staff Member' }}
@@ -390,8 +162,8 @@
                 <!-- Personal Information -->
                 <div class="mb-8">
                   <h4 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
+                      <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </div>
@@ -442,7 +214,7 @@
                           <button
                             @click="$refs.profilePictureInput.click()"
                             type="button"
-                            class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-semibold hover:bg-blue-200 transition-colors"
+                            class="px-4 py-2 bg-brand-100 text-brand-700 rounded-lg font-semibold hover:bg-brand-200 transition-colors"
                           >
                             Choose Photo
                           </button>
@@ -456,7 +228,7 @@
                         v-model.trim="form.full_name"
                         type="text"
                         required
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="Enter full name"
                       />
                     </div>
@@ -464,7 +236,7 @@
                       <label class="block text-sm font-semibold text-slate-700 mb-2">Gender</label>
                       <select
                         v-model="form.gender"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none bg-white"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none bg-white"
                       >
                         <option value="">Select Gender</option>
                         <option value="Male">Male</option>
@@ -477,7 +249,7 @@
                       <input
                         v-model="form.date_of_birth"
                         type="date"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                       />
                     </div>
                     <div>
@@ -485,7 +257,7 @@
                       <input
                         v-model.trim="form.national_id"
                         type="text"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="Enter national ID"
                       />
                     </div>
@@ -494,7 +266,7 @@
                       <input
                         v-model.trim="form.nationality"
                         type="text"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="Enter nationality"
                       />
                     </div>
@@ -502,7 +274,7 @@
                       <label class="block text-sm font-semibold text-slate-700 mb-2">Marital Status</label>
                       <select
                         v-model="form.marital_status"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none bg-white"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none bg-white"
                       >
                         <option value="">Select Status</option>
                         <option value="Single">Single</option>
@@ -516,7 +288,7 @@
                       <input
                         v-model.trim="form.religion"
                         type="text"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="Enter religion"
                       />
                     </div>
@@ -539,7 +311,7 @@
                       <input
                         v-model.trim="form.email"
                         type="email"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="email@example.com"
                       />
                     </div>
@@ -548,7 +320,7 @@
                       <input
                         v-model.trim="form.phone_number"
                         type="tel"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="+256 700 000000"
                       />
                     </div>
@@ -557,7 +329,7 @@
                       <input
                         v-model.trim="form.alternative_phone"
                         type="tel"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="+256 700 000000"
                       />
                     </div>
@@ -566,7 +338,7 @@
                       <input
                         v-model.trim="form.district"
                         type="text"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="Enter district"
                       />
                     </div>
@@ -575,7 +347,7 @@
                       <textarea
                         v-model.trim="form.address"
                         rows="2"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none resize-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none resize-none"
                         placeholder="Enter full address"
                       ></textarea>
                     </div>
@@ -584,7 +356,7 @@
                       <input
                         v-model.trim="form.emergency_contact_name"
                         type="text"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="Enter emergency contact name"
                       />
                     </div>
@@ -593,7 +365,7 @@
                       <input
                         v-model.trim="form.emergency_contact_phone"
                         type="tel"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="+256 700 000000"
                       />
                     </div>
@@ -603,8 +375,8 @@
                 <!-- Employment Type -->
                 <div class="mb-8">
                   <h4 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                      <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
+                      <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h0a4 4 0 014 4v2m-4-8a4 4 0 100-8 4 4 0 000 8zm6 0h4m-2-2v4" />
                       </svg>
                     </div>
@@ -615,7 +387,7 @@
                       <label class="block text-sm font-semibold text-slate-700 mb-2">Employment Type</label>
                       <select
                         v-model="form.employment_type"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none bg-white"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none bg-white"
                       >
                         <option
                           v-for="option in employmentTypeOptions"
@@ -632,8 +404,8 @@
                 <!-- Professional Information -->
                 <div class="mb-8">
                   <h4 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
+                      <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
                     </div>
@@ -645,7 +417,7 @@
                       <select
                         v-model="form.department_id"
                         required
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none bg-white"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none bg-white"
                       >
                         <option value="">Select Department</option>
                         <option v-for="d in departments" :key="d.id" :value="String(d.id)">
@@ -658,7 +430,7 @@
                       <select
                         v-model="form.role_id"
                         required
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none bg-white"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none bg-white"
                       >
                         <option value="">Select Position</option>
                         <option v-for="r in filteredRoles" :key="r.id" :value="String(r.id)">
@@ -685,7 +457,7 @@
                       <input
                         v-model.trim="form.qualification"
                         type="text"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="e.g., Bachelor's Degree"
                       />
                     </div>
@@ -694,7 +466,7 @@
                       <input
                         v-model.trim="form.university"
                         type="text"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="Enter university name"
                       />
                     </div>
@@ -705,7 +477,7 @@
                         type="number"
                         min="1950"
                         :max="new Date().getFullYear()"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="e.g., 2020"
                       />
                     </div>
@@ -728,7 +500,7 @@
                       <input
                         v-model="form.date_joined"
                         type="date"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                       />
                     </div>
                     <div>
@@ -736,7 +508,7 @@
                       <input
                         v-model="form.contract_start"
                         type="date"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                       />
                     </div>
                     <div>
@@ -746,7 +518,7 @@
                         type="number"
                         min="0"
                         step="0.01"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="0.00"
                       />
                     </div>
@@ -755,7 +527,7 @@
                       <input
                         v-model.trim="form.bank_name"
                         type="text"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="Enter bank name"
                       />
                     </div>
@@ -764,7 +536,7 @@
                       <input
                         v-model.trim="form.account_number"
                         type="text"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="Enter account number"
                       />
                     </div>
@@ -773,7 +545,7 @@
                       <input
                         v-model.trim="form.tin_number"
                         type="text"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="Enter TIN number"
                       />
                     </div>
@@ -782,7 +554,7 @@
                       <input
                         v-model.trim="form.nssf_number"
                         type="text"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none"
                         placeholder="Enter NSSF number"
                       />
                     </div>
@@ -790,7 +562,7 @@
                       <label class="block text-sm font-semibold text-slate-700 mb-2">Status</label>
                       <select
                         v-model="form.staff_status"
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 outline-none bg-white"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-100 transition-all duration-200 outline-none bg-white"
                       >
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
@@ -812,7 +584,7 @@
                   <button
                     type="submit"
                     :disabled="saving"
-                    class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    class="px-6 py-3 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     <svg v-if="saving" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -839,9 +611,9 @@
           <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
             <div class="fixed inset-0 transition-opacity bg-slate-900 bg-opacity-75 backdrop-blur-sm" @click="closeViewModal"></div>
 
-            <div class="relative inline-block w-full max-w-5xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl">
+            <div class="relative inline-block w-full max-w-5xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl">
               <!-- Modal Header -->
-              <div class="sticky top-0 z-10 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 px-8 py-6">
+              <div class="sticky top-0 z-10 bg-brand-900 px-8 py-6">
                 <div class="flex items-center justify-between">
                   <h3 class="text-2xl font-bold text-white">Staff Profile</h3>
                   <button
@@ -859,17 +631,17 @@
               <div class="p-8 max-h-[70vh] overflow-y-auto">
                 <div v-if="viewLoading" class="flex items-center justify-center py-20">
                   <div class="text-center">
-                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-brand-500 border-t-transparent"></div>
                     <p class="mt-4 text-slate-600 font-medium">Loading profile...</p>
                   </div>
                 </div>
 
                 <div v-else>
                   <!-- Profile Header -->
-                  <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-6 mb-6">
+                  <div class="bg-brand-50 rounded-2xl p-6 mb-6">
                     <div class="flex items-center gap-6">
                       <div class="relative">
-                        <div class="w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                        <div class="w-24 h-24 rounded-2xl overflow-hidden bg-brand-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
                           <img
                             v-if="selectedStaff.passport_photo"
                             :src="selectedStaff.passport_photo"
@@ -885,7 +657,7 @@
                         </h4>
                         <p class="text-slate-600 mt-1">{{ selectedStaff.role_name || 'N/A' }}</p>
                         <div class="flex items-center gap-3 mt-3">
-                          <span class="px-3 py-1.5 bg-blue-100 text-blue-800 rounded-lg text-sm font-bold">
+                          <span class="px-3 py-1.5 bg-brand-100 text-brand-800 rounded-lg text-sm font-bold">
                             {{ selectedStaff.hr_code || 'N/A' }}
                           </span>
                           <span
@@ -911,27 +683,27 @@
                       <div class="space-y-3">
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Gender</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.gender || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.gender || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Date of Birth</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.date_of_birth || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.date_of_birth || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">National ID</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.national_id || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.national_id || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Nationality</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.nationality || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.nationality || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Marital Status</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.marital_status || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.marital_status || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Religion</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.religion || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.religion || '-' }}</p>
                         </div>
                       </div>
                     </div>
@@ -942,27 +714,27 @@
                       <div class="space-y-3">
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Email</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.email || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.email || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Phone</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.phone_number || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.phone_number || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Alternative Phone</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.alternative_phone || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.alternative_phone || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">District</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.district || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.district || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Address</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.address || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.address || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Emergency Contact</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.emergency_contact || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.emergency_contact || '-' }}</p>
                         </div>
                       </div>
                     </div>
@@ -973,11 +745,11 @@
                       <div class="space-y-3">
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Department</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.department_name || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.department_name || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Position</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.role_name || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.role_name || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Employment Type</p>
@@ -985,11 +757,11 @@
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Date Joined</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.date_joined || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.date_joined || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Contract Start</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.contract_start || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.contract_start || '-' }}</p>
                         </div>
                       </div>
                     </div>
@@ -1004,19 +776,19 @@
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Bank Name</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.bank_name || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.bank_name || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Account Number</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.account_number || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.account_number || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">TIN Number</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.tin_number || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.tin_number || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">NSSF Number</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.nssf_number || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.nssf_number || '-' }}</p>
                         </div>
                       </div>
                     </div>
@@ -1027,15 +799,15 @@
                       <div class="space-y-3">
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Qualification</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.qualification || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.qualification || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">University</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.university || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.university || '-' }}</p>
                         </div>
                         <div>
                           <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">Year Graduated</p>
-                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.year_graduated || '—' }}</p>
+                          <p class="text-sm font-semibold text-slate-900 mt-1">{{ selectedStaff.year_graduated || '-' }}</p>
                         </div>
                       </div>
                     </div>
@@ -1044,10 +816,10 @@
                   <!-- Timestamps -->
                   <div class="mt-6 pt-6 border-t border-slate-200 flex items-center justify-between text-sm text-slate-600">
                     <div>
-                      <span class="font-semibold">Created:</span> {{ selectedStaff.created_at || '—' }}
+                      <span class="font-semibold">Created:</span> {{ selectedStaff.created_at || '-' }}
                     </div>
                     <div>
-                      <span class="font-semibold">Updated:</span> {{ selectedStaff.updated_at || '—' }}
+                      <span class="font-semibold">Updated:</span> {{ selectedStaff.updated_at || '-' }}
                     </div>
                   </div>
                 </div>
@@ -1081,9 +853,9 @@
           <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
             <div class="fixed inset-0 transition-opacity bg-slate-900 bg-opacity-75 backdrop-blur-sm" @click="closeImportModal"></div>
 
-            <div class="relative inline-block w-full max-w-2xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl">
+            <div class="relative inline-block w-full max-w-2xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl">
               <!-- Modal Header -->
-              <div class="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 px-8 py-6">
+              <div class="bg-brand-900 px-8 py-6">
                 <div class="flex items-center justify-between">
                   <h3 class="text-2xl font-bold text-white">Import Staff Data</h3>
                   <button
@@ -1100,15 +872,15 @@
               <!-- Modal Body -->
               <div class="p-8">
                 <div class="text-center mb-6">
-                  <div class="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div class="w-20 h-20 bg-brand-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-10 h-10 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
                   </div>
                   <p class="text-slate-600">Upload CSV or JSON file to import staff data</p>
                 </div>
 
-                <div class="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:border-blue-400 transition-colors duration-200">
+                <div class="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:border-brand-400 transition-colors duration-200">
                   <input
                     type="file"
                     ref="fileInput"
@@ -1118,17 +890,17 @@
                   />
                   <button
                     @click="$refs.fileInput.click()"
-                    class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    class="px-6 py-3 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     Choose File
                   </button>
                   <p class="mt-4 text-sm text-slate-500">Supported formats: CSV, JSON</p>
                 </div>
 
-                <div v-if="importFile" class="mt-6 bg-blue-50 rounded-2xl p-4 border border-blue-200">
+                <div v-if="importFile" class="mt-6 bg-brand-50 rounded-2xl p-4 border border-brand-200">
                   <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                      <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg class="w-8 h-8 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                       <div>
@@ -1160,7 +932,7 @@
                   <button
                     @click="processImport"
                     :disabled="!importFile || importing"
-                    class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    class="px-6 py-3 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     <svg v-if="importing" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -1183,6 +955,11 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { nonTeachingStaffAPI, departmentsAPI, rolesAPI } from '../services/api.js';
 import { useToast } from '../composables/useToast.js';
 import ToastBanner from '../components/hr/ToastBanner.vue';
+import StatCards from '../components/ui/StatCards.vue';
+import ListToolbar from '../components/ui/ListToolbar.vue';
+import PagerBar from '../components/ui/PagerBar.vue';
+import RowActionsMenu from '../components/RowActionsMenu.vue';
+import { Building2, CircleCheck, Eye, FileSpreadsheet, Pencil, Plus, Power, Trash2, Upload, UserX, Users as UsersIcon } from 'lucide-vue-next';
 
 const { showToast } = useToast();
 
@@ -1202,7 +979,7 @@ const selectedStaff = ref({});
 const importFile = ref(null);
 
 const page = ref(1);
-const perPage = 10;
+const perPage = ref(10);
 
 const filters = ref({
   search: '',
@@ -1299,12 +1076,36 @@ const filteredStaff = computed(() => {
   return result;
 });
 
-const paginatedStaff = computed(() => {
-  const start = (page.value - 1) * perPage;
-  return filteredStaff.value.slice(start, start + perPage);
+// Teaching Staff layout helpers: status, initials, row menu and summary cards.
+const statusOf = (s) => (s.staff_status === 'on_leave' ? 'on_leave' : (s.staff_status || s.status) === 'inactive' ? 'inactive' : 'active');
+const STATUS = {
+  active: { label: 'Active', text: 'text-brand-700', dot: 'bg-brand-500' },
+  inactive: { label: 'Inactive', text: 'text-gray-500', dot: 'bg-gray-400' },
+  on_leave: { label: 'On leave', text: 'text-amber-700', dot: 'bg-amber-500' },
+};
+const initials = (name) => String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+const rowActions = (s) => [
+  { label: 'View profile', icon: Eye, onClick: () => viewStaff(s) },
+  { label: 'Edit', icon: Pencil, onClick: () => openModal(s) },
+  { label: statusOf(s) === 'active' ? 'Deactivate' : 'Activate', icon: Power, onClick: () => toggleStatus(s) },
+  { label: 'Delete', icon: Trash2, danger: true, onClick: () => deleteStaff(s) },
+];
+const statCards = computed(() => {
+  const status = (v) => () => { filters.value.staff_status = filters.value.staff_status === v ? '' : v; };
+  return [
+    { label: 'Staff', value: staff.value.length, icon: UsersIcon },
+    { label: 'Active', value: activeCount.value, icon: CircleCheck, onClick: status('active'), active: filters.value.staff_status === 'active' },
+    { label: 'Inactive', value: inactiveCount.value, icon: UserX, tone: 'gray', onClick: status('inactive'), active: filters.value.staff_status === 'inactive' },
+    { label: 'Departments', value: departments.value.length, icon: Building2, tone: 'amber' },
+  ];
 });
 
-const totalPages = computed(() => Math.ceil(filteredStaff.value.length / perPage));
+const paginatedStaff = computed(() => {
+  const start = (page.value - 1) * perPage.value;
+  return filteredStaff.value.slice(start, start + perPage.value);
+});
+
+const totalPages = computed(() => Math.ceil(filteredStaff.value.length / perPage.value));
 
 const visiblePages = computed(() => {
   const pages = [];
@@ -1830,6 +1631,8 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.filter-label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500; }
+.tool-btn { @apply inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50; }
 .modal-enter-active,
 .modal-leave-active {
   transition: opacity 0.3s ease;
@@ -1868,5 +1671,23 @@ onMounted(async () => {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+</style>
+
+<style scoped>
+/* dark mode: generated by scripts/build-dark-overrides.cjs */
+html.dark .filter-label {
+  color: var(--d-muted);
+}
+html.dark .tool-btn {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+  color: var(--d-text-2);
+}
+html.dark .tool-btn:hover {
+  background-color: var(--d-sunken);
+}
+html.dark ::-webkit-scrollbar-track {
+  background-color: var(--d-surface);
 }
 </style>

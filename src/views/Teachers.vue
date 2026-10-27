@@ -1,5 +1,5 @@
 <template>
-  <div class="teachers-page space-y-5 pb-8">
+  <div class="teachers-page page pb-8">
     <!-- Toast -->
     <Teleport to="body">
       <Transition name="toast">
@@ -30,313 +30,232 @@
     </Teleport>
 
     <!-- Header -->
-    <header class="overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-5 text-white shadow-xl shadow-blue-900/20 sm:p-6">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <div class="page-hero">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-200/90">HR · Teaching Staff</p>
-          <h1 class="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Teachers Directory</h1>
-          <p class="mt-2 max-w-2xl text-sm leading-relaxed text-blue-100/80">
-            Manage teacher profiles, employment records, qualifications, and status — premium HR dashboard experience.
-          </p>
+          <h1 class="page-hero-title">Teaching Staff</h1>
         </div>
         <div class="flex flex-wrap gap-2">
-          <button
-            type="button"
-            class="btn-header btn-header--ghost"
-            :disabled="loading"
-            @click="reloadTeachers"
-          >
+          <button type="button" class="btn-hero px-3" :disabled="loading" title="Refresh" aria-label="Refresh" @click="reloadAll">
             <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': loading }" />
-            Refresh
           </button>
-          <button type="button" class="btn-header btn-header--emerald" @click="openImportModal">
-            <Upload class="h-4 w-4" />
-            Import
-          </button>
-          <button type="button" class="btn-header btn-header--primary" @click="openAddModal">
-            <Plus class="h-4 w-4" />
-            Add Teacher
-          </button>
+          <button type="button" class="btn-hero" @click="openImportModal"><Upload class="h-4 w-4" />Import</button>
+          <button type="button" class="btn-hero-primary" @click="openAddModal"><Plus class="h-4 w-4" />Add teacher</button>
         </div>
-      </div>
-    </header>
-
-    <!-- Stats -->
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <div v-for="card in statCards" :key="card.label" class="stat-card">
-        <div class="flex items-center justify-between">
-          <p class="text-sm font-medium text-slate-500">{{ card.label }}</p>
-          <component :is="card.icon" class="h-5 w-5 text-blue-500/70" />
-        </div>
-        <p class="mt-2 text-2xl font-bold" :class="card.color">{{ card.value }}</p>
       </div>
     </div>
 
-    <!-- Filters -->
-    <section class="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm">
-      <div class="mb-4 flex items-center gap-2">
-        <Search class="h-4 w-4 text-blue-600" />
-        <h2 class="text-sm font-semibold text-slate-800">Filters &amp; Export</h2>
-      </div>
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <div class="2xl:col-span-2">
-          <label class="field-label">Search</label>
-          <div class="relative">
-            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              v-model="filters.search"
-              type="text"
-              placeholder="Code, name, email, subject, department..."
-              class="input pl-10"
-              @input="debouncedLoad"
-            />
-          </div>
+    <!-- Summary (whole directory) -->
+    <StatCards :cards="statCards" />
+
+    <!-- Toolbar: view, search, filters, export -->
+    <div class="card p-3 sm:p-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="inline-flex rounded-xl bg-gray-100 p-1" role="tablist" aria-label="Teachers view">
+          <button
+            v-for="v in views"
+            :key="v.value"
+            type="button"
+            role="tab"
+            :aria-selected="view === v.value"
+            class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition"
+            :class="view === v.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+            @click="view = v.value"
+          >
+            <component :is="v.icon" class="h-4 w-4" /><span class="hidden sm:inline">{{ v.label }}</span>
+          </button>
         </div>
-        <div>
-          <label class="field-label">Subject</label>
-          <select v-model="filters.subject" class="input" @change="loadTeachers">
+
+        <template v-if="view === 'directory'">
+          <div class="relative min-w-[12rem] flex-1">
+            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input v-model="filters.search" type="search" placeholder="Search name, code, email, subject…" class="input py-2 !pl-9" @input="debouncedLoad" />
+          </div>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition"
+            :class="showFilters || activeFilterCount ? 'border-brand-300 bg-brand-50 text-brand-800' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'"
+            :aria-expanded="showFilters"
+            @click="showFilters = !showFilters"
+          >
+            <SlidersHorizontal class="h-4 w-4" />Filters
+            <span v-if="activeFilterCount" class="rounded-full bg-brand-600 px-1.5 text-xs text-white">{{ activeFilterCount }}</span>
+          </button>
+          <div class="flex items-center gap-1">
+            <button type="button" class="tool-btn" :disabled="!displayedTeachers.length || loading" title="Download PDF" @click="downloadPDF"><FileText class="h-4 w-4" /><span class="hidden xl:inline">PDF</span></button>
+            <button type="button" class="tool-btn" :disabled="!displayedTeachers.length || loading" title="Download Excel" @click="downloadExcel"><FileSpreadsheet class="h-4 w-4" /><span class="hidden xl:inline">Excel</span></button>
+            <button type="button" class="tool-btn" :disabled="!displayedTeachers.length || loading" title="Download CSV" @click="downloadCSV"><Download class="h-4 w-4" /><span class="hidden xl:inline">CSV</span></button>
+            <router-link v-if="canViewAnalytics" to="/teaching-analytics" class="tool-btn" title="Teaching analytics"><BarChart3 class="h-4 w-4" /><span class="hidden xl:inline">Analytics</span></router-link>
+          </div>
+        </template>
+      </div>
+
+      <div v-if="view === 'directory' && showFilters" class="mt-3 grid gap-3 border-t border-gray-100 pt-3 sm:grid-cols-2 lg:grid-cols-5">
+        <label class="block">
+          <span class="filter-label">Subject</span>
+          <select v-model="filters.subject" class="input py-2" @change="resetAndLoad">
             <option value="">All subjects</option>
             <option v-for="item in subjects" :key="item" :value="item">{{ item }}</option>
           </select>
-        </div>
-        <div>
-          <label class="field-label">Department</label>
-          <select v-model="filters.department" class="input" @change="applyLocalFilters">
+        </label>
+        <label class="block">
+          <span class="filter-label">Department</span>
+          <select v-model="filters.department" class="input py-2" @change="applyLocalFilters">
             <option value="">All departments</option>
             <option v-for="item in departmentOptions" :key="item" :value="item">{{ item }}</option>
           </select>
-        </div>
-        <div>
-          <label class="field-label">Employment Type</label>
-          <select v-model="filters.employment_type" class="input" @change="applyLocalFilters">
+        </label>
+        <label class="block">
+          <span class="filter-label">Employment</span>
+          <select v-model="filters.employment_type" class="input py-2" @change="applyLocalFilters">
             <option value="">All types</option>
             <option v-for="item in employmentTypeOptions" :key="item" :value="item">{{ item }}</option>
           </select>
-        </div>
-        <div>
-          <label class="field-label">Obligation</label>
-          <select v-model="filters.obligation" class="input" @change="loadTeachers">
+        </label>
+        <label class="block">
+          <span class="filter-label">Obligation</span>
+          <select v-model="filters.obligation" class="input py-2" @change="resetAndLoad">
             <option value="">All obligations</option>
             <option v-for="item in obligations" :key="item" :value="item">{{ item }}</option>
           </select>
-        </div>
-        <div>
-          <label class="field-label">Status</label>
-          <select v-model="filters.is_active" class="input" @change="loadTeachers">
-            <option value="">All status</option>
+        </label>
+        <label class="block">
+          <span class="filter-label">Status</span>
+          <select v-model="filters.is_active" class="input py-2" @change="resetAndLoad">
+            <option value="">Any status</option>
             <option value="1">Active</option>
             <option value="0">Inactive</option>
           </select>
+        </label>
+        <div class="flex justify-end sm:col-span-2 lg:col-span-5">
+          <button type="button" class="link-btn" :disabled="!activeFilterCount" @click="clearFilters">Clear all filters</button>
         </div>
       </div>
+    </div>
 
-      <div class="mt-5 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
-        <button type="button" class="btn-export btn-export--pdf" :disabled="!displayedTeachers.length || loading" @click="downloadPDF">
-          <FileText class="h-4 w-4" />
-          PDF
-        </button>
-        <button type="button" class="btn-export btn-export--excel" :disabled="!displayedTeachers.length || loading" @click="downloadExcel">
-          <FileSpreadsheet class="h-4 w-4" />
-          Excel
-        </button>
-        <button type="button" class="btn-export btn-export--csv" :disabled="!displayedTeachers.length || loading" @click="downloadCSV">
-          <Download class="h-4 w-4" />
-          CSV
-        </button>
-        <router-link
-          v-if="canViewAnalytics"
-          to="/teaching-analytics"
-          class="btn-export btn-export--analytics"
-        >
-          <BarChart3 class="h-4 w-4" />
-          Analytics
-        </router-link>
-        <button type="button" class="btn-export btn-export--ghost" @click="clearFilters">
-          Clear filters
-        </button>
-        <div v-if="loading" class="ml-auto inline-flex items-center gap-2 text-sm text-slate-500">
-          <span class="loading-dot" />
-          <span class="loading-dot animation-delay-150" />
-          <span class="loading-dot animation-delay-300" />
-          Loading...
-        </div>
-      </div>
-    </section>
-
-    <!-- Table -->
-    <section class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm">
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
-        <div>
-          <h2 class="text-lg font-semibold text-slate-900">Teachers Records</h2>
-          <p class="text-xs text-slate-500">{{ totalTeachers }} total record(s) · Page {{ currentPage }} of {{ totalPages }}</p>
-        </div>
+    <template v-if="view === 'directory'">
+    <section class="card overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-4 py-3 sm:px-5">
+        <p class="text-sm text-gray-600">
+          <strong class="text-gray-900">{{ totalTeachers }}</strong> teacher{{ totalTeachers === 1 ? '' : 's' }}<span v-if="activeFilterCount || filters.search"> match</span>
+        </p>
+        <label class="flex items-center gap-2 text-sm text-gray-600">
+          Rows
+          <select v-model.number="itemsPerPage" class="input w-auto py-1 text-sm" @change="resetAndLoad">
+            <option v-for="n in [10, 25, 50, 100]" :key="n" :value="n">{{ n }}</option>
+          </select>
+        </label>
       </div>
 
-      <div class="relative overflow-x-auto">
-        <table class="teachers-table min-w-[1350px] w-full">
-          <thead>
-            <tr>
-              <th>Photo</th>
-              <th>Code</th>
-              <th>Full Name</th>
-              <th>Gender</th>
-              <th>Contact</th>
-              <th>Email</th>
-              <th>Subject</th>
-              <th>Department</th>
-              <th>Position</th>
-              <th>Employment</th>
-              <th>Obligation</th>
-              <th>Status</th>
-              <th>Joined</th>
-              <th class="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="loading">
-              <td colspan="14" class="py-16 text-center">
-                <div class="mx-auto flex max-w-xs flex-col items-center gap-3 text-slate-500">
-                  <div class="flex gap-1.5">
-                    <span class="loading-dot loading-dot--lg" />
-                    <span class="loading-dot loading-dot--lg animation-delay-150" />
-                    <span class="loading-dot loading-dot--lg animation-delay-300" />
-                  </div>
-                  <p class="text-sm font-medium">Loading teachers...</p>
-                </div>
-              </td>
-            </tr>
-            <tr v-else-if="!displayedTeachers.length">
-              <td colspan="14" class="py-16 text-center">
-                <div class="mx-auto flex max-w-sm flex-col items-center gap-3">
-                  <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
-                    <Users class="h-8 w-8" />
-                  </div>
-                  <p class="text-base font-semibold text-slate-700">No teachers found</p>
-                  <p class="text-sm text-slate-500">Try adjusting filters or add a new teacher to get started.</p>
-                  <button type="button" class="btn-export btn-export--primary mt-1" @click="openAddModal">
-                    <Plus class="h-4 w-4" />
-                    Add Teacher
+      <!-- Loading / empty -->
+      <div v-if="loading" class="space-y-3 p-5">
+        <div v-for="i in 5" :key="i" class="flex animate-pulse items-center gap-3">
+          <div class="h-10 w-10 rounded-full bg-gray-100"></div>
+          <div class="h-3 flex-1 rounded bg-gray-100"></div>
+          <div class="hidden h-3 w-24 rounded bg-gray-100 sm:block"></div>
+        </div>
+      </div>
+      <div v-else-if="!displayedTeachers.length" class="px-5 py-14 text-center">
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 text-gray-400"><Users class="h-7 w-7" /></div>
+        <p class="mt-3 font-semibold text-gray-800">No teachers found</p>
+        <p class="mt-1 text-sm text-gray-500">{{ activeFilterCount || filters.search ? 'Try other filters or clear them.' : 'Add the first teacher to get started.' }}</p>
+        <button v-if="activeFilterCount || filters.search" type="button" class="btn-secondary mt-4" @click="clearFilters">Clear filters</button>
+        <button v-else type="button" class="btn-primary mt-4" @click="openAddModal"><Plus class="h-4 w-4" />Add teacher</button>
+      </div>
+
+      <template v-else>
+        <!-- Table (tablet and up) -->
+        <div class="hidden overflow-x-auto md:block">
+          <table class="w-full text-left text-sm">
+            <thead class="border-b border-gray-200 bg-gray-50/70">
+              <tr class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <th class="px-5 py-3">Teacher</th>
+                <th class="px-4 py-3">Subject</th>
+                <th class="hidden px-4 py-3 lg:table-cell">Position</th>
+                <th class="hidden px-4 py-3 xl:table-cell">Contact</th>
+                <th class="px-4 py-3">Obligation</th>
+                <th class="px-4 py-3">Status</th>
+                <th class="hidden px-4 py-3 xl:table-cell">Joined</th>
+                <th class="w-12 px-3 py-3"><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr v-for="teacher in displayedTeachers" :key="teacher.id ?? teacher.teacher_id" class="transition hover:bg-brand-50/40">
+                <td class="px-5 py-3">
+                  <button type="button" class="flex min-w-0 items-center gap-3 text-left" @click="viewTeacher(teacher)">
+                    <span class="relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-50 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">
+                      <img v-if="teacher.passport_photo" :src="photoUrl(teacher.passport_photo)" alt="" class="h-full w-full object-cover" />
+                      <template v-else>{{ initials(teacher.full_name) }}</template>
+                    </span>
+                    <span class="min-w-0">
+                      <span class="block truncate font-semibold text-gray-900 hover:text-brand-700">{{ teacher.full_name }}</span>
+                      <span class="flex items-center gap-1.5 text-xs text-gray-500">
+                        <span class="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[11px] text-gray-700">{{ teacher.teacher_code || 'No code' }}</span>
+                        <span class="hidden max-w-[14rem] truncate lg:inline">{{ teacher.email || '' }}</span>
+                      </span>
+                    </span>
                   </button>
-                </div>
-              </td>
-            </tr>
-            <tr
-              v-for="teacher in displayedTeachers"
-              :key="teacher.id ?? teacher.teacher_id"
-              class="table-row"
-            >
-              <td>
-                <div class="h-12 w-12 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center">
-                  <img
-                    v-if="teacher.passport_photo"
-                    :src="photoUrl(teacher.passport_photo)"
-                    alt="Passport"
-                    class="h-full w-full object-cover"
-                  />
-                  <svg v-else class="h-6 w-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-              </td>
-              <td>
-                <span class="code-badge">{{ teacher.teacher_code || '—' }}</span>
-              </td>
-              <td>
-                <p class="font-semibold text-slate-900">{{ teacher.full_name }}</p>
-                <p v-if="teacher.employee_id" class="text-xs text-slate-500">Emp #{{ teacher.employee_id }}</p>
-              </td>
-              <td>{{ teacher.gender || '—' }}</td>
-              <td>{{ teacher.contact || teacher.phone_number || '—' }}</td>
-              <td class="max-w-[180px] truncate" :title="teacher.email">{{ teacher.email || '—' }}</td>
-              <td>{{ teacher.subject || '—' }}</td>
-              <td>{{ teacher.department || '—' }}</td>
-              <td>{{ teacher.position || '—' }}</td>
-              <td>{{ teacher.employment_type || '—' }}</td>
-              <td>
-                <span class="badge badge--violet">{{ teacher.obligation || 'Subject Teacher' }}</span>
-              </td>
-              <td>
-                <span class="badge" :class="Number(teacher.is_active) === 1 ? 'badge--active' : 'badge--inactive'">
-                  {{ Number(teacher.is_active) === 1 ? 'Active' : 'Inactive' }}
+                </td>
+                <td class="px-4 py-3">
+                  <p class="font-medium text-gray-800">{{ teacher.subject || '-' }}</p>
+                  <p v-if="teacher.second_subject || teacher.department" class="text-xs text-gray-500">{{ [teacher.second_subject, teacher.department].filter(Boolean).join(' · ') }}</p>
+                </td>
+                <td class="hidden max-w-[12rem] px-4 py-3 text-gray-700 lg:table-cell"><span class="line-clamp-2">{{ teacher.position || '-' }}</span></td>
+                <td class="hidden whitespace-nowrap px-4 py-3 text-gray-700 xl:table-cell">{{ teacher.contact || teacher.phone_number || '-' }}</td>
+                <td class="px-4 py-3"><span class="whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="obligationStyle(teacher.obligation)">{{ teacher.obligation || 'Subject Teacher' }}</span></td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium" :class="Number(teacher.is_active) === 0 ? 'text-gray-500' : 'text-brand-700'">
+                    <span class="h-2 w-2 rounded-full" :class="Number(teacher.is_active) === 0 ? 'bg-gray-400' : 'bg-brand-500'"></span>{{ Number(teacher.is_active) === 0 ? 'Inactive' : 'Active' }}
+                  </span>
+                </td>
+                <td class="hidden whitespace-nowrap px-4 py-3 text-gray-600 xl:table-cell">{{ formatDateShort(teacher.date_joined) }}</td>
+                <td class="px-3 py-3 text-right">
+                  <RowActionsMenu :label="`Actions for ${teacher.full_name}`" :items="rowActions(teacher)" />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Cards (phones) -->
+        <ul class="divide-y divide-gray-100 md:hidden">
+          <li v-for="teacher in displayedTeachers" :key="teacher.id ?? teacher.teacher_id" class="flex items-start gap-3 px-4 py-3">
+            <span class="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-50 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">
+              <img v-if="teacher.passport_photo" :src="photoUrl(teacher.passport_photo)" alt="" class="h-full w-full object-cover" />
+              <template v-else>{{ initials(teacher.full_name) }}</template>
+            </span>
+            <button type="button" class="min-w-0 flex-1 text-left" @click="viewTeacher(teacher)">
+              <p class="truncate font-semibold text-gray-900">{{ teacher.full_name }}</p>
+              <p class="text-xs text-gray-500">{{ teacher.teacher_code || 'No code' }} · {{ teacher.subject || 'No subject' }}</p>
+              <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <span class="rounded-full px-2 py-0.5 text-[11px] font-semibold" :class="obligationStyle(teacher.obligation)">{{ teacher.obligation || 'Subject Teacher' }}</span>
+                <span class="inline-flex items-center gap-1 text-[11px] font-medium" :class="Number(teacher.is_active) === 0 ? 'text-gray-500' : 'text-brand-700'">
+                  <span class="h-1.5 w-1.5 rounded-full" :class="Number(teacher.is_active) === 0 ? 'bg-gray-400' : 'bg-brand-500'"></span>{{ Number(teacher.is_active) === 0 ? 'Inactive' : 'Active' }}
                 </span>
-              </td>
-              <td class="whitespace-nowrap text-slate-600">{{ formatDateShort(teacher.date_joined) }}</td>
-              <td>
-                <div class="flex flex-wrap justify-end gap-1">
-                  <button type="button" class="action-btn action-btn--view" title="View" @click="viewTeacher(teacher)">
-                    <Eye class="h-3.5 w-3.5" />
-                  </button>
-                  <button type="button" class="action-btn action-btn--edit" title="Edit" @click="editTeacher(teacher)">
-                    <Pencil class="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    class="action-btn"
-                    :class="Number(teacher.is_active) === 1 ? 'action-btn--warn' : 'action-btn--success'"
-                    :title="Number(teacher.is_active) === 1 ? 'Deactivate' : 'Activate'"
-                    @click="toggleTeacherStatus(teacher)"
-                  >
-                    <Power class="h-3.5 w-3.5" />
-                  </button>
-                  <button type="button" class="action-btn action-btn--danger" title="Delete" @click="deleteTeacher(teacher.id ?? teacher.teacher_id)">
-                    <Trash2 class="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              </div>
+            </button>
+            <RowActionsMenu :label="`Actions for ${teacher.full_name}`" :items="rowActions(teacher)" />
+          </li>
+        </ul>
+      </template>
 
       <!-- Pagination -->
-      <div v-if="totalPages > 1" class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-5 py-4">
-        <div class="text-sm text-slate-600">
-          Showing {{ ((currentPage - 1) * itemsPerPage) + 1 }} to {{ Math.min(currentPage * itemsPerPage, totalTeachers) }} of {{ totalTeachers }} entries
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            type="button"
-            class="pagination-btn"
-            :disabled="currentPage === 1"
-            @click="prevPage"
-          >
-            <ChevronLeft class="h-4 w-4" />
-            Previous
-          </button>
-          <div class="flex gap-1">
-            <button
-              v-for="page in Math.min(5, totalPages)"
-              :key="page"
-              type="button"
-              class="pagination-page-btn"
-              :class="{ 'pagination-page-btn--active': page === currentPage }"
-              @click="goToPage(page)"
-            >
-              {{ page }}
-            </button>
-            <span v-if="totalPages > 5" class="flex items-center px-2 text-slate-400">...</span>
-            <button
-              v-if="totalPages > 5"
-              type="button"
-              class="pagination-page-btn"
-              :class="{ 'pagination-page-btn--active': currentPage === totalPages }"
-              @click="goToPage(totalPages)"
-            >
-              {{ totalPages }}
-            </button>
-          </div>
-          <button
-            type="button"
-            class="pagination-btn"
-            :disabled="currentPage === totalPages"
-            @click="nextPage"
-          >
-            Next
-            <ChevronRight class="h-4 w-4" />
-          </button>
-        </div>
+      <div v-if="totalPages > 1" class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3 sm:px-5">
+        <p class="text-sm text-gray-600">{{ ((currentPage - 1) * itemsPerPage) + 1 }}–{{ Math.min(currentPage * itemsPerPage, totalTeachers) }} of {{ totalTeachers }}</p>
+        <nav class="flex items-center gap-1" aria-label="Pages">
+          <button type="button" class="page-btn" :disabled="currentPage === 1" aria-label="Previous page" @click="prevPage"><ChevronLeft class="h-4 w-4" /></button>
+          <template v-for="(pg, i) in pageWindow" :key="i">
+            <span v-if="pg === '…'" class="px-1 text-gray-400">…</span>
+            <button v-else type="button" class="page-btn" :class="pg === currentPage ? 'page-btn--on' : ''" :aria-current="pg === currentPage ? 'page' : undefined" @click="goToPage(pg)">{{ pg }}</button>
+          </template>
+          <button type="button" class="page-btn" :disabled="currentPage === totalPages" aria-label="Next page" @click="nextPage"><ChevronRight class="h-4 w-4" /></button>
+        </nav>
       </div>
     </section>
+    </template>
+
+    <TeachersByDepartment v-else-if="view === 'department'" @toast="(m, t) => notify(m, t)" />
+    <TeacherLoginsPanel v-else />
 
     <!-- Add / Edit Modal -->
     <Teleport to="body">
@@ -345,9 +264,9 @@
           <div class="modal-panel modal-panel--form" role="dialog" aria-modal="true">
             <div class="modal-header">
               <div>
-                <p class="text-xs font-semibold uppercase tracking-wider text-blue-200">{{ editingId ? 'Update record' : 'New registration' }}</p>
+                <p class="text-xs font-semibold uppercase tracking-wider text-brand-200">{{ editingId ? 'Update record' : 'New registration' }}</p>
                 <h3 class="text-xl font-bold">{{ editingId ? 'Edit Teacher' : 'Add Teacher' }}</h3>
-                <p class="mt-1 text-sm text-blue-100/80">{{ editingId ? 'Update teaching staff details below.' : 'Register a new teacher in the directory.' }}</p>
+                <p class="mt-1 text-sm text-brand-100/80">{{ editingId ? 'Update teaching staff details below.' : 'Register a new teacher in the directory.' }}</p>
               </div>
               <button type="button" class="modal-close" @click="closeModal"><X class="h-5 w-5" /></button>
             </div>
@@ -398,7 +317,7 @@
                         <button type="button" class="photo-remove" @click="clearPhoto">Remove</button>
                       </div>
                       <label class="photo-drop">
-                        <Upload class="h-5 w-5 text-blue-500" />
+                        <Upload class="h-5 w-5 text-brand-500" />
                         <span class="text-sm font-medium text-slate-700">Upload photo</span>
                         <span class="text-xs text-slate-500">PNG, JPG up to 2MB</span>
                         <input type="file" accept="image/*" class="sr-only" @change="handlePhotoUpload" />
@@ -594,14 +513,14 @@
                     v-if="selectedTeacher.passport_photo"
                     :src="photoUrl(selectedTeacher.passport_photo)"
                     alt="Passport"
-                    class="h-28 w-28 rounded-3xl object-cover ring-4 ring-white/30"
+                    class="h-28 w-28 rounded-2xl object-cover ring-4 ring-white/30"
                   />
                   <div v-else class="profile-avatar-lg">{{ teacherInitials(selectedTeacher.full_name) }}</div>
                 </div>
                 <div class="flex-1 text-white">
-                  <p class="text-xs font-semibold uppercase tracking-wider text-blue-200">{{ selectedTeacher.teacher_code || 'No code' }}</p>
+                  <p class="text-xs font-semibold uppercase tracking-wider text-brand-200">{{ selectedTeacher.teacher_code || 'No code' }}</p>
                   <h3 class="mt-1 text-2xl font-bold">{{ selectedTeacher.full_name || 'Unknown' }}</h3>
-                  <p class="mt-1 text-sm text-blue-100">{{ selectedTeacher.position || 'Teacher' }} · {{ selectedTeacher.department || '—' }}</p>
+                  <p class="mt-1 text-sm text-brand-100">{{ selectedTeacher.position || 'Teacher' }} · {{ selectedTeacher.department || '-' }}</p>
                   <div class="mt-3 flex flex-wrap gap-2">
                     <span class="profile-pill" :class="Number(selectedTeacher.is_active) === 1 ? 'profile-pill--active' : 'profile-pill--inactive'">
                       {{ Number(selectedTeacher.is_active) === 1 ? 'Active' : 'Inactive' }}
@@ -654,7 +573,7 @@
             <div class="modal-header modal-header--compact">
               <div>
                 <h3 class="text-xl font-bold">Import Teachers</h3>
-                <p class="mt-1 text-sm text-blue-100/80">Upload CSV or paste JSON to bulk-register staff.</p>
+                <p class="mt-1 text-sm text-brand-100/80">Upload CSV or paste JSON to bulk-register staff.</p>
               </div>
               <button type="button" class="modal-close" @click="closeImportModal"><X class="h-5 w-5" /></button>
             </div>
@@ -667,7 +586,7 @@
                 @dragleave.prevent="importDragOver = false"
                 @drop.prevent="handleImportDrop"
               >
-                <Upload class="h-8 w-8 text-blue-500" />
+                <Upload class="h-8 w-8 text-brand-500" />
                 <p class="mt-2 text-sm font-medium text-slate-800">Drag &amp; drop CSV here</p>
                 <label class="btn-secondary mt-3 cursor-pointer">
                   Browse CSV
@@ -699,12 +618,18 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onBeforeUnmount, ref, h, defineComponent } from 'vue';
+import { computed, onMounted, onBeforeUnmount, ref, h, defineComponent, watch } from 'vue';
 import { teachersAPI, subjectsNewAPI } from '../services/api';
+import TeachersByDepartment from '../components/teachers/TeachersByDepartment.vue';
+import TeacherLoginsPanel from '../components/teachers/TeacherLoginsPanel.vue';
+import { useRoute } from 'vue-router';
+import RowActionsMenu from '../components/RowActionsMenu.vue';
 import authStore from '../services/authStore.js';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
+  List,
+  LayoutGrid,
   Eye,
   Pencil,
   Power,
@@ -721,6 +646,9 @@ import {
   User,
   Phone,
   Briefcase,
+  SlidersHorizontal,
+  KeyRound,
+  Crown,
   GraduationCap,
   Building2,
   Wallet,
@@ -731,8 +659,9 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-vue-next';
+import StatCards from '../components/ui/StatCards.vue';
 
-/* ——— Inline section components ——— */
+/* --- Inline section components --- */
 const FormSection = defineComponent({
   name: 'FormSection',
   props: { title: String, desc: String, icon: Object },
@@ -740,7 +669,7 @@ const FormSection = defineComponent({
     return () =>
       h('section', { class: 'form-section' }, [
         h('div', { class: 'form-section-head' }, [
-          h(props.icon, { class: 'h-5 w-5 text-blue-600' }),
+          h(props.icon, { class: 'h-5 w-5 text-brand-600' }),
           h('div', [
             h('h4', { class: 'form-section-title' }, props.title),
             h('p', { class: 'form-section-desc' }, props.desc)
@@ -758,7 +687,7 @@ const ProfileBlock = defineComponent({
     return () =>
       h('section', { class: 'profile-block' }, [
         h('div', { class: 'profile-block-head' }, [
-          h(props.icon, { class: 'h-4 w-4 text-blue-600' }),
+          h(props.icon, { class: 'h-4 w-4 text-brand-600' }),
           h('h4', { class: 'profile-block-title' }, props.title)
         ]),
         slots.default?.()
@@ -839,9 +768,9 @@ const DetailGrid = defineComponent({
                           )
                         )
                       )
-                    : h('p', { class: 'detail-value' }, '—');
+                    : h('p', { class: 'detail-value' }, '-');
                 })()
-              : h('p', { class: 'detail-value' }, item.value ?? '—')
+              : h('p', { class: 'detail-value' }, item.value ?? '-')
           ])
         )
       );
@@ -971,6 +900,25 @@ const form = ref(emptyForm());
 const allSubjects = ref([]);
 
 const toast = ref({ show: false, type: 'success', message: '' });
+// Directory (table) or By department; remembered for this browser.
+const views = [
+  { value: 'directory', label: 'Directory', icon: List },
+  { value: 'department', label: 'By department', icon: LayoutGrid },
+  { value: 'logins', label: 'Logins', icon: KeyRound },
+];
+const VIEW_VALUES = views.map((v) => v.value);
+// ?view=logins (e.g. the old Teacher Logins link) wins; otherwise the last view used here.
+const route = useRoute();
+const view = ref((() => {
+  if (VIEW_VALUES.includes(route.query.view)) return route.query.view;
+  try {
+    const saved = localStorage.getItem('teachers.view');
+    return VIEW_VALUES.includes(saved) ? saved : 'directory';
+  } catch {
+    return 'directory';
+  }
+})());
+watch(view, (v) => { try { localStorage.setItem('teachers.view', v); } catch { /* not available */ } });
 let toastTimer = null;
 let searchTimer = null;
 
@@ -982,6 +930,14 @@ const hideToast = () => {
     toastTimer = null;
   }
 };
+
+// The table row menu (⋮): view, edit, activate/deactivate, delete.
+const rowActions = (teacher) => [
+  { label: 'View profile', icon: Eye, onClick: () => viewTeacher(teacher) },
+  { label: 'Edit', icon: Pencil, onClick: () => editTeacher(teacher) },
+  { label: Number(teacher.is_active) === 1 ? 'Deactivate' : 'Activate', icon: Power, onClick: () => toggleTeacherStatus(teacher) },
+  { label: 'Delete', icon: Trash2, danger: true, onClick: () => deleteTeacher(teacher.id ?? teacher.teacher_id) },
+];
 
 const notify = (message, type = 'success') => {
   hideToast();
@@ -1035,39 +991,76 @@ const displayedTeachers = computed(() => {
   return list;
 });
 
-const stats = computed(() => ({
-  total: totalTeachers.value,
-  active: displayedTeachers.value.filter((t) => Number(t.is_active) === 1).length,
-  inactive: displayedTeachers.value.filter((t) => Number(t.is_active) === 0).length
-}));
+// Whole-directory counts (the table only holds one page).
+const summary = ref({ total: 0, active: 0, inactive: 0, obligations: [] });
+const loadSummary = async () => {
+  try {
+    const res = await teachersAPI.summary();
+    if (res?.success) summary.value = res.data;
+  } catch { /* the cards keep their last values */ }
+};
+const heads = computed(() => summary.value.obligations
+  .filter((o) => /hod|head/i.test(o.obligation)).reduce((t, o) => t + o.count, 0));
+// A card with `filter` narrows the table to that status when clicked.
+const statCards = computed(() => [
+  { label: 'Teachers', value: summary.value.total, icon: Users, filter: '' },
+  { label: 'Active', value: summary.value.active, icon: CheckCircle2, filter: '1' },
+  { label: 'Inactive', value: summary.value.inactive, icon: AlertCircle, tone: 'gray', filter: '0' },
+  { label: 'Heads & HoDs', value: heads.value, icon: Crown, tone: 'amber' },
+].map((c) => (c.filter === undefined ? c : { ...c, onClick: () => setStatus(c.filter), active: filters.value.is_active === c.filter })));
+const setStatus = (value) => {
+  filters.value.is_active = value;
+  resetAndLoad();
+};
 
-const obligationCount = computed(() => {
-  return new Set(displayedTeachers.value.map((t) => t.obligation).filter(Boolean)).size;
+const showFilters = ref(false);
+const activeFilterCount = computed(() => ['subject', 'department', 'employment_type', 'obligation', 'is_active']
+  .filter((k) => String(filters.value[k] ?? '') !== '').length);
+const resetAndLoad = () => {
+  currentPage.value = 1;
+  loadTeachers();
+};
+const reloadAll = () => {
+  loadTeachers();
+};
+const initials = (name) => String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+const obligationStyle = (o) => {
+  const v = String(o || '').toLowerCase();
+  if (v.includes('head') || v === 'hod') return 'bg-amber-50 text-amber-800 ring-1 ring-amber-200';
+  if (v.includes('deputy')) return 'bg-violet-50 text-violet-800 ring-1 ring-violet-200';
+  if (v.includes('class')) return 'bg-sky-50 text-sky-800 ring-1 ring-sky-200';
+  return 'bg-gray-100 text-gray-700';
+};
+// Pages around the current one: 1 … 4 5 6 … 12
+const pageWindow = computed(() => {
+  const n = totalPages.value;
+  const c = currentPage.value;
+  const pages = new Set([1, n, c - 1, c, c + 1].filter((p) => p >= 1 && p <= n));
+  const sorted = [...pages].sort((a, b) => a - b);
+  const out = [];
+  sorted.forEach((p, i) => {
+    if (i && p - sorted[i - 1] > 1) out.push('…');
+    out.push(p);
+  });
+  return out;
 });
 
-const statCards = computed(() => [
-  { label: 'Total Teachers', value: stats.value.total, color: 'text-slate-900', icon: Users },
-  { label: 'Active', value: stats.value.active, color: 'text-emerald-600', icon: CheckCircle2 },
-  { label: 'Inactive', value: stats.value.inactive, color: 'text-rose-600', icon: AlertCircle },
-  { label: 'Obligation Types', value: obligationCount.value, color: 'text-blue-700', icon: Briefcase }
-]);
-
 const formatDate = (value) => {
-  if (!value) return '—';
+  if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString();
 };
 
 const formatDateShort = (value) => {
-  if (!value) return '—';
+  if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString();
 };
 
 const formatMoney = (value) => {
-  if (value === null || value === undefined || value === '') return '—';
+  if (value === null || value === undefined || value === '') return '-';
   const num = Number(value);
   if (Number.isNaN(num)) return String(value);
   return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -1164,7 +1157,7 @@ const buildPayload = () => {
   };
 };
 
-const detail = (label, value) => ({ label, value: value || '—' });
+const detail = (label, value) => ({ label, value: value || '-' });
 
 const personalDetails = computed(() => {
   const t = selectedTeacher.value;
@@ -1283,6 +1276,7 @@ const loadSubjects = async () => {
 
 const loadTeachers = async () => {
   loading.value = true;
+  loadSummary();
   error.value = '';
   try {
     const result = await teachersAPI.getAll({
@@ -1323,11 +1317,10 @@ const applyLocalFilters = () => {
   /* department & employment_type are client-side via displayedTeachers */
 };
 
-const reloadTeachers = () => loadTeachers();
 
 const debouncedLoad = () => {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(loadTeachers, 300);
+  searchTimer = setTimeout(resetAndLoad, 300);
 };
 
 const clearFilters = () => {
@@ -1594,7 +1587,7 @@ const downloadPDF = () => {
     body: displayedTeachers.value.map(exportRow),
     startY: 42,
     styles: { fontSize: 7, cellPadding: 2 },
-    headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
+    headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [248, 250, 252] }
   });
   doc.save(`teachers-${new Date().toISOString().split('T')[0]}.pdf`);
@@ -1637,9 +1630,13 @@ onBeforeUnmount(() => {
 });
 </script>
 <style scoped>
+.tool-btn { @apply inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50; }
+.filter-label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500; }
+.page-btn { @apply inline-flex h-8 min-w-[2rem] items-center justify-center rounded-lg border border-gray-200 px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40; }
+.page-btn--on { @apply border-brand-600 bg-brand-600 text-white hover:bg-brand-600; }
 .teachers-page {
-  --blue: #2563eb;
-  --blue-dark: #1e3a8a;
+  --blue: #16a34a;
+  --blue-dark: #14532d;
 }
 
 /* Header buttons */
@@ -1647,17 +1644,17 @@ onBeforeUnmount(() => {
   @apply inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all sm:text-sm;
 }
 .btn-header--ghost {
-  @apply border border-white/20 bg-white/10 text-white backdrop-blur hover:bg-white/20 disabled:opacity-50;
+  @apply border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50;
 }
 .btn-header--emerald {
   @apply bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600;
 }
 .btn-header--primary {
-  @apply bg-blue-500 text-white shadow-lg shadow-blue-500/25 hover:bg-blue-600;
+  @apply bg-brand-500 text-white shadow-lg shadow-brand-500/25 hover:bg-brand-600;
 }
 
 .stat-card {
-  @apply rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:shadow-md;
+  @apply rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition hover:shadow-md;
 }
 
 .field-label {
@@ -1665,7 +1662,7 @@ onBeforeUnmount(() => {
 }
 
 .input {
-  @apply w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100;
+  @apply w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100;
 }
 
 /* Filters export */
@@ -1673,11 +1670,11 @@ onBeforeUnmount(() => {
   @apply inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm;
 }
 .btn-export--pdf { @apply bg-emerald-600 text-white hover:bg-emerald-700; }
-.btn-export--excel { @apply bg-indigo-600 text-white hover:bg-indigo-700; }
+.btn-export--excel { @apply bg-brand-600 text-white hover:bg-brand-700; }
 .btn-export--csv { @apply bg-slate-700 text-white hover:bg-slate-800; }
-.btn-export--analytics { @apply border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100; }
+.btn-export--analytics { @apply border border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100; }
 .btn-export--ghost { @apply border border-slate-200 text-slate-700 hover:bg-slate-50; }
-.btn-export--primary { @apply bg-blue-600 text-white hover:bg-blue-700; }
+.btn-export--primary { @apply bg-brand-600 text-white hover:bg-brand-700; }
 
 /* Table */
 .teachers-table thead {
@@ -1693,27 +1690,27 @@ onBeforeUnmount(() => {
   @apply border-t border-slate-100 transition hover:bg-slate-50/80;
 }
 .code-badge {
-  @apply inline-flex rounded-lg bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700;
+  @apply inline-flex rounded-lg bg-brand-50 px-2 py-1 text-xs font-bold text-brand-700;
 }
 .badge {
   @apply inline-flex rounded-full px-2.5 py-1 text-xs font-semibold;
 }
 .badge--active { @apply bg-emerald-50 text-emerald-700; }
 .badge--inactive { @apply bg-rose-50 text-rose-700; }
-.badge--violet { @apply bg-violet-50 text-violet-700; }
+.badge--violet { @apply bg-brand-50 text-brand-700; }
 
 .action-btn {
   @apply inline-flex h-8 w-8 items-center justify-center rounded-lg border transition;
 }
-.action-btn--view { @apply border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100; }
-.action-btn--edit { @apply border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100; }
+.action-btn--view { @apply border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100; }
+.action-btn--edit { @apply border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100; }
 .action-btn--warn { @apply border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100; }
 .action-btn--success { @apply border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100; }
 .action-btn--danger { @apply border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100; }
 
 /* Loading */
 .loading-dot {
-  @apply h-2 w-2 rounded-full bg-blue-500;
+  @apply h-2 w-2 rounded-full bg-brand-500;
   animation: pulse-dot 1s ease-in-out infinite;
 }
 .loading-dot--lg { @apply h-2.5 w-2.5; }
@@ -1729,14 +1726,14 @@ onBeforeUnmount(() => {
   @apply fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/55 p-3 backdrop-blur-md sm:p-4;
 }
 .modal-panel {
-  @apply flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-white shadow-2xl;
+  @apply flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl;
 }
 .modal-panel--form { @apply max-w-3xl; }
 .modal-panel--profile { @apply max-w-4xl; }
 .modal-header {
-  @apply flex shrink-0 items-start justify-between gap-4 bg-gradient-to-r from-slate-900 via-blue-950 to-blue-800 px-5 py-5 text-white;
+  @apply flex shrink-0 items-start justify-between gap-4 bg-slate-900 px-5 py-5 text-white;
 }
-.modal-header--compact { @apply bg-gradient-to-r from-slate-900 to-blue-900; }
+.modal-header--compact { @apply bg-slate-900; }
 .modal-close {
   @apply rounded-xl p-2 text-white/70 transition hover:bg-white/10 hover:text-white;
 }
@@ -1748,7 +1745,7 @@ onBeforeUnmount(() => {
   @apply flex shrink-0 flex-wrap justify-end gap-2 border-t border-slate-100 bg-slate-50/80 px-5 py-4;
 }
 .btn-primary {
-  @apply inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-700 disabled:opacity-50;
+  @apply inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/20 transition hover:bg-brand-700 disabled:opacity-50;
 }
 .btn-secondary {
   @apply inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50;
@@ -1776,7 +1773,7 @@ onBeforeUnmount(() => {
   @apply flex flex-wrap items-center gap-4;
 }
 .photo-drop {
-  @apply flex cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-slate-200 bg-white px-6 py-5 transition hover:border-blue-400 hover:bg-blue-50/30;
+  @apply flex cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-slate-200 bg-white px-6 py-5 transition hover:border-brand-400 hover:bg-brand-50/30;
 }
 .photo-preview {
   @apply flex flex-col items-center gap-2;
@@ -1806,10 +1803,10 @@ onBeforeUnmount(() => {
 
 /* Profile modal */
 .profile-hero {
-  @apply relative shrink-0 bg-gradient-to-br from-slate-900 via-blue-950 to-blue-800 px-5 pb-6 pt-5;
+  @apply relative shrink-0 bg-slate-900 px-5 pb-6 pt-5;
 }
 .profile-avatar-lg {
-  @apply flex h-28 w-28 items-center justify-center rounded-3xl bg-white/15 text-3xl font-bold text-white ring-4 ring-white/20;
+  @apply flex h-28 w-28 items-center justify-center rounded-2xl bg-white/15 text-3xl font-bold text-white ring-4 ring-white/20;
 }
 .btn-profile-edit {
   @apply inline-flex items-center gap-2 self-start rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20;
@@ -1819,8 +1816,8 @@ onBeforeUnmount(() => {
 }
 .profile-pill--active { @apply bg-emerald-400/20 text-emerald-100; }
 .profile-pill--inactive { @apply bg-rose-400/20 text-rose-100; }
-.profile-pill--role { @apply bg-violet-400/20 text-violet-100; }
-.profile-pill--muted { @apply bg-white/10 text-blue-100; }
+.profile-pill--role { @apply bg-brand-400/20 text-brand-100; }
+.profile-pill--muted { @apply bg-white/10 text-brand-100; }
 .profile-body { @apply space-y-5; }
 .profile-block {
   @apply rounded-2xl border border-slate-100 bg-slate-50/60 p-4;
@@ -1840,7 +1837,7 @@ onBeforeUnmount(() => {
   @apply rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm transition;
 }
 .detail-card:hover {
-  @apply border-blue-200 shadow-md;
+  @apply border-brand-200 shadow-md;
 }
 .detail-heading {
   color: #000000;
@@ -1863,10 +1860,10 @@ onBeforeUnmount(() => {
   margin-left: 0;
 }
 .other-duty-item {
-  @apply flex items-start gap-3 rounded-lg bg-blue-50 px-3 py-2 border border-blue-100;
+  @apply flex items-start gap-3 rounded-lg bg-brand-50 px-3 py-2 border border-brand-100;
 }
 .other-duty-number {
-  @apply min-w-[24px] font-extrabold text-blue-700;
+  @apply min-w-[24px] font-extrabold text-brand-700;
 }
 .other-duty-text {
   @apply flex-1 text-slate-800 leading-relaxed;
@@ -1876,7 +1873,7 @@ onBeforeUnmount(() => {
   @apply flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 py-10 transition;
 }
 .import-dropzone--active {
-  @apply border-blue-400 bg-blue-50;
+  @apply border-brand-400 bg-brand-50;
 }
 
 /* Pagination */
@@ -1895,7 +1892,7 @@ onBeforeUnmount(() => {
 }
 .pagination-btn:hover:not(:disabled) {
   background-color: #f1f5f9;
-  color: #2563eb;
+  color: #16a34a;
   border-color: #cbd5e1;
 }
 .pagination-btn:disabled {
@@ -1919,16 +1916,16 @@ onBeforeUnmount(() => {
 }
 .pagination-page-btn:hover {
   background-color: #f1f5f9;
-  color: #2563eb;
+  color: #16a34a;
   border-color: #cbd5e1;
 }
 .pagination-page-btn--active {
-  background-color: #2563eb;
+  background-color: #16a34a;
   color: white;
-  border-color: #2563eb;
+  border-color: #16a34a;
 }
 .pagination-page-btn--active:hover {
-  background-color: #1d4ed8;
+  background-color: #15803d;
 }
 
 /* Transitions */
@@ -1944,5 +1941,263 @@ onBeforeUnmount(() => {
 .modal-leave-to {
   opacity: 0;
   transform: translateY(-8px) scale(0.98);
+}
+</style>
+
+<style scoped>
+/* dark mode: generated by scripts/build-dark-overrides.cjs */
+html.dark .tool-btn {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+  color: var(--d-text-2);
+}
+html.dark .tool-btn:hover {
+  background-color: var(--d-sunken);
+}
+html.dark .filter-label {
+  color: var(--d-muted);
+}
+html.dark .page-btn {
+  border-color: var(--d-line);
+  color: var(--d-text-2);
+}
+html.dark .page-btn:hover {
+  background-color: var(--d-sunken);
+}
+html.dark .btn-header--ghost {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+  color: var(--d-text-2);
+}
+html.dark .btn-header--ghost:hover {
+  background-color: var(--d-sunken);
+}
+html.dark .stat-card {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+}
+html.dark .field-label {
+  color: var(--d-muted);
+}
+html.dark .input {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+  color: var(--d-text);
+}
+html.dark .btn-export--analytics {
+  border-color: rgba(34, 197, 94, 0.3);
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+}
+html.dark .btn-export--analytics:hover {
+  background-color: rgba(34, 197, 94, 0.2);
+}
+html.dark .btn-export--ghost {
+  border-color: var(--d-line);
+  color: var(--d-text-2);
+}
+html.dark .btn-export--ghost:hover {
+  background-color: var(--d-sunken);
+}
+html.dark .teachers-table thead {
+  background-color: var(--d-sunken);
+}
+html.dark .teachers-table thead th {
+  color: var(--d-muted);
+}
+html.dark .teachers-table tbody td {
+  color: var(--d-text-2);
+}
+html.dark .table-row {
+  border-color: var(--d-line);
+}
+html.dark .table-row:hover {
+  background-color: var(--d-sunken);
+}
+html.dark .code-badge {
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+}
+html.dark .badge--active {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+}
+html.dark .badge--inactive {
+  background-color: rgba(244, 63, 94, 0.12);
+  color: #fda4af;
+}
+html.dark .badge--violet {
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+}
+html.dark .action-btn--view {
+  border-color: rgba(34, 197, 94, 0.3);
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+}
+html.dark .action-btn--view:hover {
+  background-color: rgba(34, 197, 94, 0.2);
+}
+html.dark .action-btn--edit {
+  border-color: rgba(34, 197, 94, 0.3);
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+}
+html.dark .action-btn--edit:hover {
+  background-color: rgba(34, 197, 94, 0.2);
+}
+html.dark .action-btn--warn {
+  border-color: rgba(245, 158, 11, 0.3);
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #fcd34d;
+}
+html.dark .action-btn--warn:hover {
+  background-color: rgba(245, 158, 11, 0.2);
+}
+html.dark .action-btn--success {
+  border-color: rgba(16, 185, 129, 0.3);
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+}
+html.dark .action-btn--success:hover {
+  background-color: rgba(16, 185, 129, 0.2);
+}
+html.dark .action-btn--danger {
+  border-color: rgba(244, 63, 94, 0.3);
+  background-color: rgba(244, 63, 94, 0.12);
+  color: #fda4af;
+}
+html.dark .action-btn--danger:hover {
+  background-color: rgba(244, 63, 94, 0.2);
+}
+html.dark .modal-panel {
+  background-color: var(--d-surface);
+}
+html.dark .modal-close:hover {
+  background-color: var(--d-surface);
+}
+html.dark .modal-footer {
+  border-color: var(--d-line);
+  background-color: var(--d-sunken);
+}
+html.dark .btn-secondary {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+  color: var(--d-text-2);
+}
+html.dark .btn-secondary:hover {
+  background-color: var(--d-sunken);
+}
+html.dark .form-section {
+  border-color: var(--d-line);
+  background-color: var(--d-sunken);
+}
+html.dark .form-section-title {
+  color: var(--d-text);
+}
+html.dark .form-section-desc {
+  color: var(--d-muted);
+}
+html.dark .photo-drop {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+}
+html.dark .photo-drop:hover {
+  background-color: rgba(34, 197, 94, 0.12);
+}
+html.dark .photo-remove {
+  color: #fda4af;
+}
+html.dark .status-toggle {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+}
+html.dark .status-toggle--on {
+  border-color: rgba(16, 185, 129, 0.3);
+  background-color: rgba(16, 185, 129, 0.12);
+}
+html.dark .status-toggle-track {
+  background-color: var(--d-line-strong);
+}
+html.dark .status-toggle-thumb {
+  background-color: var(--d-surface);
+}
+html.dark .alert--success {
+  border-color: rgba(16, 185, 129, 0.3);
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+}
+html.dark .alert--error {
+  border-color: rgba(244, 63, 94, 0.3);
+  background-color: rgba(244, 63, 94, 0.12);
+  color: #fda4af;
+}
+html.dark .profile-avatar-lg {
+  background-color: var(--d-surface);
+}
+html.dark .btn-profile-edit {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+}
+html.dark .btn-profile-edit:hover {
+  background-color: var(--d-surface);
+}
+html.dark .profile-pill--muted {
+  background-color: var(--d-surface);
+}
+html.dark .profile-block {
+  border-color: var(--d-line);
+  background-color: var(--d-sunken);
+}
+html.dark .other-duty-number {
+  color: var(--d-text);
+}
+html.dark .detail-card {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+}
+html.dark .detail-card:hover {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+html.dark .detail-heading {
+  color: var(--d-text);
+}
+html.dark .detail-value {
+  color: var(--d-text);
+}
+html.dark .other-duty-item {
+  background-color: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+html.dark .other-duty-number {
+  color: #86efac;
+}
+html.dark .other-duty-text {
+  color: var(--d-text);
+}
+html.dark .import-dropzone {
+  border-color: var(--d-line);
+  background-color: var(--d-sunken);
+}
+html.dark .import-dropzone--active {
+  background-color: rgba(34, 197, 94, 0.12);
+}
+html.dark .pagination-btn {
+  background-color: var(--d-surface);
+  border-color: var(--d-line);
+}
+html.dark .pagination-btn:hover:not(:disabled) {
+  background-color: var(--d-surface);
+  color: var(--d-text-2);
+  border-color: var(--d-line);
+}
+html.dark .pagination-page-btn {
+  background-color: var(--d-surface);
+  border-color: var(--d-line);
+}
+html.dark .pagination-page-btn:hover {
+  background-color: var(--d-surface);
+  color: var(--d-text-2);
+  border-color: var(--d-line);
 }
 </style>

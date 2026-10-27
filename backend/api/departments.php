@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/../config/ApiGuard.php';
+api_guard();
 require_once '../config/Database.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -51,12 +53,18 @@ try {
             
             // Fetch roles for each department if requested
             if ($includeRoles) {
+                // Roles with how many staff hold each, and the department's staff count.
+                $roleStmt = $db->prepare('SELECT r.id, r.name, r.description,
+                        (SELECT COUNT(*) FROM employees e WHERE e.role_id = r.id) AS staff_count
+                    FROM roles r WHERE r.department_id = :dept_id ORDER BY r.name ASC');
+                $staffStmt = $db->prepare('SELECT COUNT(*) FROM employees WHERE department_id = :dept_id');
                 foreach ($departments as &$dept) {
-                    $roleStmt = $db->prepare('SELECT id, name, description FROM roles WHERE department_id = :dept_id ORDER BY name ASC');
-                    $roleStmt->bindValue(':dept_id', $dept['id'], PDO::PARAM_INT);
-                    $roleStmt->execute();
+                    $roleStmt->execute([':dept_id' => $dept['id']]);
                     $dept['roles'] = $roleStmt->fetchAll(PDO::FETCH_ASSOC);
+                    $staffStmt->execute([':dept_id' => $dept['id']]);
+                    $dept['staff_count'] = (int)$staffStmt->fetchColumn();
                 }
+                unset($dept);
             }
 
             dept_sendJson(200, [

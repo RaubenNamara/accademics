@@ -1,219 +1,119 @@
 <template>
-  <div class="space-y-8">
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-8 text-white shadow-2xl">
-      <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
-      <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
-      <div class="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
-
-      <div class="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+  <div class="page">
+    <div class="page-hero">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-        
-          <h1 class="mt-3 text-4xl font-bold tracking-tight">Subject-Teacher Performance Tracking</h1>
-         
+          <h1 class="page-hero-title">Subject Performance</h1>
         </div>
-
-        <div class="flex flex-wrap gap-3">
-          <button
-            @click="loadData"
-            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/20 hover:shadow-lg hover:shadow-white/10"
-          >
-            <span class="relative z-10 flex items-center gap-2">
-              <svg class="h-4 w-4 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Refresh
-            </span>
-          </button>
-
-          <button
-            @click="downloadPDF"
-            :disabled="records.length === 0"
-            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2.5 text-sm font-medium text-white shadow-xl shadow-emerald-500/25 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
-          >
-            <span class="relative z-10 flex items-center gap-2">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Download PDF
-            </span>
-          </button>
-
-          <button
-            @click="openAddModal"
-            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-2.5 text-sm font-medium text-white shadow-xl shadow-blue-500/25 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/40"
-          >
-            <span class="relative z-10 flex items-center gap-2">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Add Record
-            </span>
-          </button>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="btn-hero-primary" @click="openAddModal"><Plus class="h-4 w-4" />Add record</button>
         </div>
       </div>
     </div>
 
-    <div class="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-xl backdrop-blur-sm">
-      <div class="grid gap-5 xl:grid-cols-3">
-        <div>
-          <label class="mb-2.5 block text-sm font-semibold text-slate-700">Year</label>
-          <select
-            v-model="filterYear"
-            @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
-          >
+    <StatCards :cards="summaryCards" />
+
+    <ListToolbar
+      v-model:search="searchQuery"
+      placeholder="Search teacher, subject or class"
+      :filter-count="0"
+    >
+      <template #filters>
+        <label class="block">
+          <span class="filter-label">Year</span>
+          <select v-model="filterYear" class="filter-select" @change="loadData">
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
-        </div>
-
-        <div>
-          <label class="mb-2.5 block text-sm font-semibold text-slate-700">Term</label>
-          <select
-            v-model="filterTerm"
-            @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
-          >
-            <option value="">All Terms</option>
+        </label>
+        <label class="block">
+          <span class="filter-label">Term</span>
+          <select v-model="filterTerm" class="filter-select" @change="loadData">
+            <option value="">All terms</option>
             <option :value="1">Term 1</option>
             <option :value="2">Term 2</option>
             <option :value="3">Term 3</option>
           </select>
-        </div>
+        </label>
+      </template>
+      <template #actions>
+        <button type="button" class="tool-btn" :disabled="loading" title="Refresh" @click="loadData"><RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" /><span class="hidden lg:inline">Refresh</span></button>
+        <button type="button" class="tool-btn" :disabled="records.length === 0" title="Download PDF" @click="downloadPDF"><FileText class="h-4 w-4" /><span class="hidden lg:inline">PDF</span></button>
+      </template>
+    </ListToolbar>
 
-        <div class="flex items-end">
-          <div class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3">
-            <div class="h-2 w-2 animate-pulse rounded-full bg-blue-500"></div>
-            <span class="text-sm font-medium text-slate-600">
-              <span class="font-bold text-blue-600">{{ records.length }}</span> records found
-            </span>
-          </div>
-        </div>
+    <section class="card overflow-hidden">
+      <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3 sm:px-5">
+        <p class="text-sm text-gray-600"><strong class="text-gray-900">{{ visibleRecords.length }}</strong> record{{ visibleRecords.length === 1 ? '' : 's' }}</p>
+        <p class="hidden text-xs text-gray-500 sm:block">BOT/EOT are class averages; TC is the change and AGP the overall gain.</p>
       </div>
-    </div>
-
-    <div class="rounded-3xl border border-slate-200/60 bg-white/80 shadow-xl backdrop-blur-sm">
-      <div class="border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-white px-6 py-5">
-        <h2 class="text-xl font-bold text-slate-900">Performance Records</h2>
+      <div v-if="loading && records.length === 0" class="space-y-3 p-5">
+        <div v-for="i in 5" :key="i" class="flex animate-pulse items-center gap-3"><div class="h-10 w-10 rounded-full bg-gray-100"></div><div class="h-3 flex-1 rounded bg-gray-100"></div></div>
       </div>
-
-      <div class="overflow-x-auto">
-        <table class="min-w-[1400px] w-full divide-y divide-slate-200/60">
-          <thead class="bg-gradient-to-r from-slate-50 to-slate-100/50">
-            <tr class="text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-              <th
-                v-for="column in tableColumns"
-                :key="column.key"
-                class="px-6 py-4"
-                :class="column.align === 'right' ? 'text-right' : ''"
-              >
-                {{ column.label }}
-              </th>
+      <div v-else-if="visibleRecords.length === 0" class="px-5 py-14 text-center">
+        <ClipboardList class="mx-auto h-9 w-9 text-gray-300" />
+        <p class="mt-2 text-sm font-medium text-gray-700">No performance records found</p>
+      </div>
+      <template v-else>
+        <table class="hidden w-full text-left text-sm md:table">
+          <thead class="border-b border-gray-200 bg-gray-50/70">
+            <tr class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              <th class="px-5 py-3">Teacher</th>
+              <th class="px-4 py-3">Class</th>
+              <th class="hidden px-4 py-3 lg:table-cell">Scores</th>
+              <th class="px-4 py-3">Change</th>
+              <th class="hidden px-4 py-3 xl:table-cell">Comment</th>
+              <th class="w-12 px-3 py-3"><span class="sr-only">Actions</span></th>
             </tr>
           </thead>
-
-          <tbody class="divide-y divide-slate-100/60 bg-white">
-            <tr v-if="records.length === 0">
-              <td :colspan="tableColumns.length" class="px-6 py-16 text-center">
-                <div class="flex flex-col items-center gap-3">
-                  <div class="rounded-full bg-slate-100 p-4">
-                    <svg class="h-8 w-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                  </div>
-                  <p class="text-sm font-medium text-slate-500">No performance records found.</p>
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="record in visibleRecords" :key="record.id" class="transition hover:bg-brand-50/40">
+              <td class="px-5 py-3">
+                <div class="flex min-w-0 items-center gap-3">
+                  <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">{{ initials(record.teacher_name) }}</span>
+                  <span class="min-w-0">
+                    <span class="block truncate font-semibold text-gray-900">{{ record.teacher_name || '-' }}</span>
+                    <span class="block truncate text-xs text-gray-500">{{ record.subject || '-' }}</span>
+                  </span>
                 </div>
               </td>
-            </tr>
-
-            <tr
-              v-for="record in records"
-              :key="record.id"
-              class="transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-blue-100/30"
-            >
-              <template v-for="column in tableColumns" :key="column.key">
-                <td v-if="column.kind === 'teacher'" class="px-6 py-4">
-                  <div class="flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-500/30">
-                      {{ record.teacher_name?.charAt(0) || '?' }}
-                    </div>
-                    <div class="font-semibold text-slate-900">{{ record.teacher_name || '-' }}</div>
-                  </div>
-                </td>
-
-                <td v-else-if="column.kind === 'subject'" class="px-6 py-4">
-                  <span class="inline-flex items-center rounded-xl bg-gradient-to-r from-blue-50 to-blue-100 px-3 py-1.5 text-xs font-semibold text-blue-700 shadow-sm">
-                    {{ record.subject || '-' }}
-                  </span>
-                </td>
-
-                <td v-else-if="column.kind === 'text'" class="px-6 py-4 text-sm font-medium text-slate-700">
-                  {{ record[column.field] || '-' }}
-                </td>
-
-                <td v-else-if="column.kind === 'tc'" class="px-6 py-4">
-                  <span
-                    class="inline-flex items-center rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm"
-                    :class="parseFloat(record[column.field]) < 0
-                      ? 'bg-gradient-to-r from-rose-100 to-pink-100 text-rose-800'
-                      : 'bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800'"
-                  >
-                    {{ formatScore(record[column.field]) }}
-                  </span>
-                </td>
-
-                <td v-else-if="column.kind === 'agp'" class="px-6 py-4">
-                  <span
-                    class="inline-flex items-center rounded-xl px-3 py-1.5 text-xs font-bold shadow-sm"
-                    :class="parseFloat(record[column.field]) < 0
-                      ? 'bg-gradient-to-r from-rose-100 to-pink-100 text-rose-800'
-                      : 'bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800'"
-                  >
-                    {{ formatScore(record[column.field]) }}
-                  </span>
-                </td>
-
-                <td v-else-if="column.kind === 'comment'" class="px-6 py-4 text-sm text-slate-600">
-                  {{ getCommentForRecord(record) }}
-                </td>
-
-                <td v-else-if="column.kind === 'actions'" class="px-6 py-4">
-                  <div class="flex justify-end gap-2">
-                    <button
-                      @click="editRecord(record)"
-                      class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-blue-500/20"
-                    >
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      Edit
-                    </button>
-
-                    <button
-                      @click="deleteRecord(record.id)"
-                      class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-pink-50 px-4 py-2 text-sm font-semibold text-rose-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-rose-500/20"
-                    >
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </template>
+              <td class="whitespace-nowrap px-4 py-3 text-gray-700">{{ record.class }} {{ record.stream }}</td>
+              <td class="hidden px-4 py-3 lg:table-cell">
+                <div class="flex flex-wrap gap-1">
+                  <span v-for="c in scoreColumns" :key="c.key" class="rounded-md px-1.5 py-0.5 text-[11px]" :class="c.kind === 'text' ? 'bg-gray-100 text-gray-600' : changeClass(record[c.field])">{{ c.label }} <strong>{{ c.kind === 'text' ? (Number(record[c.field]) ? Number(record[c.field]) : '-') : formatScore(record[c.field]) }}</strong></span>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span v-if="headlineColumn" class="whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums" :class="changeClass(record[headlineColumn.field])">{{ headlineColumn.label }} {{ formatScore(record[headlineColumn.field]) }}</span>
+              </td>
+              <td class="hidden max-w-xs px-4 py-3 text-xs text-gray-600 xl:table-cell">{{ getCommentForRecord(record) }}</td>
+              <td class="px-3 py-3 text-right"><RowActionsMenu :label="`Actions for ${record.teacher_name}`" :items="recordActions(record)" /></td>
             </tr>
           </tbody>
         </table>
-      </div>
-    </div>
+        <ul class="divide-y divide-gray-100 md:hidden">
+          <li v-for="record in visibleRecords" :key="record.id" class="flex items-start gap-3 px-4 py-3">
+            <span class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">{{ initials(record.teacher_name) }}</span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate font-semibold text-gray-900">{{ record.teacher_name || '-' }}</p>
+              <p class="truncate text-xs text-gray-500">{{ record.subject || '-' }} · {{ record.class }} {{ record.stream }}</p>
+              <div class="mt-1 flex flex-wrap gap-1">
+                <span v-for="c in scoreColumns" :key="c.key" class="rounded-md px-1.5 py-0.5 text-[11px]" :class="c.kind === 'text' ? 'bg-gray-100 text-gray-600' : changeClass(record[c.field])">{{ c.label }} <strong>{{ c.kind === 'text' ? (Number(record[c.field]) ? Number(record[c.field]) : '-') : formatScore(record[c.field]) }}</strong></span>
+              </div>
+            </div>
+            <RowActionsMenu :label="`Actions for ${record.teacher_name}`" :items="recordActions(record)" />
+          </li>
+        </ul>
+      </template>
+    </section>
 
     <div
       v-if="showModal"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm"
     >
-      <div class="relative flex max-h-[90vh] w-full max-w-4xl flex-col rounded-3xl bg-white shadow-2xl ring-1 ring-white/20">
-        <div class="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/5 to-blue-600/5"></div>
+      <div class="relative flex max-h-[90vh] w-full max-w-4xl flex-col rounded-2xl bg-white shadow-2xl ring-1 ring-white/20">
+        <div class="pointer-events-none absolute inset-0 rounded-2xl bg-brand-500/5"></div>
 
-        <div class="relative flex-shrink-0 border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-white px-6 py-6">
+        <div class="relative flex-shrink-0 border-b border-slate-200/60 bg-slate-50 px-6 py-6">
           <h3 class="text-xl font-bold text-slate-900">
             {{ editingId ? 'Edit Performance Record' : 'Add Performance Record' }}
           </h3>
@@ -234,7 +134,7 @@
                     placeholder="Search teacher..."
                     class="input mb-2"
                   >
-                  <svg class="w-5 h-5 text-gray-400 absolute right-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-5 h-5 text-slate-400 absolute right-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                   </svg>
                 </div>
@@ -277,7 +177,7 @@
             </div>
 
             <!-- Term 1 Section -->
-            <div class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-blue-50 to-blue-100 p-5 shadow-sm">
+            <div class="rounded-2xl border border-slate-200/60 bg-brand-50 p-5 shadow-sm">
               <h4 class="mb-4 font-bold text-slate-900">Term 1 Performance</h4>
               <div class="grid gap-5 md:grid-cols-4">
                 <div>
@@ -318,7 +218,7 @@
                   type="button"
                   @click="saveTerm1"
                   :disabled="savingTerm1"
-                  class="rounded-2xl bg-gradient-to-r from-blue-700 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+                  class="rounded-2xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-brand-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
                 >
                   {{ savingTerm1 ? 'Saving...' : 'Save Term 1' }}
                 </button>
@@ -326,7 +226,7 @@
             </div>
 
             <!-- Term 2 Section -->
-            <div class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-emerald-50 to-teal-50 p-5 shadow-sm">
+            <div class="rounded-2xl border border-slate-200/60 bg-emerald-50 p-5 shadow-sm">
               <h4 class="mb-4 font-bold text-slate-900">Term 2 Performance</h4>
               <div class="grid gap-5 md:grid-cols-3">
                 <div>
@@ -355,7 +255,7 @@
                   type="button"
                   @click="saveTerm2"
                   :disabled="savingTerm2"
-                  class="rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+                  class="rounded-2xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
                 >
                   {{ savingTerm2 ? 'Saving...' : 'Save Term 2' }}
                 </button>
@@ -363,7 +263,7 @@
             </div>
 
             <!-- Term 3 Section -->
-            <div class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-amber-50 to-orange-50 p-5 shadow-sm">
+            <div class="rounded-2xl border border-slate-200/60 bg-amber-50 p-5 shadow-sm">
               <h4 class="mb-4 font-bold text-slate-900">Term 3 Performance</h4>
               <div class="grid gap-5 md:grid-cols-3">
                 <div>
@@ -392,7 +292,7 @@
                   type="button"
                   @click="saveTerm3"
                   :disabled="savingTerm3"
-                  class="rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-amber-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+                  class="rounded-2xl bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-amber-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
                 >
                   {{ savingTerm3 ? 'Saving...' : 'Save Term 3' }}
                 </button>
@@ -400,7 +300,7 @@
             </div>
 
             <!-- Final Calculations Section -->
-            <div class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-blue-50 to-blue-100 p-5 shadow-sm">
+            <div class="rounded-2xl border border-slate-200/60 bg-brand-50 p-5 shadow-sm">
               <h4 class="mb-4 font-bold text-slate-900">Final Calculations (AGP)</h4>
               <div class="grid gap-5 md:grid-cols-2">
                 <div>
@@ -416,19 +316,19 @@
                 <button
                   type="button"
                   @click="calculateAGP"
-                  class="rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/40"
+                  class="rounded-2xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-brand-500/40"
                 >
                   Calculate AGP
                 </button>
               </div>
             </div>
 
-            <div v-if="error" class="rounded-2xl border border-rose-200/60 bg-gradient-to-r from-rose-50 to-pink-50 px-4 py-3 text-sm font-medium text-rose-700 shadow-sm">
+            <div v-if="error" class="rounded-2xl border border-rose-200/60 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 shadow-sm">
               {{ error }}
             </div>
           </div>
 
-          <div class="relative flex-shrink-0 border-t border-slate-200/60 bg-gradient-to-r from-slate-50 to-white px-6 py-5">
+          <div class="relative flex-shrink-0 border-t border-slate-200/60 bg-slate-50 px-6 py-5">
             <div class="flex items-center justify-end gap-3">
               <button
                 type="button"
@@ -450,12 +350,20 @@ import { ref, onMounted, computed } from 'vue';
 import { subjectPerformanceAPI, teachersAPI, classesAPI, subjectsNewAPI } from '../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useGlobalTerm } from '../composables/useGlobalTerm.js';
+import { Plus, RefreshCw, FileText, ClipboardList, Pencil, Trash2, Users as UsersIcon, TrendingUp, TrendingDown } from 'lucide-vue-next';
+import StatCards from '../components/ui/StatCards.vue';
+import ListToolbar from '../components/ui/ListToolbar.vue';
+import RowActionsMenu from '../components/RowActionsMenu.vue';
 
 const records = ref([]);
+const loading = ref(false);
+const searchQuery = ref('');
 const teachersList = ref([]);
 const teacherSearch = ref('');
 const filterYear = ref(new Date().getFullYear());
 const filterTerm = ref('');
+useGlobalTerm((y, t) => { filterYear.value = y; filterTerm.value = t; }, () => loadData());
 const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
 const showModal = ref(false);
 const editingId = ref(null);
@@ -585,6 +493,7 @@ const getCommentForRecord = (record) => {
 };
 
 const loadData = async () => {
+  loading.value = true;
   try {
     const result = await subjectPerformanceAPI.getAll(filterYear.value, filterTerm.value || null);
     if (result.success) {
@@ -592,8 +501,39 @@ const loadData = async () => {
     }
   } catch (err) {
     console.error('Failed to load data:', err);
+  } finally {
+    loading.value = false;
   }
 };
+
+const initials = (name) => String(name || '?').split(/s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+const scoreColumns = computed(() => tableColumns.value.filter((c) => ['text', 'tc', 'agp'].includes(c.kind) && !['class', 'stream'].includes(c.field)));
+// The last change column (TC of the term shown, or AGP for all terms) is the headline.
+const headlineColumn = computed(() => [...tableColumns.value].reverse().find((c) => c.kind === 'tc' || c.kind === 'agp') || null);
+const changeClass = (value) => {
+  const n = parseFloat(value);
+  if (Number.isNaN(n)) return 'bg-gray-100 text-gray-600';
+  return n < 0 ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-100' : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100';
+};
+const visibleRecords = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase();
+  if (!q) return records.value;
+  return records.value.filter((r) => `${r.teacher_name} ${r.subject} ${r.class} ${r.stream}`.toLowerCase().includes(q));
+});
+const recordActions = (record) => [
+  { label: 'Edit', icon: Pencil, onClick: () => editRecord(record) },
+  { label: 'Delete', icon: Trash2, danger: true, onClick: () => deleteRecord(record.id) },
+];
+const summaryCards = computed(() => {
+  const field = headlineColumn.value?.field;
+  const vals = field ? records.value.map((r) => parseFloat(r[field])).filter((n) => !Number.isNaN(n)) : [];
+  return [
+    { label: 'Records', value: records.value.length.toLocaleString(), icon: ClipboardList },
+    { label: 'Teachers', value: new Set(records.value.map((r) => r.teacher_id || r.teacher_name)).size.toLocaleString(), icon: UsersIcon, tone: 'sky' },
+    { label: 'Improved', value: vals.filter((n) => n >= 0).length.toLocaleString(), note: headlineColumn.value ? 'by ' + headlineColumn.value.label : '', icon: TrendingUp, tone: 'brand' },
+    { label: 'Dropped', value: vals.filter((n) => n < 0).length.toLocaleString(), note: headlineColumn.value ? 'by ' + headlineColumn.value.label : '', icon: TrendingDown, tone: 'red' },
+  ];
+});
 
 const loadClasses = async () => {
   try {
@@ -1033,7 +973,7 @@ const downloadPDF = () => {
       cellPadding: 2
     },
     headStyles: {
-      fillColor: [59, 130, 246],
+      fillColor: [22, 163, 74],
       textColor: 255,
       fontStyle: 'bold'
     },
@@ -1069,6 +1009,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.filter-label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500; }
+.filter-select { @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100; }
+.tool-btn { @apply inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50; }
 .input {
   width: 100%;
   border-radius: 1rem;
@@ -1081,11 +1024,37 @@ onMounted(() => {
 }
 
 .input:focus {
-  border-color: rgb(99 102 241);
-  box-shadow: 0 0 0 4px rgb(238 242 255);
+  border-color: rgb(22 163 74);
+  box-shadow: 0 0 0 4px rgb(220 252 231);
 }
 
 .input:hover:not(:focus) {
   border-color: rgb(203 213 225);
+}
+</style>
+
+<style scoped>
+/* dark mode: generated by scripts/build-dark-overrides.cjs */
+html.dark .filter-label {
+  color: var(--d-muted);
+}
+html.dark .filter-select {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+}
+html.dark .tool-btn {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+  color: var(--d-text-2);
+}
+html.dark .tool-btn:hover {
+  background-color: var(--d-sunken);
+}
+html.dark .input {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+}
+html.dark .input:hover:not(:focus) {
+  border-color: var(--d-line);
 }
 </style>

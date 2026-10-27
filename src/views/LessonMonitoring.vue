@@ -1,76 +1,60 @@
 <template>
-  <div class="space-y-8">
-    <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-5 text-white shadow-2xl sm:p-7">
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_28%)]"></div>
-
-      <div class="relative z-10 flex justify-end">
-        <div class="flex flex-wrap justify-end gap-3">
-          <button
-            @click="loadData"
-            class="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8 8 0 014.582 9m0 0H9m11 11v-5h-.581m0 0A8 8 0 019.418 15m15.356 2H15" />
-            </svg>
-            Refresh
-          </button>
-
-          <button
-            @click="openAddModal"
-            class="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-extrabold text-blue-700 shadow-xl shadow-black/10 transition hover:bg-blue-50"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Add Record
-          </button>
-
-          <button
-            @click="showReports = !showReports"
-            :class="showReports ? 'bg-white text-blue-700' : 'bg-white/10 text-white border border-white/20'"
-            class="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold backdrop-blur transition hover:bg-white/20"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Reports
-          </button>
+  <div class="page">
+    <div class="page-hero">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="page-hero-title">Lesson Monitoring</h1>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="btn-hero" @click="showReports = !showReports"><BarChart3 class="h-4 w-4" />Reports</button>
+          <button type="button" class="btn-hero-primary" @click="openAddModal"><Plus class="h-4 w-4" />Add record</button>
         </div>
       </div>
     </div>
 
-    <div class="grid gap-3 sm:grid-cols-3">
-      <div class="stat-card">
-        <div class="stat-icon bg-rose-50 text-rose-600"><i class="fas fa-hourglass-half"></i></div>
-        <div class="min-w-0">
-          <div class="stat-label">Time Lost</div>
-          <div class="stat-value text-rose-600">{{ formatMinutes(summary.total_minutes_lost) }}</div>
-          <div class="stat-sub">
-            ≈ {{ summary.equivalent_single_lessons || 0 }} single · {{ summary.equivalent_double_lessons || 0 }} double lessons
-          </div>
-        </div>
-      </div>
+    <StatCards :cards="summaryCards" />
 
-      <div class="stat-card">
-        <div class="stat-icon bg-teal-50 text-teal-600"><i class="fas fa-rotate-left"></i></div>
-        <div class="min-w-0">
-          <div class="stat-label">Time Compensated</div>
-          <div class="stat-value text-teal-600">{{ formatMinutes(summary.compensated_minutes) }}</div>
-          <div class="stat-sub">
-            {{ summary.compensated_lessons || 0 }} {{ summary.compensated_lessons === 1 ? 'lesson' : 'lessons' }} compensated
-          </div>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon bg-slate-100 text-slate-600"><i class="fas fa-list-check"></i></div>
-        <div class="min-w-0">
-          <div class="stat-label">Records</div>
-          <div class="stat-value text-slate-900">{{ summary.records || 0 }}</div>
-          <div class="stat-sub">lessons monitored</div>
-        </div>
-      </div>
-    </div>
+    <ListToolbar
+      v-model:search="groupSearch"
+      placeholder="Search teacher, subject or class"
+      :filter-count="[filterWeek, filterTeacher].filter(Boolean).length"
+      @clear="filterWeek = ''; filterTeacher = ''; loadData()"
+    >
+      <template #filters>
+        <label class="block">
+          <span class="tb-label">Year</span>
+          <select v-model="filterYear" class="filter-select" @change="loadData">
+            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+          </select>
+        </label>
+        <label class="block">
+          <span class="tb-label">Term</span>
+          <select v-model="filterTerm" class="filter-select" @change="loadData">
+            <option value="">All terms</option>
+            <option :value="1">Term 1</option>
+            <option :value="2">Term 2</option>
+            <option :value="3">Term 3</option>
+          </select>
+        </label>
+        <label class="block">
+          <span class="tb-label">Week</span>
+          <select v-model="filterWeek" class="filter-select" @change="loadData">
+            <option value="">All weeks</option>
+            <option v-for="w in 15" :key="w" :value="w">Week {{ w }}</option>
+          </select>
+        </label>
+        <label class="block">
+          <span class="tb-label">Teacher</span>
+          <select v-model="filterTeacher" class="filter-select" @change="loadData">
+            <option value="">All teachers</option>
+            <option v-for="t in teachersList" :key="t.id" :value="t.id">{{ t.full_name }}</option>
+          </select>
+        </label>
+      </template>
+      <template #actions>
+        <button type="button" class="tool-btn" title="Refresh" @click="loadData"><RefreshCw class="h-4 w-4" /><span class="hidden lg:inline">Refresh</span></button>
+      </template>
+    </ListToolbar>
 
     <!-- Reports Modal -->
     <Teleport to="body">
@@ -80,7 +64,7 @@
         @click.self="showReports = false"
       >
         <div
-          class="flex h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-3xl"
+          class="flex h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-2xl"
           role="dialog"
           aria-modal="true"
           aria-labelledby="reports-title"
@@ -88,7 +72,7 @@
           <!-- Header -->
           <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-4 py-4 sm:px-6">
             <div class="min-w-0">
-              <div class="text-[11px] font-bold uppercase tracking-wider text-blue-600">Lesson Monitoring</div>
+              <div class="text-[11px] font-bold uppercase tracking-wider text-brand-600">Lesson Monitoring</div>
               <h2 id="reports-title" class="text-lg font-extrabold text-slate-900 sm:text-xl">Reports</h2>
               <p class="mt-0.5 text-xs text-slate-500">{{ reportScope }}</p>
             </div>
@@ -252,7 +236,7 @@
                 type="button"
                 @click="printReport"
                 :disabled="reportRows.length === 0"
-                class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <i class="fas fa-file-pdf"></i>
                 Download PDF
@@ -264,15 +248,15 @@
     </Teleport>
 
     <!-- Top Classes by Minutes Lost -->
-    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div class="card overflow-hidden">
       <button
         type="button"
         @click="isAnalyticsCollapsed = !isAnalyticsCollapsed"
-        class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
+        class="flex w-full items-center justify-between gap-4 px-5 py-3 text-left transition hover:bg-slate-50"
         :aria-expanded="!isAnalyticsCollapsed"
       >
         <div class="flex items-center gap-3">
-          <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+          <div class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
             <i class="fas fa-chart-bar"></i>
           </div>
           <div>
@@ -298,40 +282,34 @@
       </button>
 
       <div v-if="!isAnalyticsCollapsed" class="border-t border-slate-100">
-        <ol v-if="topClassesByMinutesLost.length > 0" class="divide-y divide-slate-100">
+        <ol v-if="topClassesByMinutesLost.length > 0" class="gap-x-10 px-5 py-2 lg:columns-2">
           <li
             v-for="(item, index) in visibleTopClasses"
             :key="`${item.class}_${item.stream}`"
-            class="grid grid-cols-[2rem_1fr_auto] items-center gap-x-3 gap-y-2 px-5 py-3 sm:grid-cols-[2rem_12rem_1fr_7rem]"
+            class="grid break-inside-avoid grid-cols-[1.25rem_minmax(0,1fr)_auto] items-center gap-x-3 py-2.5"
+            :title="`${item.total_lessons} lessons · ${item.teachers.length} teachers · about ${Math.floor(item.total_minutes_lost / 40)} single lessons lost`"
           >
-            <span
-              class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold"
-              :class="index < 3 ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-600'"
-            >
-              {{ index + 1 }}
-            </span>
+            <span class="text-xs font-bold tabular-nums" :class="index < 3 ? 'text-rose-600' : 'text-slate-400'">{{ index + 1 }}</span>
 
             <div class="min-w-0">
-              <div class="truncate text-sm font-bold text-slate-900">
-                {{ item.class }}<span v-if="item.stream" class="font-semibold text-slate-500"> · {{ item.stream }}</span>
+              <div class="flex items-baseline justify-between gap-3">
+                <span class="truncate text-sm font-semibold text-slate-900">
+                  {{ item.class }}<span v-if="item.stream" class="font-medium text-slate-500">&nbsp;{{ item.stream }}</span>
+                  <span class="ml-2 hidden text-[11px] font-normal text-slate-400 sm:inline">{{ item.total_lessons }} lessons · {{ item.teachers.length }} teachers</span>
+                </span>
               </div>
-              <div class="text-[11px] text-slate-500">
-                {{ item.total_lessons }} {{ item.total_lessons === 1 ? 'lesson' : 'lessons' }} ·
-                {{ item.teachers.length }} {{ item.teachers.length === 1 ? 'teacher' : 'teachers' }}
+              <div class="mt-1.5 h-1 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  class="h-full rounded-full transition-all duration-500"
+                  :class="index < 3 ? 'bg-gradient-to-r from-rose-400 to-rose-600' : 'bg-gradient-to-r from-rose-200 to-rose-300'"
+                  :style="{ width: `${topClassesMaxLost ? (item.total_minutes_lost / topClassesMaxLost) * 100 : 0}%` }"
+                ></div>
               </div>
             </div>
 
-            <div class="col-span-3 col-start-1 row-start-2 h-2 overflow-hidden rounded-full bg-slate-100 sm:col-span-1 sm:col-start-3 sm:row-start-1">
-              <div
-                class="h-full rounded-full transition-all duration-500"
-                :class="index < 3 ? 'bg-rose-500' : 'bg-rose-300'"
-                :style="{ width: `${topClassesMaxLost ? (item.total_minutes_lost / topClassesMaxLost) * 100 : 0}%` }"
-              ></div>
-            </div>
-
-            <div class="text-right sm:col-start-4 sm:row-start-1">
-              <div class="text-sm font-extrabold text-slate-900">{{ formatMinutes(item.total_minutes_lost) }}</div>
-              <div class="text-[11px] text-slate-500">≈ {{ Math.floor(item.total_minutes_lost / 40) }} single lessons</div>
+            <div class="w-20 text-right">
+              <div class="text-sm font-bold tabular-nums text-slate-900">{{ formatMinutes(item.total_minutes_lost) }}</div>
+              <div class="text-[10px] text-slate-400">≈ {{ Math.floor(item.total_minutes_lost / 40) }} lessons</div>
             </div>
           </li>
         </ol>
@@ -344,7 +322,7 @@
           <button
             type="button"
             @click="showAllTopClasses = !showAllTopClasses"
-            class="text-sm font-semibold text-blue-700 hover:text-blue-800"
+            class="text-sm font-semibold text-brand-700 hover:text-brand-800"
           >
             {{ showAllTopClasses ? 'Show top 5 only' : `Show all ${topClassesByMinutesLost.length}` }}
           </button>
@@ -352,127 +330,31 @@
       </div>
     </div>
 
-    <div class="rounded-[2rem] border border-slate-200 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur">
-      <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <div>
-          <label class="filter-label">Year</label>
-          <select v-model="filterYear" @change="loadData" class="input">
-            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="filter-label">Term</label>
-          <select v-model="filterTerm" @change="loadData" class="input">
-            <option value="">All Terms</option>
-            <option :value="1">Term 1</option>
-            <option :value="2">Term 2</option>
-            <option :value="3">Term 3</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="filter-label">Week</label>
-          <select v-model="filterWeek" @change="loadData" class="input">
-            <option value="">All Weeks</option>
-            <option v-for="w in 15" :key="w" :value="w">Week {{ w }}</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="filter-label">Teacher</label>
-          <select v-model="filterTeacher" @change="loadData" class="input">
-            <option value="">All Teachers</option>
-            <option v-for="t in teachersList" :key="t.id" :value="t.id">{{ t.full_name }}</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div class="space-y-5">
+    <div class="space-y-2">
       <div
-        v-for="group in groupedRecords"
+        v-for="group in pagedGroups"
         :key="group.group_key"
-        class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:rounded-3xl"
+        class="card overflow-hidden"
       >
-        <!-- Teacher header strip -->
-        <div class="bg-gradient-to-r from-blue-700 to-blue-600 px-3 py-3 sm:px-5">
-          <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
-            <!-- Name -->
-            <div class="order-1 flex min-w-0 flex-1 items-center gap-3">
-              <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-white/20 text-lg font-bold text-white ring-1 ring-white/30">
-                {{ group.teacher_name?.charAt(0) || 'T' }}
-              </div>
-              <div class="min-w-0">
-                <div class="text-[10px] font-bold uppercase tracking-wider text-white/70">Teacher</div>
-                <div class="truncate text-base font-extrabold text-white sm:text-lg">{{ group.teacher_name || '-' }}</div>
-              </div>
+        <!-- Teacher header -->
+        <header class="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-2.5 sm:px-5" :class="isTeacherOpen(group) ? 'border-b border-gray-100' : ''">
+          <button type="button" class="flex min-w-0 flex-1 items-center gap-3 text-left" :aria-expanded="isTeacherOpen(group)" @click="toggleTeacher(group)">
+            <ChevronDown class="h-4 w-4 flex-shrink-0 text-gray-400 transition" :class="isTeacherOpen(group) ? 'rotate-180' : ''" />
+            <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">{{ initials(group.teacher_name) }}</span>
+            <div class="min-w-0">
+              <p class="truncate font-semibold text-gray-900">{{ group.teacher_name || '-' }}</p>
+              <p class="text-xs text-gray-500">{{ group.subjects_classes.length }} {{ group.subjects_classes.length === 1 ? 'class' : 'classes' }} · {{ group.total_lessons }} lessons</p>
             </div>
-
-            <!-- Stats: own full-width row on phones, inline from tablet up -->
-            <div class="order-3 grid w-full grid-cols-3 gap-2 md:order-2 md:w-auto">
-              <div class="teacher-stat">
-                <div class="teacher-stat-value">{{ group.subjects_classes.length }}</div>
-                <div class="teacher-stat-label">{{ group.subjects_classes.length === 1 ? 'Class' : 'Classes' }}</div>
-              </div>
-              <div class="teacher-stat">
-                <div class="teacher-stat-value">{{ group.total_lessons }}</div>
-                <div class="teacher-stat-label">Lessons</div>
-              </div>
-              <div class="teacher-stat">
-                <div class="teacher-stat-value">{{ formatMinutes(group.total_minutes_lost) }}</div>
-                <div class="teacher-stat-label">Time lost</div>
-              </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="order-2 flex flex-shrink-0 items-center gap-2 md:order-3">
-              <button
-                @click="openTeacherView(group)"
-                class="teacher-action"
-                title="View attendance"
-                aria-label="View attendance"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0A9 9 0 1112 3a9 9 0 019 9zm-9 0a3 3 0 110-6 3 3 0 010 6z" />
-                </svg>
-              </button>
-
-              <button
-                @click="openQuickAddModal(group)"
-                class="teacher-action"
-                title="Add attendance"
-                aria-label="Add attendance"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-              </button>
-            </div>
+          </button>
+          <div class="text-right">
+            <p class="tabular-nums text-sm font-semibold" :class="group.total_minutes_lost > 0 ? 'text-rose-600' : 'text-emerald-600'">{{ formatMinutes(group.total_minutes_lost) }}</p>
+            <p class="text-[11px] text-gray-500">time lost</p>
           </div>
-        </div>
+          <RowActionsMenu :label="`Actions for ${group.teacher_name}`" :items="teacherActions(group)" />
+        </header>
 
         <!-- Subject & Class Details Section -->
-        <div class="p-3 sm:p-5">
-          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <h3 class="text-base font-extrabold text-slate-900">Subject & Class Details:</h3>
-              <p class="text-xs text-slate-500">
-                {{ group.subjects_classes.length }} {{ group.subjects_classes.length === 1 ? 'class' : 'classes' }} ·
-                Year {{ group.year }} ·
-                <span class="font-extrabold text-emerald-600">{{ filterTerm ? `Term ${filterTerm}` : 'All terms' }}</span>
-              </p>
-            </div>
-
-            <button
-              v-if="group.subjects_classes.length > 1"
-              type="button"
-              @click="toggleAllClasses(group)"
-              class="rounded-lg px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-50"
-            >
-              {{ allClassesOpen(group) ? 'Collapse all' : 'Expand all' }}
-            </button>
-          </div>
+        <div v-if="isTeacherOpen(group)" class="p-3 sm:p-4">
 
           <div class="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200">
             <div v-for="subjectClass in group.subjects_classes" :key="subjectClass.key">
@@ -500,7 +382,7 @@
                     <span class="text-base font-extrabold text-slate-900">
                       {{ subjectClass.class || '-' }}<span v-if="subjectClass.stream" class="text-slate-500"> · {{ subjectClass.stream }}</span>
                     </span>
-                    <span class="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                    <span class="rounded-md bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">
                       {{ subjectClass.subject || '-' }}
                     </span>
                   </div>
@@ -578,7 +460,7 @@
                     :key="week.week_number"
                     type="button"
                     @click="selectWeek(group, subjectClass, week.week_number)"
-                    class="grid w-full grid-cols-[4.5rem_1fr_auto_1rem] items-center gap-3 border-b border-slate-100 px-3 py-2.5 text-left text-sm transition last:border-0 hover:bg-blue-50/50 sm:grid-cols-[5rem_4.5rem_1fr_5.5rem_9.5rem_1rem] sm:px-4"
+                    class="grid w-full grid-cols-[4.5rem_1fr_auto_1rem] items-center gap-3 border-b border-slate-100 px-3 py-2.5 text-left text-sm transition last:border-0 hover:bg-brand-50/50 sm:grid-cols-[5rem_4.5rem_1fr_5.5rem_9.5rem_1rem] sm:px-4"
                   >
                     <span class="font-bold text-slate-900">Week {{ week.week_number }}</span>
                     <span class="hidden text-xs text-slate-500 sm:block">{{ plural(weekStats(week).lessons, 'lesson', 'lessons') }}</span>
@@ -647,7 +529,7 @@
                       >
                         <!-- Date tile -->
                         <div class="w-14 flex-shrink-0 rounded-lg border border-slate-200 bg-white py-1 text-center">
-                          <div class="text-[10px] font-bold uppercase text-blue-600">{{ entry.day_of_week || '-' }}</div>
+                          <div class="text-[10px] font-bold uppercase text-brand-600">{{ entry.day_of_week || '-' }}</div>
                           <div class="text-lg font-extrabold leading-none text-slate-900">{{ dateParts(entry.attendance_date).day }}</div>
                           <div class="text-[10px] font-semibold uppercase text-slate-500">{{ dateParts(entry.attendance_date).month }}</div>
                         </div>
@@ -690,40 +572,8 @@
                         </span>
 
                         <!-- Actions -->
-                        <div class="ml-auto flex gap-1">
-                                <button
-                                  v-if="entry.minutes_lost > 0"
-                                  @click="openCompensationModal(entry)"
-                                  class="table-icon-btn border-emerald-200 bg-emerald-50 text-emerald-700"
-                                  title="Record Time Regained"
-                                  aria-label="Record Time Regained"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                </button>
-
-                                <button
-                                  @click="editRecord(entry)"
-                                  class="table-icon-btn border-blue-200 bg-blue-50 text-blue-700"
-                                  title="Edit record"
-                                  aria-label="Edit record"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                </button>
-
-                                <button
-                                  @click="deleteRecord(entry.id)"
-                                  class="table-icon-btn border-rose-200 bg-rose-50 text-rose-700"
-                                  title="Delete record"
-                                  aria-label="Delete record"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                </button>
+                        <div class="ml-auto">
+                          <RowActionsMenu :label="`Actions for lesson on ${entry.date || ''}`" :items="entryActions(entry)" />
                         </div>
                         </div>
                       </li>
@@ -735,11 +585,13 @@
         </div>
       </div>
 
-      <div
-        v-if="groupedRecords.length === 0"
-        class="rounded-[2rem] border border-dashed border-slate-300 bg-white py-24 text-center"
-      >
-        <div class="text-slate-500">No attendance records found.</div>
+      <div v-if="visibleGroups.length > groupsPerPage || groupPage > 1" class="card overflow-hidden">
+        <PagerBar v-model:page="groupPage" v-model:per-page="groupsPerPage" :total="visibleGroups.length" class="!border-t-0" />
+      </div>
+
+      <div v-if="visibleGroups.length === 0" class="card px-5 py-14 text-center">
+        <ClipboardList class="mx-auto h-9 w-9 text-gray-300" />
+        <p class="mt-2 text-sm font-medium text-gray-700">No attendance records found</p>
       </div>
     </div>
 
@@ -747,8 +599,8 @@
       v-if="showViewModal"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
     >
-      <div class="flex max-h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl">
-        <div class="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-sky-50 px-6 py-5 sm:px-8 sm:py-6">
+      <div class="flex max-h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-white shadow-2xl">
+        <div class="border-b border-slate-200 bg-slate-50 px-6 py-5 sm:px-8 sm:py-6">
           <div class="flex items-start justify-between gap-4">
             <div>
               <h3 class="text-xl font-extrabold text-slate-900 sm:text-2xl">
@@ -787,7 +639,7 @@
 
               <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div class="text-xs font-semibold text-slate-500">Expected Minutes</div>
-                <div class="mt-1 text-2xl font-extrabold text-blue-600">{{ viewingTeacherSummary.total_expected_minutes }}</div>
+                <div class="mt-1 text-2xl font-extrabold text-brand-600">{{ viewingTeacherSummary.total_expected_minutes }}</div>
               </div>
 
               <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -833,7 +685,7 @@
                     <tr v-for="r in viewingTeacherRecords" :key="r.id" class="hover:bg-slate-50">
                       <td class="px-6 py-4 text-sm font-semibold text-slate-700">Week {{ r.week_number }}</td>
                       <td class="px-6 py-4 text-sm font-semibold text-slate-700">{{ r.attendance_date }}</td>
-                      <td class="px-6 py-4 text-sm font-bold text-blue-600">{{ r.day_of_week || '-' }}</td>
+                      <td class="px-6 py-4 text-sm font-bold text-brand-600">{{ r.day_of_week || '-' }}</td>
                       <td class="px-6 py-4 text-sm font-semibold text-slate-700">{{ r.subject }}</td>
                       <td class="px-6 py-4 text-sm font-semibold text-slate-700">{{ r.class }}</td>
                       <td class="px-6 py-4 text-sm font-semibold text-slate-700">{{ r.stream }}</td>
@@ -877,180 +729,172 @@
 
     <div
       v-if="showModal"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-end justify-center bg-gray-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      @keydown.esc="showModal = false"
     >
-      <div class="flex max-h-[90vh] w-full max-w-6xl flex-col rounded-3xl border border-slate-200/60 bg-white shadow-2xl">
-        <div class="flex-shrink-0 border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-5 sm:px-8 sm:py-6">
-          <h3 class="text-lg font-bold text-slate-900 sm:text-xl">
-            {{ formMode === 'quick' ? 'Add Attendance for Existing Teacher' : (editingId ? 'Edit Monitoring Record' : 'Add Monitoring Record') }}
-          </h3>
-          <p class="mt-2 text-sm text-slate-600">
-            <span v-if="formMode === 'quick'">
-              Only week, date, time in, and time out are required. Teacher details are copied from the selected group.
-            </span>
-            <span v-else>
-              Enter attendance details. Minutes lost are calculated automatically.
-            </span>
-          </p>
-        </div>
+      <div class="flex max-h-[100dvh] w-full max-w-3xl flex-col overflow-hidden bg-white shadow-2xl sm:max-h-[92vh] sm:rounded-2xl" role="dialog" aria-modal="true" aria-labelledby="lm-modal-title">
+        <header class="flex items-start gap-3 border-b border-gray-100 px-5 py-4">
+          <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700 ring-1 ring-brand-100"><Clock class="h-5 w-5" /></span>
+          <div class="min-w-0 flex-1">
+            <h3 id="lm-modal-title" class="text-lg font-semibold text-gray-900">
+              {{ formMode === 'quick' ? 'Add attendance' : (editingId ? 'Edit monitoring record' : 'New monitoring record') }}
+            </h3>
+            <p class="text-sm text-gray-500">Enter when the lesson started and ended. Minutes lost work themselves out.</p>
+          </div>
+          <button type="button" class="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700" aria-label="Close" @click="showModal = false"><X class="h-5 w-5" /></button>
+        </header>
 
-        <form @submit.prevent="saveRecord" class="flex flex-1 flex-col overflow-hidden">
-          <div class="flex-1 space-y-8 overflow-y-auto px-6 py-6 sm:px-8">
-            <div v-if="formMode === 'quick'" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
-              <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <div>
-                  <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Teacher</div>
-                  <div class="mt-1 font-bold text-slate-900">{{ quickTeacherLabel }}</div>
-                </div>
-                <div>
-                  <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Year</div>
-                  <div class="mt-1 font-bold text-slate-900">{{ form.year }}</div>
-                </div>
-                <div>
-                  <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Term</div>
-                  <div class="mt-1 font-bold text-slate-900">Term {{ form.term }}</div>
-                </div>
-                <div>
-                  <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Status</div>
-                  <div class="mt-1 font-bold text-blue-600">Quick Add Mode</div>
+        <form class="flex min-h-0 flex-1 flex-col" @submit.prevent="saveRecord">
+          <div class="min-h-0 flex-1 space-y-6 overflow-y-auto px-5 py-5">
+            <!-- Lesson -->
+            <section>
+              <p class="m-section">Lesson</p>
+
+              <div v-if="formMode === 'quick'" class="mb-4 flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50/50 px-3 py-2.5">
+                <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-brand-800 ring-1 ring-brand-100">{{ initials(quickTeacherLabel) }}</span>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate font-semibold text-gray-900">{{ quickTeacherLabel }}</p>
+                  <p class="text-xs text-gray-500">Term {{ form.term }}, {{ form.year }}</p>
                 </div>
               </div>
-              <div class="mt-3 text-sm text-slate-600">
-                Teacher is pre-selected. Please select subject, class, and stream below.
-              </div>
-            </div>
-
-            <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-              <div v-if="formMode !== 'quick'">
-                <label class="mb-2.5 block text-sm font-semibold text-slate-700">Teacher *</label>
-                <div class="relative">
-                  <input
-                    v-model="teacherSearch"
-                    type="text"
-                    placeholder="Search teacher..."
-                    class="input mb-2"
-                  >
-                  <svg class="w-5 h-5 text-gray-400 absolute right-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                  </svg>
+              <div v-else class="mb-4">
+                <span class="m-label">Teacher</span>
+                <div v-if="selectedFormTeacher" class="flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50/50 px-3 py-2.5">
+                  <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-brand-800 ring-1 ring-brand-100">{{ initials(selectedFormTeacher.full_name) }}</span>
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate font-semibold text-gray-900">{{ selectedFormTeacher.full_name }}</p>
+                    <p class="font-mono text-[11px] text-gray-500">{{ selectedFormTeacher.teacher_code }}</p>
+                  </div>
+                  <button type="button" class="text-sm font-medium text-brand-700 hover:underline" @click="form.teacher_id = ''; teacherSearch = ''">Change</button>
                 </div>
-                <select v-model="form.teacher_id" required class="input">
-                  <option value="">Select teacher</option>
-                  <option v-for="t in filteredTeachers" :key="t.id" :value="t.id">{{ t.full_name }} ({{ t.teacher_code }})</option>
-                </select>
+                <div v-else class="rounded-xl border border-gray-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100">
+                  <div class="relative">
+                    <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input v-model="teacherSearch" type="text" class="w-full rounded-t-xl border-0 bg-transparent py-2.5 pl-9 pr-3 text-sm outline-none" placeholder="Type a name or code" aria-label="Search teacher" />
+                  </div>
+                  <ul class="max-h-40 overflow-y-auto border-t border-gray-100 py-1" role="listbox">
+                    <li v-for="t in filteredTeachers.slice(0, 50)" :key="t.id">
+                      <button type="button" class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-brand-50" role="option" @click="form.teacher_id = t.id">
+                        <span class="truncate text-gray-900">{{ t.full_name }}</span>
+                        <span class="ml-auto font-mono text-[11px] text-gray-500">{{ t.teacher_code }}</span>
+                      </button>
+                    </li>
+                    <li v-if="filteredTeachers.length === 0" class="px-3 py-2 text-sm text-gray-500">No teacher matches "{{ teacherSearch }}"</li>
+                    <li v-else-if="filteredTeachers.length > 50" class="px-3 py-1.5 text-xs text-gray-400">Keep typing to narrow {{ filteredTeachers.length }} teachers</li>
+                  </ul>
+                </div>
               </div>
 
-              <div>
-                <label class="mb-2.5 block text-sm font-semibold text-slate-700">Subject *</label>
-                <select v-model="form.subject" required class="input">
-                  <option value="">Select subject</option>
-                  <option v-for="sub in subjects" :key="sub" :value="sub">{{ sub }}</option>
-                </select>
+              <div class="grid gap-3 sm:grid-cols-3">
+                <label class="block sm:col-span-1">
+                  <span class="m-label">Subject</span>
+                  <select v-model="form.subject" required class="m-input">
+                    <option value="">Select subject</option>
+                    <option v-for="sub in subjects" :key="sub" :value="sub">{{ sub }}</option>
+                  </select>
+                </label>
+                <label class="block">
+                  <span class="m-label">Class</span>
+                  <select v-model="form.class" required class="m-input">
+                    <option value="">Select class</option>
+                    <option v-for="c in classes" :key="c" :value="c">{{ c }}</option>
+                  </select>
+                </label>
+                <label class="block">
+                  <span class="m-label">Stream</span>
+                  <select v-model="form.stream" required class="m-input">
+                    <option value="">Select stream</option>
+                    <option v-for="s in streams" :key="s" :value="s">{{ s }}</option>
+                  </select>
+                </label>
               </div>
+            </section>
 
-              <div>
-                <label class="mb-2.5 block text-sm font-semibold text-slate-700">Class *</label>
-                <select v-model="form.class" required class="input">
-                  <option value="">Select class</option>
-                  <option v-for="c in classes" :key="c" :value="c">{{ c }}</option>
-                </select>
+            <!-- When -->
+            <section>
+              <p class="m-section">When</p>
+              <div class="grid grid-cols-2 gap-3" :class="formMode === 'quick' ? 'sm:grid-cols-2' : 'sm:grid-cols-4'">
+                <label v-if="formMode !== 'quick'" class="block">
+                  <span class="m-label">Year</span>
+                  <input v-model.number="form.year" type="number" required class="m-input" />
+                </label>
+                <label v-if="formMode !== 'quick'" class="block">
+                  <span class="m-label">Term</span>
+                  <select v-model="form.term" required class="m-input">
+                    <option :value="1">Term 1</option>
+                    <option :value="2">Term 2</option>
+                    <option :value="3">Term 3</option>
+                  </select>
+                </label>
+                <label class="block">
+                  <span class="m-label">Week</span>
+                  <select v-model="form.week_number" required class="m-input">
+                    <option value="">Select week</option>
+                    <option v-for="w in 15" :key="w" :value="w">Week {{ w }}</option>
+                  </select>
+                </label>
+                <label class="block">
+                  <span class="m-label">Date <span v-if="form.day_of_week" class="ml-1 normal-case tracking-normal text-brand-700">{{ form.day_of_week }}</span></span>
+                  <input v-model="form.attendance_date" type="date" required class="m-input" />
+                </label>
               </div>
+            </section>
 
-              <div>
-                <label class="mb-2.5 block text-sm font-semibold text-slate-700">Stream *</label>
-                <select v-model="form.stream" required class="input">
-                  <option value="">Select stream</option>
-                  <option v-for="s in streams" :key="s" :value="s">{{ s }}</option>
-                </select>
+            <!-- Time -->
+            <section>
+              <p class="m-section">Time</p>
+              <div class="mb-3">
+                <span class="m-label">Lesson length</span>
+                <div class="flex flex-wrap items-center gap-2">
+                  <button
+                    v-for="opt in LESSON_LENGTHS"
+                    :key="opt.minutes"
+                    type="button"
+                    class="rounded-lg border px-3 py-1.5 text-sm font-medium transition"
+                    :class="Number(form.expected_minutes) === opt.minutes ? 'border-brand-500 bg-brand-50 text-brand-800 ring-2 ring-brand-100' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'"
+                    :aria-pressed="Number(form.expected_minutes) === opt.minutes"
+                    @click="form.expected_minutes = opt.minutes; autoCalculate()"
+                  >{{ opt.label }} <span class="text-gray-400">{{ opt.minutes }} min</span></button>
+                  <label class="flex items-center gap-1.5 text-sm text-gray-600">
+                    or
+                    <input v-model.number="form.expected_minutes" type="number" min="0" required class="w-20 rounded-lg border border-gray-300 px-2 py-1.5 text-center text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100" aria-label="Expected minutes" @input="autoCalculate" />
+                    min
+                  </label>
+                </div>
               </div>
-
-              <div>
-                <label class="mb-2.5 block text-sm font-semibold text-slate-700">Week *</label>
-                <select v-model="form.week_number" required class="input">
-                  <option value="">Select week</option>
-                  <option v-for="w in 15" :key="w" :value="w">Week {{ w }}</option>
-                </select>
+              <div class="grid grid-cols-2 gap-3">
+                <label class="block">
+                  <span class="m-label">Time in</span>
+                  <input v-model="form.time_in" type="time" required class="m-input" @input="autoCalculate" @change="autoCalculate" />
+                </label>
+                <label class="block">
+                  <span class="m-label">Time out</span>
+                  <input v-model="form.time_out" type="time" required class="m-input" @input="autoCalculate" @change="autoCalculate" />
+                </label>
               </div>
+            </section>
 
-              <div>
-                <label class="mb-2.5 block text-sm font-semibold text-slate-700">Attendance Date *</label>
-                <input v-model="form.attendance_date" type="date" required class="input" />
-              </div>
-
-              <div>
-                <label class="mb-2.5 block text-sm font-semibold text-slate-700">Day</label>
-                <input v-model="form.day_of_week" type="text" readonly class="input bg-slate-100 font-bold text-blue-600" />
-              </div>
-
-              <div>
-                <label class="mb-2.5 block text-sm font-semibold text-slate-700">Time In *</label>
-                <input v-model="form.time_in" type="time" required class="input" @change="autoCalculate" />
-              </div>
-
-              <div>
-                <label class="mb-2.5 block text-sm font-semibold text-slate-700">Time Out *</label>
-                <input v-model="form.time_out" type="time" required class="input" @change="autoCalculate" />
-              </div>
-
-              <div>
-                <label class="mb-2.5 block text-sm font-semibold text-slate-700">Expected Minutes *</label>
-                <input v-model.number="form.expected_minutes" type="number" min="0" required class="input" @input="autoCalculate" />
-              </div>
-
-              <div v-if="formMode !== 'quick'">
-                <label class="mb-2.5 block text-sm font-semibold text-slate-700">Year *</label>
-                <input v-model.number="form.year" type="number" required class="input" />
-              </div>
-
-              <div v-if="formMode !== 'quick'">
-                <label class="mb-2.5 block text-sm font-semibold text-slate-700">Term *</label>
-                <select v-model="form.term" required class="input">
-                  <option :value="1">Term 1</option>
-                  <option :value="2">Term 2</option>
-                  <option :value="3">Term 3</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="mb-2.5 block text-sm font-semibold text-slate-700">Actual Minutes</label>
-                <input v-model="form.actual_minutes" readonly class="input bg-slate-100 font-bold" />
-              </div>
-
-              <div>
-                <label class="mb-2.5 block text-sm font-semibold text-slate-700">Minutes Lost</label>
-                <input v-model="form.minutes_lost" readonly class="input bg-slate-100 font-bold" />
-              </div>
-            </div>
-
-            <div v-if="error" class="rounded-2xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-pink-50 px-6 py-4 text-sm font-bold text-rose-700">
-              {{ error }}
-            </div>
+            <p v-if="error" class="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ error }}</p>
           </div>
 
-          <div class="flex-shrink-0 border-t border-slate-200/60 bg-white px-6 py-5 sm:px-8">
-            <div class="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                @click="showModal = false"
-                class="inline-flex items-center gap-2 rounded-2xl border-2 border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 transition-all hover:bg-slate-50"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Cancel
-              </button>
-              <button
-                type="submit"
-                :disabled="saving"
-                class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-700 to-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition hover:shadow-blue-500/35 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <svg v-if="!saving" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                {{ saving ? 'Saving...' : (editingId ? 'Update Record' : 'Save Record') }}
-              </button>
+          <footer class="flex flex-wrap items-center gap-3 border-t border-gray-100 bg-gray-50/70 px-5 py-3">
+            <div class="min-w-0 flex-1">
+              <template v-if="form.time_in && form.time_out && Number(form.expected_minutes)">
+                <p class="text-sm">
+                  <span class="font-semibold text-gray-900">Taught {{ form.actual_minutes }} of {{ form.expected_minutes }} min</span>
+                  <span class="ml-2 font-semibold" :class="Number(form.minutes_lost) > 0 ? 'text-red-600' : 'text-emerald-600'">{{ Number(form.minutes_lost) > 0 ? `${form.minutes_lost} min lost` : 'No time lost' }}</span>
+                </p>
+                <div class="mt-1 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-gray-200">
+                  <div class="h-full rounded-full transition-all duration-300" :class="Number(form.minutes_lost) > 0 ? 'bg-red-500' : 'bg-emerald-500'" :style="{ width: Math.min(100, (Number(form.actual_minutes) / Number(form.expected_minutes)) * 100) + '%' }"></div>
+                </div>
+              </template>
+              <p v-else class="hidden text-sm text-gray-500 sm:block">Enter time in and time out to see the time lost.</p>
             </div>
-          </div>
+            <button type="button" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="showModal = false">Cancel</button>
+            <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60" :disabled="saving || !form.teacher_id">
+              <Check class="h-4 w-4" />{{ saving ? 'Saving…' : (editingId ? 'Save changes' : 'Save record') }}
+            </button>
+          </footer>
         </form>
       </div>
     </div>
@@ -1060,8 +904,8 @@
       v-if="showCompensationModal"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm"
     >
-      <div class="flex max-h-[90vh] w-full max-w-4xl flex-col rounded-3xl border border-slate-200/60 bg-white shadow-2xl">
-        <div class="flex-shrink-0 border-b border-slate-200/60 bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-5 sm:px-8 sm:py-6">
+      <div class="flex max-h-[90vh] w-full max-w-4xl flex-col rounded-2xl border border-slate-200/60 bg-white shadow-2xl">
+        <div class="flex-shrink-0 border-b border-slate-200/60 bg-emerald-50 px-6 py-5 sm:px-8 sm:py-6">
           <h3 class="text-lg font-bold text-slate-900 sm:text-xl">
             Record Time Regained
           </h3>
@@ -1097,7 +941,7 @@
             <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               <div>
                 <label class="mb-2.5 block text-sm font-semibold text-slate-700">Original Day</label>
-                <input v-model="compensationForm.original_day" type="text" readonly class="input bg-slate-100 font-bold text-blue-600" />
+                <input v-model="compensationForm.original_day" type="text" readonly class="input bg-slate-100 font-bold text-brand-600" />
               </div>
 
               <div>
@@ -1107,7 +951,7 @@
 
               <div>
                 <label class="mb-2.5 block text-sm font-semibold text-slate-700">Compensation Day</label>
-                <input v-model="compensationForm.compensation_day" type="text" readonly class="input bg-slate-100 font-bold text-blue-600" />
+                <input v-model="compensationForm.compensation_day" type="text" readonly class="input bg-slate-100 font-bold text-brand-600" />
               </div>
 
               <div>
@@ -1134,7 +978,7 @@
               </div>
             </div>
 
-            <div v-if="compensationError" class="rounded-2xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-pink-50 px-6 py-4 text-sm font-bold text-rose-700">
+            <div v-if="compensationError" class="rounded-2xl border-2 border-rose-200 bg-rose-50 px-6 py-4 text-sm font-bold text-rose-700">
               {{ compensationError }}
             </div>
           </div>
@@ -1154,7 +998,7 @@
               <button
                 type="submit"
                 :disabled="compensationSaving"
-                class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/30 transition hover:shadow-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+                class="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/30 transition hover:shadow-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <svg v-if="!compensationSaving" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -1174,6 +1018,12 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { lessonMonitoringAPI, teachersAPI, classesAPI, subjectsNewAPI, lessonCompensationsAPI } from '../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useGlobalTerm } from '../composables/useGlobalTerm.js';
+import { Plus, RefreshCw, BarChart3, ClipboardList, Pencil, Trash2, Eye, PlusCircle, Hourglass, RotateCcw, ListChecks, AlarmClock, ChevronsUpDown, ChevronDown, Clock, X, Search, Check } from 'lucide-vue-next';
+import PagerBar from '../components/ui/PagerBar.vue';
+import StatCards from '../components/ui/StatCards.vue';
+import ListToolbar from '../components/ui/ListToolbar.vue';
+import RowActionsMenu from '../components/RowActionsMenu.vue';
 
 const records = ref([]);
 const teachersList = ref([]);
@@ -1186,6 +1036,7 @@ const filterYear = ref(new Date().getFullYear());
 const filterTerm = ref('');
 const filterWeek = ref('');
 const filterTeacher = ref('');
+useGlobalTerm((y, t) => { filterYear.value = y; filterTerm.value = t; }, () => loadData());
 
 const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
 
@@ -1274,6 +1125,51 @@ const subjects = computed(() => {
 
 const classes = computed(() => {
   return [...new Set(allClasses.value.map(c => c.class_name || c.class || c.name).filter(Boolean))].sort();
+});
+
+const groupSearch = ref('');
+const LESSON_LENGTHS = [
+  { label: 'Single', minutes: 40 },
+  { label: 'Double', minutes: 80 },
+  { label: 'Triple', minutes: 120 },
+];
+const selectedFormTeacher = computed(() => teachersList.value.find((t) => String(t.id) === String(form.value.teacher_id)) || null);
+const initials = (name) => String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+const visibleGroups = computed(() => {
+  const q = groupSearch.value.trim().toLowerCase();
+  if (!q) return groupedRecords.value;
+  return groupedRecords.value.filter((g) => [g.teacher_name, ...(g.subjects_classes || []).flatMap((sc) => [sc.subject, sc.subject_name, sc.class, sc.stream])]
+    .filter(Boolean).join(' ').toLowerCase().includes(q));
+});
+// Teacher cards start folded; the list is paged so the page stays short.
+const openTeachers = ref(new Set());
+const isTeacherOpen = (group) => openTeachers.value.has(group.group_key) || visibleGroups.value.length === 1;
+const toggleTeacher = (group) => {
+  const next = new Set(openTeachers.value);
+  next.has(group.group_key) ? next.delete(group.group_key) : next.add(group.group_key);
+  openTeachers.value = next;
+};
+const groupPage = ref(1);
+const groupsPerPage = ref(10);
+const pagedGroups = computed(() => visibleGroups.value.slice((groupPage.value - 1) * groupsPerPage.value, groupPage.value * groupsPerPage.value));
+const teacherActions = (group) => [
+  { label: 'View attendance', icon: Eye, onClick: () => openTeacherView(group) },
+  { label: 'Add attendance', icon: PlusCircle, onClick: () => openQuickAddModal(group) },
+  ...(group.subjects_classes.length > 1 ? [{ label: allClassesOpen(group) ? 'Collapse all classes' : 'Expand all classes', icon: ChevronsUpDown, onClick: () => toggleAllClasses(group) }] : []),
+];
+const entryActions = (entry) => [
+  ...(entry.minutes_lost > 0 ? [{ label: 'Record time regained', icon: AlarmClock, onClick: () => openCompensationModal(entry) }] : []),
+  { label: 'Edit', icon: Pencil, onClick: () => editRecord(entry) },
+  { label: 'Delete', icon: Trash2, danger: true, onClick: () => deleteRecord(entry.id) },
+];
+const summaryCards = computed(() => {
+  const owed = Math.max(0, (Number(summary.value.total_minutes_lost) || 0) - (Number(summary.value.compensated_minutes) || 0));
+  return [
+    { label: 'Time lost', value: formatMinutes(summary.value.total_minutes_lost), note: `≈ ${summary.value.equivalent_single_lessons || 0} single · ${summary.value.equivalent_double_lessons || 0} double lessons`, icon: Hourglass, tone: 'red' },
+    { label: 'Compensated', value: formatMinutes(summary.value.compensated_minutes), note: `${summary.value.compensated_lessons || 0} lessons`, icon: RotateCcw, tone: 'sky' },
+    { label: 'Still owed', value: formatMinutes(owed), icon: AlarmClock, tone: 'amber' },
+    { label: 'Records', value: String(summary.value.records || 0), note: 'lessons monitored', icon: ListChecks },
+  ];
 });
 
 const groupedRecords = computed(() => {
@@ -2242,17 +2138,18 @@ const openAddModal = () => {
     subject: '',
     class: '',
     stream: '',
-    week_number: '',
+    week_number: filterWeek.value || '',
     attendance_date: new Date().toISOString().slice(0, 10),
     day_of_week: getDayOfWeek(new Date().toISOString().slice(0, 10)),
     time_in: '',
     time_out: '',
-    expected_minutes: 0,
+    expected_minutes: 40,
     actual_minutes: 0,
     minutes_lost: 0,
-    year: new Date().getFullYear(),
+    year: Number(filterYear.value) || new Date().getFullYear(),
     term: filterTerm.value || 1
   };
+  teacherSearch.value = '';
 
   showModal.value = true;
 };
@@ -2273,12 +2170,12 @@ const openQuickAddModal = (groupOrRecord) => {
     subject: '',
     class: '',
     stream: '',
-    week_number: '',
+    week_number: filterWeek.value || '',
     attendance_date: new Date().toISOString().slice(0, 10),
     day_of_week: getDayOfWeek(new Date().toISOString().slice(0, 10)),
     time_in: '',
     time_out: '',
-    expected_minutes: 0,
+    expected_minutes: 40,
     actual_minutes: 0,
     minutes_lost: 0,
     year: Number(base?.year || filterYear.value || new Date().getFullYear()),
@@ -2464,9 +2361,17 @@ onMounted(() => {
   loadClasses();
   loadSubjects();
 });
+// Back to page 1 when filtering leaves the current page empty (declared last: it reads groupedRecords).
+watch(visibleGroups, () => { if ((groupPage.value - 1) * groupsPerPage.value >= visibleGroups.value.length) groupPage.value = 1; });
 </script>
 
 <style scoped>
+.m-section { @apply mb-3 text-sm font-semibold text-gray-900; }
+.m-label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500; }
+.m-input { @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100; }
+.tb-label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500; }
+.filter-select { @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100; }
+.tool-btn { @apply inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50; }
 .input {
   width: 100%;
   border-radius: 1rem;
@@ -2480,8 +2385,8 @@ onMounted(() => {
 }
 
 .input:focus {
-  border-color: rgb(99 102 241);
-  box-shadow: 0 0 0 4px rgb(238 242 255);
+  border-color: rgb(22 163 74);
+  box-shadow: 0 0 0 4px rgb(220 252 231);
 }
 
 .input:hover:not(:focus) {
@@ -2608,12 +2513,12 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   border-radius: 9999px;
-  background: rgb(238 242 255);
+  background: rgb(220 252 231);
   padding: 0.45rem 0.85rem;
   font-size: 11px;
   font-weight: 700;
-  color: rgb(67 56 202);
-  border: 1px solid rgb(199 210 254);
+  color: rgb(21 128 61);
+  border: 1px solid rgb(187 247 208);
 }
 
 .detail-badge-rose {
@@ -2662,5 +2567,74 @@ onMounted(() => {
   .mini-value {
     font-size: 1rem;
   }
+}
+</style>
+
+<style scoped>
+/* dark mode: generated by scripts/build-dark-overrides.cjs */
+html.dark .m-section {
+  color: var(--d-text);
+}
+html.dark .m-label {
+  color: var(--d-muted);
+}
+html.dark .m-input {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+}
+html.dark .tb-label {
+  color: var(--d-muted);
+}
+html.dark .filter-select {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+}
+html.dark .tool-btn {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+  color: var(--d-text-2);
+}
+html.dark .tool-btn:hover {
+  background-color: var(--d-sunken);
+}
+html.dark .input {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+}
+html.dark .input:hover:not(:focus) {
+  border-color: var(--d-line);
+}
+html.dark .stat-card {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+}
+html.dark .teacher-stat {
+  background-color: var(--d-surface);
+}
+html.dark .teacher-action {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+}
+html.dark .teacher-action:hover {
+  background-color: var(--d-surface);
+}
+html.dark .filter-label {
+  color: var(--d-text-2);
+}
+html.dark .mini-card {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+}
+html.dark .mini-value {
+  color: var(--d-text);
+}
+html.dark .detail-badge {
+  background-color: var(--d-sunken);
+  color: var(--d-text-2);
+  border-color: var(--d-line);
+}
+html.dark .detail-badge-rose {
+  background-color: var(--d-surface);
+  border-color: var(--d-line);
 }
 </style>

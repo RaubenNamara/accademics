@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once '../config/Database.php';
 require_once '../config/HrHelpers.php';
+require_once '../config/TimetableService.php';
 
 hr_cors_headers();
 
@@ -21,7 +22,7 @@ try {
     }
     
     if (in_array($method, ['POST', 'PUT', 'DELETE'], true)) {
-        hr_require_auth(['admin', 'academic_office']);
+        hr_require_auth(TT_EDITOR_ROLES);
     }
     
     if ($method === 'POST') {
@@ -226,9 +227,16 @@ function bulkUpdate(PDO $db, array $data): void
             )
         ");
         
+        // Only unavailable periods are stored; anything not listed counts as available.
+        $periods = tt_load_periods($db);
         foreach ($availability as $avail) {
-            if (empty($avail['is_available'])) {
-                continue; // Skip available slots (default is available)
+            if (!empty($avail['is_available'])) {
+                continue;
+            }
+            $day = (string)($avail['day_of_week'] ?? '');
+            $p = (int)($avail['period_number'] ?? 0);
+            if (!in_array($day, TT_DAYS, true) || !isset($periods[$p]) || $periods[$p]['period_type'] !== 'lesson') {
+                continue; // ignore days/periods that are not lesson slots
             }
             
             $insert->execute([
@@ -241,9 +249,10 @@ function bulkUpdate(PDO $db, array $data): void
             ]);
         }
         
+        tt_bump_revision($db, $academic_session_id); // the timetable must be validated again
         $db->commit();
-        
-        hr_respond(true, 'Teacher availability bulk updated');
+
+        hr_respond(true, 'Teacher availability saved');
     } catch (Exception $e) {
         $db->rollBack();
         hr_respond(false, 'Bulk update failed: ' . $e->getMessage(), null, 500);

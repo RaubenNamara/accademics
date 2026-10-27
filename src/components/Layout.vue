@@ -1,126 +1,165 @@
 <template>
-  <div class="min-h-screen bg-slate-100">
-    <div
-      v-if="mobileOpen"
-      class="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden"
-      @click="mobileOpen = false"
-    />
-
+  <div class="min-h-screen">
+    <!-- Sidebar: a floating white card with a light green edge (same frame as eSpace/Tusome) -->
     <aside
-      class="sidebar-shell fixed left-0 top-0 z-50 flex h-full flex-col text-white transition-all duration-300 ease-out"
-      :class="[
-        collapsed ? 'w-[72px]' : 'w-72',
-        mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      ]"
+      class="app-sidebar fixed bottom-3 left-0 top-3 z-50 flex flex-col overflow-hidden rounded-r-2xl transition-all duration-300 print:hidden lg:left-3 lg:rounded-2xl"
+      :class="[collapsed ? 'lg:w-16' : 'lg:w-56', 'w-60', mobileOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)] lg:translate-x-0']"
+      aria-label="Main navigation"
     >
-      <div class="flex items-center gap-3 border-b border-white/10 px-4 py-5" :class="collapsed ? 'justify-center' : ''">
-        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 shadow-lg backdrop-blur">
-          <i class="fas fa-graduation-cap text-xl text-sky-200"></i>
-        </div>
-        <div v-if="!collapsed" class="min-w-0">
-          <h1 class="truncate text-lg font-bold tracking-tight">School HR</h1>
-          <p class="text-xs text-sky-200/80">Enterprise Staff Suite</p>
-        </div>
-        <button
-          type="button"
-          class="ml-auto hidden rounded-lg p-2 text-white/70 hover:bg-white/10 lg:inline-flex"
-          @click="collapsed = !collapsed"
-        >
-          <i :class="collapsed ? 'fas fa-angle-right' : 'fas fa-angle-left'"></i>
-        </button>
+      <div class="flex-shrink-0 border-b px-4 py-3.5" :class="frameDivider">
+        <RouterLink :to="authStore.getHomeRoute()" class="flex items-center gap-3" :class="collapsed ? 'lg:justify-center' : ''" @click="mobileOpen = false">
+          <SkoolMark v-if="collapsed" :size="36" class="hidden flex-shrink-0 lg:block" />
+          <span :class="collapsed ? 'lg:hidden' : ''" class="min-w-0">
+            <SkoolLogo :size="22" />
+            <span v-if="authStore.user?.school?.name" class="mt-1 line-clamp-2 block max-w-[10rem] text-[11px] font-medium leading-tight text-brand-700" :title="authStore.user.school.name">{{ authStore.user.school.name }}</span>
+          </span>
+        </RouterLink>
       </div>
 
-      <nav class="flex-1 overflow-y-auto px-3 py-4 scrollbar-thin">
-        <template v-for="section in navSections" :key="section.title">
-          <p
-            v-if="!collapsed && section.title"
-            class="mb-2 mt-4 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-sky-200/60 first:mt-0"
+      <nav class="scrollbar-thin relative flex-1 overflow-y-auto px-3 py-4">
+        <section v-for="(group, gi) in navSections" :key="group.title" class="nav-group" :class="{ 'is-folded': isFolded(group.title) && !collapsed }">
+          <button
+            v-if="gi > 0 && !collapsed"
+            type="button"
+            class="nav-fold"
+            :aria-expanded="!isFolded(group.title)"
+            :title="isFolded(group.title) ? `Show ${group.title}` : `Fold ${group.title}`"
+            @click="toggleFold(group.title)"
           >
-            {{ section.title }}
-          </p>
-          <div v-else-if="collapsed && section.title" class="my-3 border-t border-white/10" />
+            <span class="nav-fold-line" aria-hidden="true"></span>
+            <span class="nav-fold-label">
+              <span class="truncate">{{ group.title }}</span>
+              <span v-if="group.items.some((i) => isActive(i.to))" class="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-brand-500"></span>
+              <span class="ml-auto text-[10px] font-semibold tabular-nums text-gray-400">{{ group.items.length }}</span>
+            </span>
+            <ChevronDown class="nav-fold-chevron" aria-hidden="true" />
+          </button>
+          <div v-else-if="gi > 0" class="mx-2 mb-2.5 h-px bg-brand-600/20"></div>
 
-          <router-link
-            v-for="item in section.items"
-            :key="item.to"
-            :to="item.to"
-            class="nav-item group mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200"
-            :class="[
-              isActive(item.to) ? 'nav-item-active' : 'text-sky-100/90 hover:bg-white/10 hover:text-white',
-              collapsed ? 'justify-center' : ''
-            ]"
-            :title="collapsed ? item.label : ''"
-            @click="mobileOpen = false"
-          >
-            <i :class="[item.icon, 'w-5 text-center text-base transition-transform group-hover:scale-110']"></i>
-            <span v-if="!collapsed" class="truncate">{{ item.label }}</span>
-            <span
-              v-if="!collapsed && item.badge"
-              class="ml-auto rounded-full bg-sky-400/20 px-2 py-0.5 text-[10px] font-semibold text-sky-100"
-            >{{ item.badge }}</span>
-          </router-link>
-        </template>
+          <div class="nav-fold-body">
+            <div class="nav-fold-inner space-y-0.5">
+              <RouterLink
+                v-for="item in group.items"
+                :key="item.to"
+                :to="item.to"
+                class="group flex items-center gap-2.5 rounded-xl py-1.5 pl-3 pr-2.5 text-sm font-medium transition-all duration-150"
+                :class="[
+                  isActive(item.to)
+                    ? 'bg-brand-100 font-semibold text-brand-900 ring-1 ring-brand-200'
+                    : 'text-gray-800 hover:bg-brand-50 hover:text-brand-800',
+                  collapsed ? 'lg:justify-center lg:px-0' : ''
+                ]"
+                :title="collapsed ? item.label : undefined"
+                :aria-current="isActive(item.to) ? 'page' : undefined"
+                @click="mobileOpen = false"
+              >
+                <span
+                  class="relative flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md transition-all duration-150"
+                  :class="isActive(item.to) ? 'bg-brand-600 text-white shadow-sm' : 'text-brand-700 group-hover:text-brand-800'"
+                >
+                  <component :is="item.icon" class="h-4 w-4" :stroke-width="1.9" />
+                  <span v-if="navBadge(item.to) && collapsed" class="absolute -right-1 -top-1 hidden h-2.5 w-2.5 rounded-full bg-red-600 ring-2 ring-white lg:block"></span>
+                </span>
+                <span class="truncate" :class="collapsed ? 'lg:hidden' : ''">{{ item.label }}</span>
+                <span
+                  v-if="navBadge(item.to)"
+                  class="ml-auto rounded-full bg-red-600 px-1.5 py-px text-[10px] font-bold leading-4 text-white"
+                  :class="collapsed ? 'lg:hidden' : ''"
+                  :title="`${navBadge(item.to)} new lesson plan(s) to review`"
+                >{{ navBadge(item.to) }}</span>
+              </RouterLink>
+            </div>
+          </div>
+        </section>
       </nav>
 
-      <div class="border-t border-white/10 p-3">
-        <div class="flex items-center gap-3 rounded-2xl bg-white/10 p-3 backdrop-blur" :class="collapsed ? 'justify-center' : ''">
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 text-sm font-bold shadow-lg">
-            {{ userInitials }}
-          </div>
-          <div v-if="!collapsed" class="min-w-0 flex-1">
-            <p class="truncate text-sm font-semibold">{{ authStore.user?.full_name || 'User' }}</p>
-            <p class="truncate text-xs text-sky-200/70">{{ roleLabel }}</p>
-          </div>
-          <button
-            v-if="!collapsed"
-            type="button"
-            class="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-rose-200"
-            title="Logout"
-            @click="logout"
-          >
-            <i class="fas fa-sign-out-alt"></i>
-          </button>
-        </div>
+      <div class="flex-shrink-0 border-t p-2.5" :class="frameDivider">
+        <button
+          type="button"
+          class="flex w-full items-center gap-2.5 rounded-xl py-1.5 pl-3 pr-2.5 text-red-600 transition-colors duration-150 hover:bg-red-50"
+          :class="collapsed ? 'lg:justify-center lg:px-0' : ''"
+          @click="logout"
+        >
+          <LogOut class="h-4 w-4 flex-shrink-0" />
+          <span class="text-sm font-medium" :class="collapsed ? 'lg:hidden' : ''">Logout</span>
+        </button>
       </div>
     </aside>
 
-    <div class="min-h-screen transition-all duration-300" :class="collapsed ? 'lg:ml-[72px]' : 'lg:ml-72'">
-      <header class="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
-        <div class="flex items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-          <div class="flex items-center gap-3">
+    <!-- Collapse handle on the sidebar's edge -->
+    <button
+      type="button"
+      class="fixed top-1/2 z-50 hidden h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-gray-400 bg-white text-gray-600 shadow-md transition-all duration-300 hover:text-brand-700 print:hidden lg:flex"
+      :style="{ left: collapsed ? '64px' : '212px' }"
+      :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+      @click="toggleCollapsed"
+    >
+      <ChevronLeft class="h-3.5 w-3.5 transition-transform duration-300" :class="{ 'rotate-180': collapsed }" />
+    </button>
+
+    <div v-if="mobileOpen" class="fixed inset-0 z-40 bg-black/50 lg:hidden" @click="mobileOpen = false" />
+
+    <div class="flex min-h-screen flex-col transition-all duration-300 print:!ml-0" :class="collapsed ? 'lg:ml-[88px]' : 'lg:ml-[248px]'">
+      <header class="app-header sticky top-0 z-30 print:hidden">
+        <div class="flex items-center justify-between gap-3 px-3 py-2 sm:px-5">
+          <div class="flex items-center gap-2">
             <button
               type="button"
-              class="rounded-xl border border-slate-200 p-2.5 text-slate-600 lg:hidden"
-              @click="mobileOpen = true"
+              class="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100"
+              aria-label="Menu"
+              @click="toggleMenu"
             >
-              <i class="fas fa-bars"></i>
+              <Menu class="h-6 w-6" />
             </button>
-            <div>
-              <h2 class="text-lg font-semibold text-slate-900 sm:text-xl">{{ pageTitle }}</h2>
-              <p class="hidden text-xs text-slate-500 sm:block">{{ pageSubtitle }}</p>
-            </div>
           </div>
+
           <div class="flex items-center gap-3">
-            <span class="hidden rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 sm:inline">
-              {{ currentYear }} · Term {{ currentTerm }}
+            <!-- The term every page shows: the open term unless an admin picks another -->
+            <label v-if="!isPortal && termStore.state.sessions.length" class="hidden items-center gap-2 sm:flex">
+              <span class="sr-only">Term shown</span>
+              <CalendarRange class="h-4 w-4 text-brand-700" aria-hidden="true" />
+              <select
+                :value="termStore.selected.value?.id"
+                class="rounded-full border py-1 pl-3 pr-8 text-xs font-medium outline-none focus:ring-2 focus:ring-brand-100"
+                :class="termStore.isViewingOpen.value ? 'border-gray-200 bg-white text-gray-700' : 'border-amber-300 bg-amber-50 text-amber-900'"
+                @change="termStore.select($event.target.value)"
+              >
+                <option v-for="s in termStore.state.sessions" :key="s.id" :value="s.id">
+                  {{ termStore.label(s) }}{{ termStore.statusOf(s) === 'open' ? ' · open' : termStore.statusOf(s) === 'closed' ? ' · closed' : '' }}
+                </option>
+              </select>
+            </label>
+            <span v-else class="hidden rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-600 sm:inline">
+              {{ termStore.open.value ? termStore.label(termStore.open.value) : currentYear }}
             </span>
             <button
               type="button"
-              class="rounded-xl border border-slate-200 p-2.5 text-slate-500 hover:border-rose-200 hover:text-rose-600 lg:hidden"
-              @click="logout"
+              class="theme-toggle"
+              :aria-label="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+              :title="theme === 'dark' ? 'Light mode' : 'Dark mode'"
+              @click="toggleTheme"
             >
-              <i class="fas fa-sign-out-alt"></i>
+              <Sun v-if="theme === 'dark'" class="h-[1.15rem] w-[1.15rem]" />
+              <Moon v-else class="h-[1.15rem] w-[1.15rem]" />
             </button>
+            <div class="flex items-center gap-2.5">
+              <span class="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white">{{ userInitials }}</span>
+              <span class="hidden min-w-0 leading-tight sm:block">
+                <span class="block max-w-[11rem] truncate text-sm font-medium text-gray-900">{{ authStore.user?.full_name || 'User' }}</span>
+                <span class="block text-xs text-gray-500">{{ roleLabel }}</span>
+              </span>
+            </div>
           </div>
         </div>
       </header>
 
-      <main class="p-4 sm:p-6 lg:p-8">
-        <div class="max-w-[1920px] mx-auto w-full">
-          <div
-            v-if="route.query.denied === '1'"
-            class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
-          >
+      <main class="flex-1 px-3 py-3 sm:px-5 sm:py-4 print:p-0">
+        <div class="mx-auto w-full max-w-[1920px]">
+          <div v-if="!isPortal && termStore.selected.value && !termStore.isViewingOpen.value" class="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
+            <span>You are viewing <strong>{{ termStore.label(termStore.selected.value) }}</strong> ({{ termStore.statusOf(termStore.selected.value) }}). Marks can only be entered in the open term<template v-if="termStore.open.value">, {{ termStore.label(termStore.open.value) }}</template>.</span>
+            <button v-if="termStore.open.value" type="button" class="font-semibold text-amber-900 underline" @click="termStore.reset()">Back to the open term</button>
+          </div>
+          <div v-if="route.query.denied === '1'" class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             You do not have permission to access that page.
           </div>
           <router-view />
@@ -131,124 +170,247 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import {
+  LayoutDashboard, GraduationCap, UserRound, ChartColumn, UsersRound, BookUser, PlaneTakeoff, Building2, ShieldCheck,
+  CalendarDays, ChartLine, Clock, Eye, ListChecks, Users, FileText, FolderOpen, BookOpen, School, Upload,
+  LogOut, Menu, Building, Sun, Moon, ChevronLeft, ChevronDown, ClipboardList, NotebookPen, PenLine, Award, FileBadge, Settings,
+  CalendarCheck, TrendingUp, House, CalendarRange, CalendarCog, BookOpenCheck,
+} from 'lucide-vue-next';
 import authStore from '../services/authStore.js';
-import { filterNavSections, getRoleLabel } from '../config/accessControl.js';
+import termStore from '../services/termStore.js';
+import { theme, toggleTheme } from '../services/theme.js';
+import { canAccessRoute, filterNavSections, getRoleLabel } from '../config/accessControl.js';
+import { newLessonPlans, refreshNewLessonPlans } from '../services/lessonPlanBadge.js';
+import SkoolMark from './SkoolMark.vue';
+import SkoolLogo from './SkoolLogo.vue';
 
 const route = useRoute();
 const router = useRouter();
-const collapsed = ref(false);
-const mobileOpen = ref(false);
-const currentYear = ref(new Date().getFullYear());
-const currentTerm = ref(1);
+const frameDivider = 'border-[rgba(21,80,50,0.1)]';
 
-const allNavSections = [
-  {
-    title: 'Overview',
-    items: [
-      { to: '/hr-dashboard', label: 'HR Dashboard', icon: 'fas fa-chart-pie', zone: 'hr' },
-      { to: '/dashboard', label: 'Performance', icon: 'fas fa-tachometer-alt', zone: 'academic' }
-    ]
-  },
-  {
-    title: 'Staff Management',
-    items: [
-      { to: '/teachers', label: 'Teaching Staff', icon: 'fas fa-chalkboard-teacher', zone: 'hr' },
-      { to: '/non-teaching-staff', label: 'Non-Teaching Staff', icon: 'fas fa-user-tie', zone: 'hr' },
-      { to: '/teaching-analytics', label: 'Teaching Analytics', icon: 'fas fa-chart-bar', zone: 'hr' },
-      { to: '/class-teacher-assignments', label: 'Class Teachers', icon: 'fas fa-users-cog', zone: 'hr' }
-    ]
-  },
-  {
-    title: 'HR Operations',
-    items: [
-      { to: '/leave', label: 'Leave Management', icon: 'fas fa-plane-departure', zone: 'hr' },
-      { to: '/payroll', label: 'Payroll', icon: 'fas fa-money-check-alt', zone: 'hr' },
-      { to: '/departments', label: 'Departments', icon: 'fas fa-building', zone: 'hr' },
-      { to: '/users', label: 'System Users', icon: 'fas fa-user-shield', zone: 'hr' }
-    ]
-  },
-  {
-    title: 'Academic Performance',
-    items: [
-      { to: '/timetable', label: 'Timetable', icon: 'fas fa-calendar-alt', zone: 'academic' },
-      { to: '/subject-performance', label: 'Subject Performance', icon: 'fas fa-chart-line', zone: 'academic' },
-      { to: '/lesson-monitoring', label: 'Lesson Monitoring', icon: 'fas fa-clock', zone: 'academic' },
-      { to: '/observations', label: 'Observations', icon: 'fas fa-eye', zone: 'academic' },
-      { to: '/duty-performance', label: 'Duty Performance', icon: 'fas fa-tasks', zone: 'academic' },
-      { to: '/class-performance', label: 'Class Performance', icon: 'fas fa-users', zone: 'academic' },
-      { to: '/reports', label: 'Reports', icon: 'fas fa-file-alt', zone: 'academic' }
-    ]
-  },
-  {
-    title: 'Students',
-    items: [
-      { to: '/digital-register', label: 'Student E-files', icon: 'fas fa-user-graduate', zone: 'academic' },
-      { to: '/student-academic-track', label: 'Academic Track', icon: 'fas fa-graduation-cap', zone: 'academic' },
-      { to: '/subjects-management', label: 'Subjects', icon: 'fas fa-book', zone: 'academic' },
-      { to: '/classes-management', label: 'Classes', icon: 'fas fa-chalkboard', zone: 'academic' },
-      { to: '/class-subjects-assignment', label: 'Class Subjects', icon: 'fas fa-link', zone: 'academic' },
-      { to: '/bulk-import-results', label: 'Bulk Import', icon: 'fas fa-upload', zone: 'academic' }
-    ]
-  }
-];
-
-const navSections = computed(() =>
-  filterNavSections(allNavSections, authStore.getRole())
-);
-
-const titles = {
-  '/hr-dashboard': ['HR Dashboard', 'Staff overview & analytics'],
-  '/dashboard': ['Performance Dashboard', 'Academic performance metrics'],
-  '/teachers': ['Teaching Staff', 'Teachers directory & HR codes TS-xxx'],
-  '/non-teaching-staff': ['Non-Teaching Staff', 'Support staff NTS-xxx'],
-  '/teaching-analytics': ['Teaching Analytics', 'Workload & lesson attendance'],
-  '/class-teacher-assignments': ['Class Teacher Assignments', 'Assign & reassign class teachers'],
-  '/timetable': ['Timetable Management', 'Schedules, rooms & conflict detection'],
-  '/leave': ['Leave Management', 'Requests, approvals & balances'],
-  '/payroll': ['Payroll', 'Salaries, allowances & payslips'],
-  '/departments': ['Departments Management', 'Manage school departments & positions'],
-  '/users': ['User Management', 'System access control'],
-  '/digital-register': ['Student E-files', 'Digital student records & documents']
+// Remember the sidebar's state per browser (it may be unavailable in private windows).
+const stored = (key, fallback) => {
+  try { return JSON.parse(localStorage.getItem(key) ?? 'null') ?? fallback; } catch { return fallback; }
+};
+const store = (key, value) => {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* not available */ }
 };
 
-const pageTitle = computed(() => titles[route.path]?.[0] || 'School HR System');
-const pageSubtitle = computed(() => titles[route.path]?.[1] || '');
+const collapsed = ref(stored('acc.sidebar.collapsed', false));
+const folded = ref(stored('acc.sidebar.folded', []));
+const mobileOpen = ref(false);
+const currentYear = new Date().getFullYear();
 
+const allNavSections = [
+  { title: 'Overview', items: [
+    { to: '/hr-dashboard', label: 'HR Dashboard', icon: LayoutDashboard, zone: 'staff' },
+  ] },
+  { title: 'My Work', items: [
+    { to: '/my/dashboard', label: 'My Dashboard', icon: House, zone: 'portal' },
+    { to: '/my/timetable', label: 'My Timetable', icon: CalendarDays, zone: 'portal' },
+    { to: '/my/lesson-plans', label: 'Lesson Plans', icon: NotebookPen, zone: 'portal' },
+    { to: '/my/marks', label: 'Enter Marks', icon: PenLine, zone: 'portal' },
+  ] },
+  { title: 'My Record', items: [
+    { to: '/my/performance', label: 'My Performance', icon: TrendingUp, zone: 'portal' },
+    { to: '/my/attendance', label: 'Lesson Attendance', icon: CalendarCheck, zone: 'portal' },
+    { to: '/my/leave', label: 'My Leave', icon: PlaneTakeoff, zone: 'portal' },
+  ] },
+  { title: 'Staff Management', items: [
+    { to: '/teachers', label: 'Teaching Staff', icon: GraduationCap, zone: 'hr' },
+    { to: '/non-teaching-staff', label: 'Non-Teaching Staff', icon: UserRound, zone: 'hr' },
+    { to: '/teaching-analytics', label: 'Teaching Analytics', icon: ChartColumn, zone: 'hr' },
+    { to: '/class-teacher-assignments', label: 'Class Teachers', icon: UsersRound, zone: 'hr' },
+    { to: '/teaching-assignments', label: 'Teaching Assignments', icon: BookUser, zone: 'school' },
+  ] },
+  { title: 'HR Operations', items: [
+    { to: '/leave', label: 'Leave Management', icon: PlaneTakeoff, zone: 'hr' },
+    { to: '/departments', label: 'Departments', icon: Building2, zone: 'hr' },
+    { to: '/users', label: 'System Users', icon: ShieldCheck, zone: 'hr' },
+  ] },
+  { title: 'Exams & Reports', items: [
+    { to: '/examinations', label: 'Examinations', icon: ClipboardList, zone: 'school' },
+    { to: '/report-cards', label: 'Report Cards', icon: FileBadge, zone: 'school' },
+    { to: '/lesson-plans', label: 'Lesson Plans', icon: Award, zone: 'school' },
+  ] },
+  { title: 'Settings', items: [
+    { to: '/academic-calendar', label: 'Terms & Years', icon: CalendarCog, zone: 'school' },
+    { to: '/curriculum-setup', label: 'Curriculum Setup', icon: BookOpenCheck, zone: 'school' },
+    { to: '/report-settings', label: 'Report Settings', icon: Settings, zone: 'school' },
+    { to: '/platform/schools', label: 'Schools', icon: Building, zone: 'platform' },
+  ] },
+  { title: 'Academic Performance', items: [
+    { to: '/timetable', label: 'Timetable', icon: CalendarDays, zone: 'academic' },
+    { to: '/subject-performance', label: 'Subject Performance', icon: ChartLine, zone: 'academic' },
+    { to: '/lesson-monitoring', label: 'Lesson Monitoring', icon: Clock, zone: 'academic' },
+    { to: '/observations', label: 'Observations', icon: Eye, zone: 'academic' },
+    { to: '/duty-performance', label: 'Duty Performance', icon: ListChecks, zone: 'academic' },
+    { to: '/class-performance', label: 'Class Performance', icon: Users, zone: 'academic' },
+    { to: '/reports', label: 'Reports', icon: FileText, zone: 'academic' },
+  ] },
+  { title: 'Students', items: [
+    { to: '/digital-register', label: 'Student E-files', icon: FolderOpen, zone: 'academic' },
+    { to: '/student-academic-track', label: 'Academic Track', icon: GraduationCap, zone: 'academic' },
+    { to: '/subjects-management', label: 'Subjects', icon: BookOpen, zone: 'academic' },
+    { to: '/classes-management', label: 'Classes', icon: School, zone: 'academic' },
+    { to: '/bulk-import-results', label: 'Bulk Import', icon: Upload, zone: 'academic' },
+  ] },
+];
+
+const navSections = computed(() => filterNavSections(allNavSections, authStore.getRole(), authStore.user));
+const roleLabel = computed(() => getRoleLabel(authStore.getRole(), authStore.user));
+const isPortal = computed(() => authStore.getRole() === 'subject_teacher');
+termStore.load().catch(() => {});
 const userInitials = computed(() => {
-  if (!authStore.user?.full_name) return 'U';
-  return authStore.user.full_name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
+  const name = authStore.user?.full_name;
+  if (!name) return 'U';
+  return name.split(' ').filter(Boolean).map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 });
 
-const roleLabel = computed(() => getRoleLabel(authStore.getRole()));
+const isActive = (path) => route.path === path || route.path.startsWith(`${path}/`);
+const isFolded = (title) => folded.value.includes(title);
+const toggleFold = (title) => {
+  folded.value = isFolded(title) ? folded.value.filter((t) => t !== title) : [...folded.value, title];
+  store('acc.sidebar.folded', folded.value);
+};
+const toggleCollapsed = () => {
+  collapsed.value = !collapsed.value;
+  store('acc.sidebar.collapsed', collapsed.value);
+};
+const toggleMenu = () => {
+  if (window.matchMedia('(min-width: 1024px)').matches) toggleCollapsed();
+  else mobileOpen.value = !mobileOpen.value;
+};
 
-const isActive = (path) => route.path === path;
+// Opening a page inside a folded group unfolds it, so you can always see where you are.
+watch(() => route.path, () => {
+  const group = navSections.value.find((g) => g.items.some((i) => isActive(i.to)));
+  if (group && isFolded(group.title)) toggleFold(group.title);
+}, { immediate: true });
+
+// Red count on "Lesson Plans" for reviewers: plans submitted that nobody has opened yet.
+const canReviewPlans = computed(() => canAccessRoute('/lesson-plans', authStore.user?.role, authStore.user));
+const navBadge = (to) => (to === '/lesson-plans' && canReviewPlans.value ? newLessonPlans.value : 0);
+watch(() => route.path, () => { if (canReviewPlans.value) refreshNewLessonPlans(); }, { immediate: true });
+const badgeTimer = setInterval(() => { if (canReviewPlans.value && document.visibilityState === 'visible') refreshNewLessonPlans(); }, 60000);
+onBeforeUnmount(() => clearInterval(badgeTimer));
 
 const logout = () => {
+  termStore.reset();
   authStore.clearAuth();
   router.push('/login');
 };
 </script>
 
 <style scoped>
-.sidebar-shell {
-  background: linear-gradient(165deg, #0c1929 0%, #0f2744 35%, #1e3a5f 70%, #1d4ed8 100%);
-  box-shadow: 4px 0 24px rgba(15, 23, 42, 0.15);
+.theme-toggle {
+  display: inline-flex;
+  height: 2.4rem;
+  width: 2.4rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgb(229 231 235);
+  background: #fff;
+  color: rgb(75 85 99);
+  transition: background-color 0.2s, color 0.2s, transform 0.3s;
+}
+.theme-toggle:hover { background: rgb(240 253 244); color: rgb(21 128 61); transform: rotate(-12deg); }
+.theme-toggle:focus-visible { outline: 2px solid #22c55e; outline-offset: 2px; }
+html.dark .theme-toggle { background: #16211c; border-color: #31413a; color: #fcd34d; }
+html.dark .theme-toggle:hover { background: #1a2621; color: #fde68a; }
+
+.app-sidebar {
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.app-header {
+  background: var(--glass-bg-strong);
+  border-bottom: 1px solid var(--glass-edge);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }
 
-.nav-item-active {
-  background: linear-gradient(90deg, rgba(56, 189, 248, 0.25), rgba(59, 130, 246, 0.15));
-  color: #fff;
-  box-shadow: inset 3px 0 0 #38bdf8;
+/* Sidebar groups: open = a thin green line; folded = the group's name in a soft row. */
+.nav-group { margin-bottom: 1.1rem; transition: margin 0.3s ease; }
+.nav-group.is-folded { margin-bottom: 0.35rem; }
+.nav-fold {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: calc(100% - 0.75rem);
+  margin: 0 0.375rem 0.55rem;
+  min-height: 0.9rem;
+  padding: 0 0.375rem;
+  border-radius: 0.75rem;
+  color: rgb(100 116 139);
+  transition: background-color 0.2s, padding 0.3s ease, margin 0.3s ease;
 }
+.nav-fold:focus-visible { outline: 2px solid rgb(21 135 74); outline-offset: 1px; }
+.nav-fold-line {
+  flex: 1 1 auto;
+  height: 1px;
+  background: rgba(21, 135, 74, 0.2);
+  transition: transform 0.3s ease, opacity 0.2s ease;
+  transform-origin: left;
+}
+.nav-fold-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 0 1 0;
+  min-width: 0;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: opacity 0.25s ease 0.05s, max-width 0.3s ease;
+}
+.nav-fold-chevron {
+  width: 0.8rem;
+  height: 0.8rem;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.3s ease;
+}
+.nav-fold:hover .nav-fold-chevron,
+.nav-fold:focus-visible .nav-fold-chevron { opacity: 0.75; }
+.nav-fold:hover .nav-fold-line { background: rgba(21, 135, 74, 0.45); }
+@media (hover: none) { .nav-fold-chevron { opacity: 0.45; } }
 
-.scrollbar-thin::-webkit-scrollbar {
-  width: 4px;
+.is-folded .nav-fold {
+  min-height: 2rem;
+  margin-bottom: 0;
+  padding: 0 0.6rem 0 0.9rem;
+  background: rgba(21, 135, 74, 0.06);
 }
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+.is-folded .nav-fold:hover { background: rgba(21, 135, 74, 0.12); color: rgb(17 86 51); }
+.is-folded .nav-fold-line { transform: scaleX(0); opacity: 0; flex: 0 0 0; }
+.is-folded .nav-fold-label { flex: 1 1 auto; max-width: 100%; opacity: 1; }
+.is-folded .nav-fold-chevron { opacity: 0.6; transform: rotate(-90deg); }
+
+.nav-fold-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
+.is-folded .nav-fold-body { grid-template-rows: 0fr; }
+.nav-fold-inner { min-height: 0; overflow: hidden; }
 </style>
 
+<style scoped>
+/* dark mode: generated by scripts/build-dark-overrides.cjs */
+html.dark .is-folded .nav-fold:hover {
+  color: var(--d-text-2);
+}
+</style>

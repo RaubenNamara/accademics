@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../config/ApiGuard.php';
+api_guard();
 /**
  * School Events API
  * Manages school-wide events that can be scheduled in the timetable

@@ -27,6 +27,11 @@ const authStore = {
     localStorage.setItem('user', JSON.stringify(user));
   },
 
+  updateUser(patch) {
+    state.user = { ...(state.user || {}), ...patch };
+    localStorage.setItem('user', JSON.stringify(state.user));
+  },
+
   clearAuth() {
     state.token = null;
     state.user = null;

@@ -1,287 +1,129 @@
 <template>
-  <div class="p-6 bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen">
-    <!-- Header with Gradient Background -->
-    <div class="rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-8 text-white shadow-2xl mb-8">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+  <div class="page">
+    <div class="page-hero">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div class="flex items-center gap-3 mb-3">
-            <div class="bg-white/20 p-3 rounded-xl backdrop-blur">
-              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-              </svg>
-            </div>
-            <div>
-              <p class="text-sm uppercase tracking-[0.2em] text-blue-200">Academic Tracking</p>
-              <h1 class="text-4xl font-bold mt-1">Student Academic Track</h1>
-            </div>
-          </div>
-          <p class="text-blue-100 text-lg max-w-2xl">
-            Manage and view student academic results with comprehensive tracking
-          </p>
+          <h1 class="page-hero-title">Academic Track</h1>
         </div>
-        <div class="flex flex-wrap gap-3">
-          <div class="bg-white/20 backdrop-blur rounded-xl px-6 py-3">
-            <div class="text-2xl font-bold">{{ results.length }}</div>
-            <div class="text-sm text-blue-200">Total Results</div>
-          </div>
-          <button
-            @click="loadResults"
-            class="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-medium text-white backdrop-blur hover:bg-white/20 transition-all shadow-lg"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-            </svg>
-            Refresh
-          </button>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="btn-hero-primary" @click="showAddModal = true"><Plus class="h-4 w-4" />Add result</button>
         </div>
       </div>
     </div>
 
-    <!-- Filters -->
-    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div class="flex items-center gap-3 mb-4">
-        <div class="bg-blue-100 p-2 rounded-lg">
-          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
-          </svg>
-        </div>
-        <h2 class="text-lg font-semibold text-gray-800">Filters</h2>
-      </div>
-      <div class="grid gap-4 xl:grid-cols-6">
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">Student</label>
-          <select
-            v-model="filters.student_id"
-            @change="loadResults"
-            class="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          >
-            <option value="">All Students</option>
-            <option v-for="student in students" :key="student.id" :value="student.id">
-              {{ student.full_name }} ({{ student.admission_number }})
-            </option>
-          </select>
-        </div>
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">Year</label>
-          <select
-            v-model="filters.year"
-            @change="loadResults"
-            class="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          >
-            <option value="">All Years</option>
+    <StatCards :cards="summaryCards" />
+
+    <ListToolbar
+      v-model:search="studentSearch"
+      placeholder="Search student name or admission number"
+      :filter-count="[filters.term, filters.subject_id, filters.class, filters.stream].filter(Boolean).length"
+      @clear="clearFilters"
+    >
+      <template #filters>
+        <label class="block">
+          <span class="filter-label">Year</span>
+          <select v-model="filters.year" class="filter-select" @change="loadResults">
+            <option value="">All years</option>
             <option v-for="year in yearOptions" :key="year" :value="year">{{ year }}</option>
           </select>
-        </div>
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">Term</label>
-          <select
-            v-model="filters.term"
-            @change="loadResults"
-            class="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          >
-            <option value="">All Terms</option>
+        </label>
+        <label class="block">
+          <span class="filter-label">Term</span>
+          <select v-model="filters.term" class="filter-select" @change="loadResults">
+            <option value="">All terms</option>
             <option value="1">Term 1</option>
             <option value="2">Term 2</option>
             <option value="3">Term 3</option>
           </select>
-        </div>
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">Subject</label>
-          <select
-            v-model="filters.subject_id"
-            @change="loadResults"
-            class="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          >
-            <option value="">All Subjects</option>
-            <option v-for="subject in subjects" :key="subject.id" :value="subject.id">
-              {{ subject.subject_name }}
-            </option>
+        </label>
+        <label class="block">
+          <span class="filter-label">Subject</span>
+          <select v-model="filters.subject_id" class="filter-select" @change="loadResults">
+            <option value="">All subjects</option>
+            <option v-for="subject in subjects" :key="subject.id" :value="subject.id">{{ subject.subject_name }}</option>
           </select>
-        </div>
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">Class</label>
-          <select
-            v-model="filters.class"
-            @change="loadResults"
-            class="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          >
-            <option value="">All Classes</option>
-            <option v-for="classItem in classes" :key="classItem" :value="classItem">
-              {{ classItem }}
-            </option>
+        </label>
+        <label class="block">
+          <span class="filter-label">Class</span>
+          <select v-model="filters.class" class="filter-select" @change="loadResults">
+            <option value="">All classes</option>
+            <option v-for="classItem in classes" :key="classItem" :value="classItem">{{ classItem }}</option>
           </select>
-        </div>
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">Stream</label>
-          <select
-            v-model="filters.stream"
-            @change="loadResults"
-            class="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          >
-            <option value="">All Streams</option>
-            <option v-for="stream in streamOptions" :key="stream" :value="stream">
-              {{ stream }}
-            </option>
+        </label>
+        <label class="block">
+          <span class="filter-label">Stream</span>
+          <select v-model="filters.stream" class="filter-select" @change="loadResults">
+            <option value="">All streams</option>
+            <option v-for="stream in streamOptions" :key="stream" :value="stream">{{ stream }}</option>
           </select>
-        </div>
-        <div class="flex items-end">
-          <button
-            @click="clearFilters"
-            class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-          >
-            Clear Filters
-          </button>
-        </div>
-      </div>
-    </div>
+        </label>
+      </template>
+      <template #actions>
+        <button type="button" class="tool-btn" :disabled="loading" title="Refresh" @click="loadResults"><RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" /><span class="hidden lg:inline">Refresh</span></button>
+        <button type="button" class="tool-btn" :disabled="results.length === 0" title="Download PDF" @click="downloadPDF"><FileText class="h-4 w-4" /><span class="hidden lg:inline">PDF</span></button>
+      </template>
+    </ListToolbar>
 
-    <!-- Actions -->
-    <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-lg">
-      <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
-        <div class="flex items-center gap-3">
-          <div class="bg-blue-100 p-2 rounded-lg">
-            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-          </div>
-          <div>
-            <span class="text-sm text-gray-600">Showing </span>
-            <span class="font-bold text-blue-600 text-lg">{{ results.length }}</span>
-            <span class="text-sm text-gray-600"> results</span>
-          </div>
-        </div>
-        <div class="flex gap-3">
-          <button
-            @click="downloadPDF"
-            :disabled="results.length === 0"
-            class="rounded-xl bg-gradient-to-r from-green-600 to-green-700 px-5 py-3 text-sm font-medium text-white shadow-lg shadow-green-500/20 hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all hover:shadow-xl"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-            Download PDF
-          </button>
-          <button
-            @click="showAddModal = true"
-            class="rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-3 text-sm font-medium text-white shadow-lg shadow-blue-500/20 hover:from-blue-700 hover:to-blue-800 flex items-center gap-2 transition-all hover:shadow-xl"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Add Result
-          </button>
-        </div>
+    <section class="card overflow-hidden">
+      <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3 sm:px-5">
+        <p class="text-sm text-gray-600"><strong class="text-gray-900">{{ visibleStudents.length }}</strong> student{{ visibleStudents.length === 1 ? '' : 's' }} · {{ results.length }} mark{{ results.length === 1 ? '' : 's' }}</p>
       </div>
-    </div>
-
-    <!-- Results Table -->
-    <div class="rounded-3xl border border-gray-200 bg-white shadow-lg overflow-hidden">
-      <div class="border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-        <div class="flex items-center gap-3">
-          <div class="bg-white/20 p-2 rounded-lg backdrop-blur">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-            </svg>
-          </div>
-          <h2 class="text-xl font-bold text-white">Academic Results</h2>
-        </div>
+      <div v-if="loading && pivotData.length === 0" class="space-y-3 p-5">
+        <div v-for="i in 5" :key="i" class="flex animate-pulse items-center gap-3"><div class="h-10 w-10 rounded-full bg-gray-100"></div><div class="h-3 flex-1 rounded bg-gray-100"></div></div>
       </div>
-      <div class="overflow-x-auto">
-        <table class="min-w-[1200px] w-full divide-y divide-gray-200">
-          <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
-            <tr class="text-left text-xs font-semibold uppercase tracking-wide text-gray-700">
-              <th class="px-6 py-4 font-bold">Student</th>
-              <th class="px-6 py-4 font-bold">Class</th>
-              <th class="px-6 py-4 font-bold">Stream</th>
-              <th v-for="subject in subjects" :key="subject.id" class="px-6 py-4 font-bold">
-                {{ subject.subject_name }}
-              </th>
-              <th class="px-6 py-4 font-bold">Status</th>
-              <th class="px-6 py-4 text-right font-bold">Actions</th>
+      <div v-else-if="visibleStudents.length === 0" class="px-5 py-14 text-center">
+        <GraduationCap class="mx-auto h-9 w-9 text-gray-300" />
+        <p class="mt-2 text-sm font-medium text-gray-700">No academic results found</p>
+      </div>
+      <template v-else>
+        <table class="hidden w-full text-left text-sm md:table">
+          <thead class="border-b border-gray-200 bg-gray-50/70">
+            <tr class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              <th class="px-5 py-3">Student</th>
+              <th class="px-4 py-3">Class</th>
+              <th class="hidden px-4 py-3 lg:table-cell">Marks</th>
+              <th class="px-4 py-3">Standing</th>
+              <th class="w-12 px-3 py-3"><span class="sr-only">Actions</span></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100 bg-white">
-            <tr v-if="pivotData.length === 0">
-              <td :colspan="subjects.length + 5" class="px-6 py-16 text-center text-gray-500">
-                <div class="flex flex-col items-center gap-4">
-                  <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                  </svg>
-                  <div>
-                    <p class="text-xl font-semibold text-gray-600">No academic results found</p>
-                    <p class="text-sm text-gray-400 mt-1">Try adjusting your filters or add some results to get started</p>
-                  </div>
-                </div>
-              </td>
-            </tr>
-            <tr v-for="student in pivotData" :key="student.student_id" class="transition hover:bg-blue-50">
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span class="text-sm font-bold text-blue-600">{{ student.student_name.charAt(0).toUpperCase() }}</span>
-                  </div>
-                  <div>
-                    <div class="font-semibold text-gray-900">{{ student.student_name }}</div>
-                    <div class="text-sm text-gray-500">{{ student.admission_number }}</div>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  {{ student.class || '-' }}
-                </span>
-              </td>
-              <td class="px-6 py-4">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  {{ student.stream || '-' }}
-                </span>
-              </td>
-              <td v-for="subject in subjects" :key="subject.id" class="px-6 py-4">
-                <div v-if="student.subjects[subject.id]" class="text-center">
-                  <div class="text-lg font-bold text-gray-900">{{ student.subjects[subject.id].marks }}</div>
-                  <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-bold mt-1" :class="getGradeClass(student.subjects[subject.id].grade)">
-                    {{ student.subjects[subject.id].grade }}
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="student in pageStudents" :key="student.student_id" class="transition hover:bg-brand-50/40">
+              <td class="px-5 py-3">
+                <button type="button" class="flex min-w-0 items-center gap-3 text-left" @click="viewStudent(student)">
+                  <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">{{ initials(student.student_name) }}</span>
+                  <span class="min-w-0">
+                    <span class="block truncate font-semibold text-gray-900 hover:text-brand-700">{{ student.student_name }}</span>
+                    <span class="block font-mono text-[11px] text-gray-500">{{ student.admission_number }}</span>
                   </span>
-                </div>
-                <div v-else class="text-center text-gray-400">
-                  <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                  </svg>
-                </div>
+                </button>
               </td>
-              <td class="px-6 py-4">
-                <span class="inline-flex rounded-full px-3 py-1 text-sm font-bold" :class="getPredictionClass(student)">
-                  {{ getPrediction(student) }}
-                </span>
-              </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center justify-end gap-2">
-                  <button @click="viewStudent(student)" class="inline-flex items-center px-3 py-1.5 border border-blue-600 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg text-xs font-medium transition-colors">
-                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                    </svg>
-                    View
-                  </button>
-                  <button @click="editStudent(student)" class="inline-flex items-center px-3 py-1.5 border border-green-600 text-green-600 bg-green-50 hover:bg-green-100 rounded-lg text-xs font-medium transition-colors">
-                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                    Edit
-                  </button>
-                  <button @click="deleteStudent(student)" class="inline-flex items-center px-3 py-1.5 border border-red-600 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg text-xs font-medium transition-colors">
-                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                    </svg>
-                    Delete
-                  </button>
+              <td class="whitespace-nowrap px-4 py-3 text-gray-700">{{ student.class || '-' }} {{ student.stream || '' }}</td>
+              <td class="hidden px-4 py-3 lg:table-cell">
+                <div class="flex flex-wrap gap-1">
+                  <span v-for="(m, sid) in student.subjects" :key="sid" class="rounded-md bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600" :title="m.subject_name">{{ subjectCode(sid, m.subject_name) }} <strong class="text-gray-800">{{ Number(m.marks) }}</strong><span v-if="m.grade" class="ml-1 rounded px-1 font-semibold" :class="getGradeClass(m.grade)">{{ m.grade }}</span></span>
                 </div>
               </td>
+              <td class="px-4 py-3">
+                <span class="whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="getPredictionClass(student)">{{ getPrediction(student) }}</span>
+              </td>
+              <td class="px-3 py-3 text-right"><RowActionsMenu :label="`Actions for ${student.student_name}`" :items="studentActions(student)" /></td>
             </tr>
           </tbody>
         </table>
-      </div>
-    </div>
+        <ul class="divide-y divide-gray-100 md:hidden">
+          <li v-for="student in pageStudents" :key="student.student_id" class="flex items-start gap-3 px-4 py-3">
+            <span class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">{{ initials(student.student_name) }}</span>
+            <button type="button" class="min-w-0 flex-1 text-left" @click="viewStudent(student)">
+              <p class="truncate font-semibold text-gray-900">{{ student.student_name }}</p>
+              <p class="text-xs text-gray-500">{{ student.admission_number }} · {{ student.class || '-' }} {{ student.stream || '' }} · {{ Object.keys(student.subjects).length }} subjects</p>
+              <span class="mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold" :class="getPredictionClass(student)">{{ getPrediction(student) }}</span>
+            </button>
+            <RowActionsMenu :label="`Actions for ${student.student_name}`" :items="studentActions(student)" />
+          </li>
+        </ul>
+        <PagerBar v-model:page="page" v-model:per-page="perPage" :total="visibleStudents.length" />
+      </template>
+    </section>
 
     <!-- Add/Edit Modal -->
     <div v-if="showAddModal || showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
@@ -368,7 +210,7 @@
             <button @click="closeModal" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
               Cancel
             </button>
-            <button @click="saveResult" :disabled="saving" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50">
+            <button @click="saveResult" :disabled="saving" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-50">
               {{ saving ? 'Saving...' : 'Save Results' }}
             </button>
           </div>
@@ -389,7 +231,7 @@
         </div>
         <div class="overflow-y-auto px-6 py-6">
           <!-- Student Info -->
-          <div class="mb-6 rounded-2xl bg-gradient-to-r from-blue-50 to-blue-100 p-6">
+          <div class="mb-6 rounded-2xl bg-brand-50 p-6">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
                 <p class="text-sm text-slate-500">Student Name</p>
@@ -442,9 +284,9 @@
                     :cx="60 + index * 90" 
                     :cy="180 - (data.average / 100) * 160" 
                     r="4" 
-                    fill="#3b82f6"
+                    fill="#16a34a"
                   />
-                  <text :x="60 + index * 90" :cy="175 - (data.average / 100) * 160" text-anchor="middle" font-size="10" font-weight="bold" fill="#3b82f6">
+                  <text :x="60 + index * 90" :cy="175 - (data.average / 100) * 160" text-anchor="middle" font-size="10" font-weight="bold" fill="#16a34a">
                     {{ data.average.toFixed(1) }}
                   </text>
                 </template>
@@ -454,7 +296,7 @@
                   v-if="performanceData.length > 1"
                   :points="performanceData.slice(0, isOLevel ? 4 : 2).map((data, index) => `${60 + index * 90},${180 - (data.average / 100) * 160}`).join(' ')"
                   fill="none"
-                  stroke="#3b82f6"
+                  stroke="#16a34a"
                   stroke-width="2"
                 />
               </svg>
@@ -494,12 +336,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import api from '../services/api.js';
 import { classesAPI, subjectsNewAPI } from '../services/api';
 import authStore from '../services/authStore.js';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useGlobalTerm } from '../composables/useGlobalTerm.js';
+import { Plus, RefreshCw, FileText, GraduationCap, Eye, Pencil, Trash2, Users as UsersIcon, ClipboardList, Gauge, Star } from 'lucide-vue-next';
+import StatCards from '../components/ui/StatCards.vue';
+import ListToolbar from '../components/ui/ListToolbar.vue';
+import PagerBar from '../components/ui/PagerBar.vue';
+import RowActionsMenu from '../components/RowActionsMenu.vue';
 
 const results = ref([]);
 const students = ref([]);
@@ -514,6 +362,42 @@ for (let year = 2020; year <= 2033; year++) {
   yearOptions.value.push(year.toString());
 }
 const pivotData = ref([]);
+const loading = ref(false);
+const studentSearch = ref('');
+const page = ref(1);
+const perPage = ref(25);
+const initials = (name) => String(name || '?').split(/s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+const shortSubject = (name) => {
+  const words = String(name || '').split(/s+/).filter(Boolean);
+  return words.length > 1 ? words.map((w) => w[0]).join('').toUpperCase() : String(name || '').slice(0, 4);
+};
+const subjectCode = (id, name) => subjects.value.find((x) => String(x.id) === String(id))?.subject_code || shortSubject(name);
+const studentAverage = (student) => {
+  const marks = Object.values(student.subjects).map((m) => parseFloat(m.marks)).filter((n) => !Number.isNaN(n));
+  return marks.length ? marks.reduce((a, b) => a + b, 0) / marks.length : null;
+};
+const visibleStudents = computed(() => {
+  const q = studentSearch.value.trim().toLowerCase();
+  if (!q) return pivotData.value;
+  return pivotData.value.filter((st) => `${st.student_name} ${st.admission_number}`.toLowerCase().includes(q));
+});
+const pageStudents = computed(() => visibleStudents.value.slice((page.value - 1) * perPage.value, page.value * perPage.value));
+watch([studentSearch, perPage, pivotData], () => { page.value = 1; });
+const studentActions = (student) => [
+  { label: 'View', icon: Eye, onClick: () => viewStudent(student) },
+  { label: 'Edit', icon: Pencil, onClick: () => editStudent(student) },
+  { label: 'Delete', icon: Trash2, danger: true, onClick: () => deleteStudent(student) },
+];
+const summaryCards = computed(() => {
+  const avgs = pivotData.value.map(studentAverage).filter((n) => n !== null);
+  const overall = avgs.length ? Math.round(avgs.reduce((a, b) => a + b, 0) / avgs.length) : null;
+  return [
+    { label: 'Students', value: pivotData.value.length.toLocaleString(), icon: UsersIcon },
+    { label: 'Marks entered', value: results.value.length.toLocaleString(), icon: ClipboardList, tone: 'sky' },
+    { label: 'Average mark', value: overall === null ? '-' : overall + '%', icon: Gauge, tone: 'gray' },
+    { label: '70% and above', value: avgs.filter((n) => n >= 70).length.toLocaleString(), note: 'outstanding or better', icon: Star, tone: 'amber' },
+  ];
+});
 
 const filters = ref({
   student_id: '',
@@ -583,7 +467,10 @@ const loadClasses = async () => {
   }
 };
 
+useGlobalTerm((y, t) => { filters.value.year = String(y); filters.value.term = String(t); }, () => loadResults());
+
 const loadResults = async () => {
+  loading.value = true;
   try {
     const token = localStorage.getItem('token');
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
@@ -611,6 +498,8 @@ const loadResults = async () => {
     if (error.response?.status === 401) {
       alert('Authentication required. Please log in to access this feature.');
     }
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -759,7 +648,7 @@ const closeModal = () => {
 const getGradeClass = (grade) => {
   const classes = {
     'A': 'bg-emerald-100 text-emerald-800',
-    'B': 'bg-blue-100 text-blue-800',
+    'B': 'bg-brand-100 text-brand-800',
     'C': 'bg-amber-100 text-amber-800',
     'D': 'bg-orange-100 text-orange-800',
     'E': 'bg-red-100 text-red-800'
@@ -808,7 +697,7 @@ const getPredictionClass = (student) => {
   const averageMarks = sumMarks / subjectsWithMarks.length;
   
   if (averageMarks >= 80) return 'bg-emerald-100 text-emerald-800';
-  if (averageMarks >= 70) return 'bg-blue-100 text-blue-800';
+  if (averageMarks >= 70) return 'bg-brand-100 text-brand-800';
   if (averageMarks >= 60) return 'bg-amber-100 text-amber-800';
   if (averageMarks >= 50) return 'bg-orange-100 text-orange-800';
   return 'bg-red-100 text-red-800';
@@ -936,7 +825,7 @@ const downloadPDF = () => {
       cellPadding: 3,
     },
     headStyles: {
-      fillColor: [59, 130, 246],
+      fillColor: [22, 163, 74],
       textColor: 255,
       fontStyle: 'bold',
     },
@@ -981,6 +870,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.filter-label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500; }
+.filter-select { @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100; }
+.tool-btn { @apply inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50; }
 .input {
   width: 100%;
   padding: 0.625rem 0.875rem;
@@ -993,8 +885,30 @@ onMounted(() => {
 
 .input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
 }
 </style>
 
+<style scoped>
+/* dark mode: generated by scripts/build-dark-overrides.cjs */
+html.dark .filter-label {
+  color: var(--d-muted);
+}
+html.dark .filter-select {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+}
+html.dark .tool-btn {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+  color: var(--d-text-2);
+}
+html.dark .tool-btn:hover {
+  background-color: var(--d-sunken);
+}
+html.dark .input {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+}
+</style>

@@ -1,330 +1,136 @@
 <template>
-  <div class="space-y-8">
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-8 text-white shadow-2xl">
-      <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
-      <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
-      <div class="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
-      <div class="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+  <div class="page">
+    <div class="page-hero">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-       
-          <h1 class="mt-3 text-4xl font-bold tracking-tight">Class Teacher Performance Tracking</h1>
-        
+          <h1 class="page-hero-title">Class Teacher Performance</h1>
         </div>
-
-        <div class="flex flex-wrap gap-3">
-          <button
-            @click="loadData"
-            class="group inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-medium text-white backdrop-blur transition-all hover:border-white/30 hover:bg-white/20"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Refresh
-          </button>
-          <button
-            @click="downloadPDF"
-            :disabled="records.length === 0"
-            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2.5 text-sm font-medium text-white shadow-xl shadow-emerald-500/25 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
-          >
-            <span class="relative z-10 flex items-center gap-2">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Download PDF
-            </span>
-          </button>
-          <button
-            @click="openAddModal"
-            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-2.5 text-sm font-medium text-white shadow-xl shadow-blue-500/25 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/40"
-          >
-            <span class="relative z-10 flex items-center gap-2">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Add Record
-            </span>
-          </button>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="btn-hero-primary" @click="openAddModal"><Plus class="h-4 w-4" />Add record</button>
         </div>
       </div>
     </div>
 
-    <div class="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-xl backdrop-blur-sm">
-      <div class="grid gap-5 xl:grid-cols-4">
-        <div>
-          <label class="mb-2.5 block text-sm font-semibold text-slate-700">Year</label>
-          <select
-            v-model="filterYear"
-            @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
-          >
+    <StatCards :cards="summaryCards" />
+
+    <ListToolbar
+      v-model:search="searchQuery"
+      placeholder="Search teacher or class"
+      :filter-count="[filterWeek].filter(Boolean).length"
+      @clear="filterWeek = ''; loadData()"
+    >
+      <template #filters>
+        <label class="block">
+          <span class="filter-label">Year</span>
+          <select v-model="filterYear" class="filter-select" @change="loadData">
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
-        </div>
-
-        <div>
-          <label class="mb-2.5 block text-sm font-semibold text-slate-700">Term</label>
-          <select
-            v-model="filterTerm"
-            @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
-          >
+        </label>
+        <label class="block">
+          <span class="filter-label">Term</span>
+          <select v-model="filterTerm" class="filter-select" @change="loadData">
             <option :value="1">Term 1</option>
             <option :value="2">Term 2</option>
             <option :value="3">Term 3</option>
           </select>
-        </div>
-
-        <div>
-          <label class="mb-2.5 block text-sm font-semibold text-slate-700">Week</label>
-          <select
-            v-model="filterWeek"
-            @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
-          >
-            <option value="">All Weeks</option>
-            <option v-for="week in 13" :key="week" :value="week">Week {{ week }}</option>
+        </label>
+        <label class="block">
+          <span class="filter-label">Week</span>
+          <select v-model="filterWeek" class="filter-select" @change="loadData">
+            <option value="">All weeks</option>
+            <option v-for="w in 13" :key="w" :value="w">Week {{ w }}</option>
           </select>
-        </div>
+        </label>
+      </template>
+      <template #actions>
+        <button type="button" class="tool-btn" :disabled="loading" title="Refresh" @click="loadData"><RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" /><span class="hidden lg:inline">Refresh</span></button>
+        <button type="button" class="tool-btn" :disabled="records.length === 0" title="Download PDF" @click="downloadPDF"><FileText class="h-4 w-4" /><span class="hidden lg:inline">PDF</span></button>
+      </template>
+    </ListToolbar>
 
-        <div class="flex items-end">
-          <div class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3">
-            <div class="h-2 w-2 animate-pulse rounded-full bg-blue-500"></div>
-            <span class="text-sm font-medium text-slate-600">
-              <span class="font-bold text-blue-600">{{ records.length }}</span> records found
-            </span>
+    <section v-if="loading && records.length === 0" class="card space-y-3 p-5">
+      <div v-for="i in 4" :key="i" class="flex animate-pulse items-center gap-3"><div class="h-10 w-10 rounded-full bg-gray-100"></div><div class="h-3 flex-1 rounded bg-gray-100"></div></div>
+    </section>
+    <section v-else-if="visibleGroups.length === 0" class="card px-5 py-14 text-center">
+      <ClipboardList class="mx-auto h-9 w-9 text-gray-300" />
+      <p class="mt-2 text-sm font-medium text-gray-700">No performance records found</p>
+    </section>
+
+    <template v-else>
+    <section v-for="group in visibleGroups" :key="`${group.teacher_id}-${group.class}-${group.stream}-${group.year}-${group.term}`" class="card overflow-hidden">
+      <header class="flex items-center gap-3 border-b border-gray-100 px-4 py-3 sm:px-5">
+        <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">{{ initials(group.teacher_name) }}</span>
+        <div class="min-w-0 flex-1">
+          <p class="truncate font-semibold text-gray-900">{{ group.teacher_name }}</p>
+          <p class="text-xs text-gray-500">{{ group.class }} {{ group.stream }} · Term {{ group.term }} · {{ group.weeks.length }} week{{ group.weeks.length === 1 ? '' : 's' }} recorded</p>
+        </div>
+        <div class="hidden text-right sm:block">
+          <p class="tabular-nums text-sm font-semibold text-gray-900">{{ groupAverage(group) }}/90</p>
+          <p class="text-[11px] text-gray-500">average week</p>
+        </div>
+        <RowActionsMenu :label="`Actions for ${group.teacher_name}`" :items="[{ label: 'Add next week', icon: PlusCircle, onClick: () => addNewWeek(group) }]" />
+      </header>
+
+      <table class="hidden w-full text-left text-sm md:table">
+        <thead class="bg-gray-50/70">
+          <tr class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+            <th class="w-20 px-5 py-2.5">Week</th>
+            <th class="px-4 py-2.5">Duties</th>
+            <th class="px-4 py-2.5">Parent</th>
+            <th class="px-4 py-2.5">Weekly</th>
+            <th class="hidden px-4 py-2.5 xl:table-cell">Tests</th>
+            <th class="hidden px-4 py-2.5 lg:table-cell">Average</th>
+            <th class="w-12 px-3 py-2.5"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <tr v-for="record in group.weeks" :key="record.id" class="transition hover:bg-brand-50/40">
+            <td class="whitespace-nowrap px-5 py-2.5 font-medium text-gray-800">Week {{ record.week }}</td>
+            <td class="px-4 py-2.5">
+              <div class="flex flex-wrap gap-1">
+                <span v-for="d in DUTIES" :key="d.key" class="rounded-md px-1.5 py-0.5 text-[11px] font-semibold" :class="getScoreClass(record[d.key])" :title="`${d.label}: ${getScoreLabel(record[d.key])}`">{{ d.short }} {{ Number(record[d.key]) || 0 }}</span>
+              </div>
+            </td>
+            <td class="px-4 py-2.5">
+              <span class="inline-flex items-center gap-1.5 text-xs font-medium" :class="record.parent_contacted ? 'text-emerald-700' : 'text-gray-500'"><span class="h-1.5 w-1.5 rounded-full" :class="record.parent_contacted ? 'bg-emerald-500' : 'bg-gray-300'"></span>{{ record.parent_contacted ? 'Contacted' : 'No' }}</span>
+            </td>
+            <td class="px-4 py-2.5">
+              <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums" :class="getWeeklyScoreClass(record.weekly_score)">{{ record.weekly_score }}/90</span>
+            </td>
+            <td class="hidden px-4 py-2.5 xl:table-cell">
+              <div class="flex flex-wrap gap-1">
+                <span v-for="t in TESTS" :key="t" class="rounded-md bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">{{ t.toUpperCase() }} <strong class="text-gray-800">{{ num(record[t]) }}</strong></span>
+              </div>
+            </td>
+            <td class="hidden px-4 py-2.5 tabular-nums font-semibold text-gray-900 lg:table-cell">{{ num(record.average_score) }}{{ Number(record.average_score) ? "%" : "" }}</td>
+            <td class="px-3 py-2.5 text-right"><RowActionsMenu :label="`Actions for week ${record.week}`" :items="weekActions(record)" /></td>
+          </tr>
+        </tbody>
+      </table>
+      <ul class="divide-y divide-gray-100 md:hidden">
+        <li v-for="record in group.weeks" :key="record.id" class="flex items-start gap-3 px-4 py-3">
+          <div class="min-w-0 flex-1">
+            <p class="font-medium text-gray-900">Week {{ record.week }} <span class="ml-1 rounded-full px-2 py-0.5 text-[11px] font-semibold" :class="getWeeklyScoreClass(record.weekly_score)">{{ record.weekly_score }}/90</span></p>
+            <div class="mt-1 flex flex-wrap gap-1">
+              <span v-for="d in DUTIES" :key="d.key" class="rounded-md px-1.5 py-0.5 text-[11px] font-semibold" :class="getScoreClass(record[d.key])">{{ d.short }} {{ Number(record[d.key]) || 0 }}</span>
+            </div>
+            <p class="mt-1 text-xs text-gray-500">Parent {{ record.parent_contacted ? 'contacted' : 'not contacted' }} · average {{ num(record.average_score) }}{{ Number(record.average_score) ? "%" : "" }}</p>
           </div>
-        </div>
-      </div>
-    </div>
+          <RowActionsMenu :label="`Actions for week ${record.week}`" :items="weekActions(record)" />
+        </li>
+      </ul>
+    </section>
 
-    <div class="rounded-3xl border border-slate-200/60 bg-white/80 shadow-xl backdrop-blur-sm">
-      <div class="border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-white px-6 py-5">
-        <h2 class="text-xl font-bold text-slate-900">Performance Records</h2>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="min-w-[1600px] w-full divide-y divide-slate-200/60">
-          <thead class="bg-gradient-to-r from-slate-50 to-slate-100/50">
-            <tr class="text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-              <th class="border-r border-slate-200 px-6 py-4">Teacher</th>
-              <th class="border-r border-slate-200 px-6 py-4">Class</th>
-              <th class="border-r border-slate-200 px-6 py-4">Stream</th>
-              <th class="border-r border-slate-200 px-6 py-4">Week</th>
-              <th class="border-r border-slate-200 px-6 py-4 text-center">Roll Call</th>
-              <th class="border-r border-slate-200 px-6 py-4 text-center">Mentorship</th>
-              <th class="border-r border-slate-200 px-6 py-4 text-center">Devotion</th>
-              <th class="border-r border-slate-200 px-6 py-4 text-center">Cleanliness</th>
-              <th class="border-r border-slate-200 px-6 py-4 text-center">Parent Contacted</th>
-              <th class="border-r border-slate-200 px-6 py-4 text-center">Weekly Score</th>
-              <th class="border-r border-slate-200 px-6 py-4 text-center">Weekly Avg</th>
-              <th class="border-r border-slate-200 px-6 py-4">BT1</th>
-              <th class="border-r border-slate-200 px-6 py-4">T1</th>
-              <th class="border-r border-slate-200 px-6 py-4">C1</th>
-              <th class="border-r border-slate-200 px-6 py-4">T2</th>
-              <th class="border-r border-slate-200 px-6 py-4">C2</th>
-              <th class="border-r border-slate-200 px-6 py-4">T3</th>
-              <th class="border-r border-slate-200 px-6 py-4">C3</th>
-              <th class="border-r border-slate-200 px-6 py-4">Average</th>
-              <th class="px-6 py-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100/60 bg-white">
-            <tr v-if="groupedRecords.length === 0">
-              <td colspan="19" class="px-6 py-16 text-center">
-                <div class="flex flex-col items-center gap-3">
-                  <div class="rounded-full bg-slate-100 p-4">
-                    <svg class="h-8 w-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                  </div>
-                  <p class="text-sm font-medium text-slate-500">No performance records found.</p>
-                </div>
-              </td>
-            </tr>
-
-            <template v-for="group in groupedRecords" :key="`${group.teacher_id}-${group.class}-${group.stream}-${group.year}-${group.term}`">
-              <tr class="bg-gradient-to-r from-blue-50/50 to-blue-100/50">
-                <td class="border-r border-slate-100 px-6 py-4">
-                  <div class="flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-500/30">
-                      {{ group.teacher_name?.charAt(0) || '?' }}
-                    </div>
-                    <div class="font-semibold text-slate-900">{{ group.teacher_name }}</div>
-                  </div>
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4 text-sm font-medium text-slate-700">{{ group.class }}</td>
-                <td class="border-r border-slate-100 px-6 py-4 text-sm font-medium text-slate-700">{{ group.stream }}</td>
-                <td class="border-r border-slate-100 px-6 py-4 text-sm font-medium text-slate-700">
-                 <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-bold text-blue-800">
-                  Term {{ group.term }}
-                </span>
-                                </td>
-                <td colspan="15" class="px-6 py-4 text-sm text-slate-500">
-                  {{ group.weeks.length }} week{{ group.weeks.length > 1 ? 's' : '' }} recorded
-                </td>
-                <td class="px-6 py-4">
-                
-                </td>
-              </tr>
-
-              <tr
-                v-for="record in group.weeks"
-                :key="record.id"
-                class="transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-blue-100/30"
-              >
-                <td class="border-r border-slate-100 px-6 py-4 text-sm text-slate-400 pl-12">
-                  Week {{ record.week }}
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4"></td>
-                <td class="border-r border-slate-100 px-6 py-4"></td>
-                <td class="border-r border-slate-100 px-6 py-4"></td>
-                <td class="border-r border-slate-100 px-6 py-4 text-center">
-                  <div class="flex justify-center">
-                    <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-bold" :class="getScoreClass(record.roll_call_score)">
-                      {{ getScoreLabel(record.roll_call_score) }}
-                    </span>
-                  </div>
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4 text-center">
-                  <div class="flex justify-center">
-                    <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-bold" :class="getScoreClass(record.mentorship_score)">
-                      {{ getScoreLabel(record.mentorship_score) }}
-                    </span>
-                  </div>
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4 text-center">
-                  <div class="flex justify-center">
-                    <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-bold" :class="getScoreClass(record.devotion_score)">
-                      {{ getScoreLabel(record.devotion_score) }}
-                    </span>
-                  </div>
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4 text-center">
-                  <div class="flex justify-center">
-                    <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-bold" :class="getScoreClass(record.cleanliness_score)">
-                      {{ getScoreLabel(record.cleanliness_score) }}
-                    </span>
-                  </div>
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4 text-center">
-                  <div class="flex justify-center">
-                    <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-bold" :class="getParentContactedClass(record.parent_contacted)">
-                      {{ record.parent_contacted ? 'Yes' : 'No' }}
-                    </span>
-                  </div>
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4 text-center">
-                  <span class="inline-flex items-center rounded-xl px-3 py-1.5 text-sm font-bold" :class="getWeeklyScoreClass(record.weekly_score)">
-                    {{ record.weekly_score }}/90
-                  </span>
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4 text-center">
-                  <span
-                    class="inline-flex items-center rounded-xl px-3 py-1.5 text-xs font-bold shadow-sm"
-                    :class="record.weekly_average_score >= 70 ? 'bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800' : 'bg-gradient-to-r from-rose-100 to-pink-100 text-rose-800'"
-                  >
-                    {{ record.weekly_average_score || '-' }}
-                  </span>
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4 text-center">
-                  <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-bold" :class="getScoreClass(record.bt1)">
-                    {{ record.bt1 || '-' }}
-                  </span>
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4 text-center">
-                  <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-bold" :class="getScoreClass(record.t1)">
-                    {{ record.t1 || '-' }}
-                  </span>
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4 text-center">
-                  <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-bold" :class="getScoreClass(record.c1)">
-                    {{ record.c1 || '-' }}
-                  </span>
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4 text-center">
-                  <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-bold" :class="getScoreClass(record.t2)">
-                    {{ record.t2 || '-' }}
-                  </span>
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4 text-center">
-                  <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-bold" :class="getScoreClass(record.c2)">
-                    {{ record.c2 || '-' }}
-                  </span>
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4 text-center">
-                  <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-bold" :class="getScoreClass(record.t3)">
-                    {{ record.t3 || '-' }}
-                  </span>
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4 text-center">
-                  <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-bold" :class="getScoreClass(record.c3)">
-                    {{ record.c3 || '-' }}
-                  </span>
-                </td>
-                <td class="border-r border-slate-100 px-6 py-4">
-                  <span
-                    class="inline-flex items-center rounded-xl px-3 py-1.5 text-xs font-bold shadow-sm"
-                    :class="record.average_score >= 0 ? 'bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800' : 'bg-gradient-to-r from-rose-100 to-pink-100 text-rose-800'"
-                  >
-                    {{ record.average_score }}%
-                  </span>
-                </td>
-                <td class="px-6 py-4">
-                  <div class="flex justify-end gap-2">
-                    <button
-                      @click="editRecord(record)"
-                      class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-blue-500/20"
-                    >
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    <button
-                      @click="editTerm1(record)"
-                      class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-blue-500/20"
-                      title="Add T1 Score"
-                    >
-                      T1
-                    </button>
-                    <button
-                      @click="editTerm2(record)"
-                      class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-blue-500/20"
-                      title="Add T2 Score"
-                    >
-                      T2
-                    </button>
-                    <button
-                      @click="editTerm3(record)"
-                      class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-2 text-sm font-semibold text-amber-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-amber-500/20"
-                      title="Add T3 Score"
-                    >
-                      T3
-                    </button>
-                    <button
-                      @click="deleteRecord(record.id)"
-                      class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-pink-50 px-3 py-2 text-sm font-semibold text-rose-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-rose-500/20"
-                    >
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </template>
 
     <div
       v-if="showModal"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm"
     >
-      <div class="relative flex max-h-[90vh] w-full max-w-5xl flex-col rounded-3xl bg-white shadow-2xl ring-1 ring-white/20">
-        <div class="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/5 to-blue-600/5 pointer-events-none"></div>
+      <div class="relative flex max-h-[90vh] w-full max-w-5xl flex-col rounded-2xl bg-white shadow-2xl ring-1 ring-white/20">
+        <div class="absolute inset-0 rounded-2xl bg-brand-500/5 pointer-events-none"></div>
 
-        <div class="relative flex-shrink-0 border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-white px-6 py-6">
+        <div class="relative flex-shrink-0 border-b border-slate-200/60 bg-slate-50 px-6 py-6">
           <h3 class="text-xl font-bold text-slate-900">
             {{ editingId ? 'Edit Record' : 'Add Record' }}
           </h3>
@@ -345,7 +151,7 @@
                     placeholder="Search teacher..."
                     class="input mb-2"
                   >
-                  <svg class="w-5 h-5 text-gray-400 absolute right-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-5 h-5 text-slate-400 absolute right-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                   </svg>
                 </div>
@@ -403,7 +209,7 @@
             <div class="border-t border-slate-200/60 pt-6">
               <h4 class="mb-4 font-bold text-slate-900">Weekly Assessment (Each out of 20 marks)</h4>
 
-              <div class="mb-4 rounded-xl border border-slate-200 bg-gradient-to-r from-blue-50 to-blue-50 p-4">
+              <div class="mb-4 rounded-xl border border-slate-200 bg-brand-50 p-4">
                 <div class="mb-3 flex items-center justify-between">
                   <h6 class="font-medium text-slate-900">Roll Call</h6>
                   <span class="text-sm text-slate-600">Score: {{ form.roll_call_score }}/20</span>
@@ -414,8 +220,8 @@
                     <span class="text-sm font-medium text-emerald-800">Excellent (20)</span>
                   </label>
                   <label class="flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors hover:bg-white/50">
-                    <input type="radio" v-model="form.roll_call_score" :value="15" class="h-4 w-4 text-blue-600 focus:ring-blue-500" />
-                    <span class="text-sm font-medium text-blue-800">Very Good (15)</span>
+                    <input type="radio" v-model="form.roll_call_score" :value="15" class="h-4 w-4 text-brand-600 focus:ring-brand-500" />
+                    <span class="text-sm font-medium text-brand-800">Very Good (15)</span>
                   </label>
                   <label class="flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors hover:bg-white/50">
                     <input type="radio" v-model="form.roll_call_score" :value="12" class="h-4 w-4 text-amber-600 focus:ring-amber-500" />
@@ -428,7 +234,7 @@
                 </div>
               </div>
 
-              <div class="mb-4 rounded-xl border border-slate-200 bg-gradient-to-r from-blue-50 to-blue-100 p-4">
+              <div class="mb-4 rounded-xl border border-slate-200 bg-brand-50 p-4">
                 <div class="mb-3 flex items-center justify-between">
                   <h6 class="font-medium text-slate-900">Mentorship</h6>
                   <span class="text-sm text-slate-600">Score: {{ form.mentorship_score }}/20</span>
@@ -439,8 +245,8 @@
                     <span class="text-sm font-medium text-emerald-800">Excellent (20)</span>
                   </label>
                   <label class="flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors hover:bg-white/50">
-                    <input type="radio" v-model="form.mentorship_score" :value="15" class="h-4 w-4 text-blue-600 focus:ring-blue-500" />
-                    <span class="text-sm font-medium text-blue-800">Very Good (15)</span>
+                    <input type="radio" v-model="form.mentorship_score" :value="15" class="h-4 w-4 text-brand-600 focus:ring-brand-500" />
+                    <span class="text-sm font-medium text-brand-800">Very Good (15)</span>
                   </label>
                   <label class="flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors hover:bg-white/50">
                     <input type="radio" v-model="form.mentorship_score" :value="12" class="h-4 w-4 text-amber-600 focus:ring-amber-500" />
@@ -453,7 +259,7 @@
                 </div>
               </div>
 
-              <div class="mb-4 rounded-xl border border-slate-200 bg-gradient-to-r from-green-50 to-emerald-50 p-4">
+              <div class="mb-4 rounded-xl border border-slate-200 bg-green-50 p-4">
                 <div class="mb-3 flex items-center justify-between">
                   <h6 class="font-medium text-slate-900">Devotion</h6>
                   <span class="text-sm text-slate-600">Score: {{ form.devotion_score }}/20</span>
@@ -464,8 +270,8 @@
                     <span class="text-sm font-medium text-emerald-800">Excellent (20)</span>
                   </label>
                   <label class="flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors hover:bg-white/50">
-                    <input type="radio" v-model="form.devotion_score" :value="15" class="h-4 w-4 text-blue-600 focus:ring-blue-500" />
-                    <span class="text-sm font-medium text-blue-800">Very Good (15)</span>
+                    <input type="radio" v-model="form.devotion_score" :value="15" class="h-4 w-4 text-brand-600 focus:ring-brand-500" />
+                    <span class="text-sm font-medium text-brand-800">Very Good (15)</span>
                   </label>
                   <label class="flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors hover:bg-white/50">
                     <input type="radio" v-model="form.devotion_score" :value="12" class="h-4 w-4 text-amber-600 focus:ring-amber-500" />
@@ -478,7 +284,7 @@
                 </div>
               </div>
 
-              <div class="mb-4 rounded-xl border border-slate-200 bg-gradient-to-r from-amber-50 to-orange-50 p-4">
+              <div class="mb-4 rounded-xl border border-slate-200 bg-amber-50 p-4">
                 <div class="mb-3 flex items-center justify-between">
                   <h6 class="font-medium text-slate-900">Cleanliness</h6>
                   <span class="text-sm text-slate-600">Score: {{ form.cleanliness_score }}/20</span>
@@ -489,8 +295,8 @@
                     <span class="text-sm font-medium text-emerald-800">Excellent (20)</span>
                   </label>
                   <label class="flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors hover:bg-white/50">
-                    <input type="radio" v-model="form.cleanliness_score" :value="15" class="h-4 w-4 text-blue-600 focus:ring-blue-500" />
-                    <span class="text-sm font-medium text-blue-800">Very Good (15)</span>
+                    <input type="radio" v-model="form.cleanliness_score" :value="15" class="h-4 w-4 text-brand-600 focus:ring-brand-500" />
+                    <span class="text-sm font-medium text-brand-800">Very Good (15)</span>
                   </label>
                   <label class="flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors hover:bg-white/50">
                     <input type="radio" v-model="form.cleanliness_score" :value="12" class="h-4 w-4 text-amber-600 focus:ring-amber-500" />
@@ -503,7 +309,7 @@
                 </div>
               </div>
 
-              <div class="rounded-xl border border-slate-200 bg-gradient-to-r from-cyan-50 to-sky-50 p-4">
+              <div class="rounded-xl border border-slate-200 bg-brand-50 p-4">
                 <div class="mb-3 flex items-center justify-between">
                   <h6 class="font-medium text-slate-900">Parent Contacted</h6>
                   <span class="text-sm text-slate-600">{{ form.parent_contacted ? 'Recorded' : 'Not recorded' }}</span>
@@ -512,7 +318,7 @@
                   <input
                     type="checkbox"
                     v-model="form.parent_contacted"
-                    class="h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
+                    class="h-4 w-4 rounded text-brand-600 focus:ring-brand-500"
                   />
                   <span class="text-sm font-medium text-slate-700">At least one parent contacted this week</span>
                 </label>
@@ -547,7 +353,7 @@
               </div>
             </div>
 
-            <div class="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-blue-50 to-blue-100 p-5 shadow-sm">
+            <div class="rounded-2xl border border-slate-200/60 bg-brand-50 p-5 shadow-sm">
               <h4 class="mb-4 font-bold text-slate-900">Calculated Results (Auto)</h4>
 
               <div class="mb-6">
@@ -597,12 +403,12 @@
               </div>
             </div>
 
-            <div v-if="error" class="rounded-2xl border border-rose-200/60 bg-gradient-to-r from-rose-50 to-pink-50 px-4 py-3 text-sm font-medium text-rose-700 shadow-sm">
+            <div v-if="error" class="rounded-2xl border border-rose-200/60 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 shadow-sm">
               {{ error }}
             </div>
           </div>
 
-          <div class="relative flex-shrink-0 border-t border-slate-200/60 bg-gradient-to-r from-slate-50 to-white px-6 py-5">
+          <div class="relative flex-shrink-0 border-t border-slate-200/60 bg-slate-50 px-6 py-5">
             <div class="flex items-center justify-end gap-3">
               <button
                 type="button"
@@ -614,7 +420,7 @@
               <button
                 type="submit"
                 :disabled="saving"
-                class="rounded-2xl bg-gradient-to-r from-blue-700 to-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+                class="rounded-2xl bg-brand-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-brand-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
               >
                 {{ saving ? 'Saving...' : 'Save' }}
               </button>
@@ -631,6 +437,11 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { classTeacherPerformanceAPI, teachersAPI, classesAPI } from '../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useGlobalTerm } from '../composables/useGlobalTerm.js';
+import { Plus, RefreshCw, FileText, ClipboardList, Pencil, Trash2, Users as UsersIcon, Gauge, Phone, PlusCircle } from 'lucide-vue-next';
+import StatCards from '../components/ui/StatCards.vue';
+import ListToolbar from '../components/ui/ListToolbar.vue';
+import RowActionsMenu from '../components/RowActionsMenu.vue';
 
 const createEmptyForm = () => ({
   teacher_id: '',
@@ -658,11 +469,14 @@ const createEmptyForm = () => ({
 });
 
 const records = ref([]);
+const loading = ref(false);
+const searchQuery = ref('');
 const teachersList = ref([]);
 const teacherSearch = ref('');
 const filterYear = ref(new Date().getFullYear());
 const filterTerm = ref(1);
 const filterWeek = ref('');
+useGlobalTerm((y, t) => { filterYear.value = y; filterTerm.value = t; }, () => loadData());
 const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
 const showModal = ref(false);
 
@@ -694,6 +508,42 @@ const groupedRecords = computed(() => {
     grouped[key].weeks.push(record);
   });
   return Object.values(grouped);
+});
+const DUTIES = [
+  { key: 'roll_call_score', short: 'RC', label: 'Roll call' },
+  { key: 'mentorship_score', short: 'M', label: 'Mentorship' },
+  { key: 'devotion_score', short: 'D', label: 'Devotion' },
+  { key: 'cleanliness_score', short: 'C', label: 'Cleanliness' },
+];
+const num = (v) => (Number(v) ? Number(Number(v).toFixed(1)) : '-');
+const TESTS = ['bt1', 't1', 'c1', 't2', 'c2', 't3', 'c3'];
+const initials = (name) => String(name || '?').split(/s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+const visibleGroups = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase();
+  if (!q) return groupedRecords.value;
+  return groupedRecords.value.filter((g) => `${g.teacher_name} ${g.class} ${g.stream}`.toLowerCase().includes(q));
+});
+const groupAverage = (group) => {
+  const n = group.weeks.length;
+  return n ? Math.round(group.weeks.reduce((sum, r) => sum + (Number(r.weekly_score) || 0), 0) / n) : 0;
+};
+const weekActions = (record) => [
+  { label: 'Edit week', icon: Pencil, onClick: () => editRecord(record) },
+  { label: 'Add T1 score', icon: PlusCircle, onClick: () => editTerm1(record) },
+  { label: 'Add T2 score', icon: PlusCircle, onClick: () => editTerm2(record) },
+  { label: 'Add T3 score', icon: PlusCircle, onClick: () => editTerm3(record) },
+  { label: 'Delete', icon: Trash2, danger: true, onClick: () => deleteRecord(record.id) },
+];
+const summaryCards = computed(() => {
+  const list = records.value;
+  const avg = list.length ? Math.round(list.reduce((sum, r) => sum + (Number(r.weekly_score) || 0), 0) / list.length) : null;
+  const contacted = list.filter((r) => Number(r.parent_contacted)).length;
+  return [
+    { label: 'Weekly records', value: list.length.toLocaleString(), icon: ClipboardList },
+    { label: 'Class teachers', value: groupedRecords.value.length.toLocaleString(), icon: UsersIcon, tone: 'sky' },
+    { label: 'Average week', value: avg === null ? '-' : avg + '/90', icon: Gauge, tone: 'gray' },
+    { label: 'Parents contacted', value: list.length ? Math.round((contacted / list.length) * 100) + '%' : '-', note: contacted + ' of ' + list.length + ' weeks', icon: Phone, tone: 'amber' },
+  ];
 });
 const editingId = ref(null);
 const saving = ref(false);
@@ -800,6 +650,7 @@ watch(
 );
 
 const loadData = async () => {
+  loading.value = true;
   try {
     const params = {
       year: filterYear.value,
@@ -813,6 +664,8 @@ const loadData = async () => {
     if (result.success) records.value = result.data.data || result.data;
   } catch (err) {
     console.error('Failed to load data:', err);
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -838,7 +691,7 @@ const loadTeachers = async () => {
 const getScoreClass = (score) => {
   const value = Number(score) || 0;
   if (value >= 20) return 'bg-emerald-100 text-emerald-800';
-  if (value >= 15) return 'bg-blue-100 text-blue-800';
+  if (value >= 15) return 'bg-brand-100 text-brand-800';
   if (value >= 12) return 'bg-amber-100 text-amber-800';
   return 'bg-red-100 text-red-800';
 };
@@ -858,7 +711,7 @@ const getParentContactedClass = (contacted) => {
 const getWeeklyScoreClass = (score) => {
   const value = Number(score) || 0;
   if (value >= 70) return 'bg-emerald-100 text-emerald-800';
-  if (value >= 50) return 'bg-blue-100 text-blue-800';
+  if (value >= 50) return 'bg-brand-100 text-brand-800';
   if (value >= 30) return 'bg-amber-100 text-amber-800';
   return 'bg-red-100 text-red-800';
 };
@@ -1192,7 +1045,7 @@ const downloadPDF = () => {
       cellPadding: 2
     },
     headStyles: {
-      fillColor: [59, 130, 246],
+      fillColor: [22, 163, 74],
       textColor: 255,
       fontStyle: 'bold'
     },
@@ -1228,6 +1081,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.filter-label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500; }
+.filter-select { @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100; }
+.tool-btn { @apply inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50; }
 .input {
   width: 100%;
   border-radius: 1rem;
@@ -1240,11 +1096,37 @@ onMounted(() => {
 }
 
 .input:focus {
-  border-color: rgb(99 102 241);
-  box-shadow: 0 0 0 4px rgb(238 242 255);
+  border-color: rgb(22 163 74);
+  box-shadow: 0 0 0 4px rgb(220 252 231);
 }
 
 .input:hover:not(:focus) {
   border-color: rgb(203 213 225);
+}
+</style>
+
+<style scoped>
+/* dark mode: generated by scripts/build-dark-overrides.cjs */
+html.dark .filter-label {
+  color: var(--d-muted);
+}
+html.dark .filter-select {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+}
+html.dark .tool-btn {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+  color: var(--d-text-2);
+}
+html.dark .tool-btn:hover {
+  background-color: var(--d-sunken);
+}
+html.dark .input {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+}
+html.dark .input:hover:not(:focus) {
+  border-color: var(--d-line);
 }
 </style>

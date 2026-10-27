@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/../config/ApiGuard.php';
+api_guard();
 require_once '../config/Database.php';
 require_once '../config/JWT.php';
 require_once '../config/HrHelpers.php';

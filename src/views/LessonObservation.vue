@@ -1,260 +1,136 @@
 <template>
-  <div class="space-y-8">
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-8 text-white shadow-2xl">
-      <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
-      <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
-      <div class="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
-
-      <div class="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+  <div class="page">
+    <div class="page-hero">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 class="mt-3 text-4xl font-bold tracking-tight">Teacher Observation Tracking</h1>
+          <h1 class="page-hero-title">Lesson Observations</h1>
         </div>
-
-        <div class="flex flex-wrap gap-3">
-          <button
-            @click="loadData"
-            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/20 hover:shadow-lg hover:shadow-white/10"
-          >
-            <span class="relative z-10 flex items-center gap-2">
-              <svg class="h-4 w-4 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Refresh
-            </span>
-          </button>
-
-          <button
-            @click="downloadPDF"
-            :disabled="records.length === 0"
-            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2.5 text-sm font-medium text-white shadow-xl shadow-emerald-500/25 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
-          >
-            <span class="relative z-10 flex items-center gap-2">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Download PDF
-            </span>
-          </button>
-
-          <button
-            @click="openAddModal()"
-            class="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 to-blue-500 px-5 py-2.5 text-sm font-medium text-white shadow-xl shadow-blue-500/25 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/40"
-          >
-            <span class="relative z-10 flex items-center gap-2">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Add Observation
-            </span>
-          </button>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="btn-hero-primary" @click="openAddModal()"><Plus class="h-4 w-4" />Add observation</button>
         </div>
       </div>
     </div>
 
-    <div class="rounded-3xl border border-slate-200/60 bg-white/80 p-6 shadow-xl backdrop-blur-sm">
-      <div class="grid gap-5 xl:grid-cols-6">
-        <div>
-          <label class="mb-2.5 block text-sm font-semibold text-slate-700">Year</label>
-          <select
-            v-model="filterYear"
-            @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
-          >
+    <StatCards :cards="summaryCards" />
+
+    <ListToolbar
+      :search="filterSearch"
+      placeholder="Search teacher"
+      :filter-count="[filterTerm !== 'all' ? filterTerm : '', filterClass, filterStream].filter(Boolean).length"
+      @update:search="(v) => { filterSearch = v; loadData(); }"
+      @clear="filterTerm = 'all'; filterClass = ''; filterStream = ''; loadData()"
+    >
+      <template #filters>
+        <label class="block">
+          <span class="filter-label">Year</span>
+          <select v-model="filterYear" class="filter-select" @change="loadData">
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
-        </div>
-
-        <div>
-          <label class="mb-2.5 block text-sm font-semibold text-slate-700">Term</label>
-          <select
-            v-model="filterTerm"
-            @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
-          >
-            <option value="all">All Terms</option>
+        </label>
+        <label class="block">
+          <span class="filter-label">Term</span>
+          <select v-model="filterTerm" class="filter-select" @change="loadData">
+            <option value="all">All terms</option>
             <option :value="1">Term 1</option>
             <option :value="2">Term 2</option>
             <option :value="3">Term 3</option>
           </select>
-        </div>
-
-        <div>
-          <label class="mb-2.5 block text-sm font-semibold text-slate-700">Class</label>
-          <select
-            v-model="filterClass"
-            @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
-          >
-            <option value="">All Classes</option>
+        </label>
+        <label class="block">
+          <span class="filter-label">Class</span>
+          <select v-model="filterClass" class="filter-select" @change="loadData">
+            <option value="">All classes</option>
             <option v-for="c in classes" :key="c" :value="c">{{ c }}</option>
           </select>
-        </div>
-
-        <div>
-          <label class="mb-2.5 block text-sm font-semibold text-slate-700">Stream</label>
-          <select
-            v-model="filterStream"
-            @change="loadData"
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
-          >
-            <option value="">All Streams</option>
+        </label>
+        <label class="block">
+          <span class="filter-label">Stream</span>
+          <select v-model="filterStream" class="filter-select" @change="loadData">
+            <option value="">All streams</option>
             <option v-for="s in streams" :key="s" :value="s">{{ s }}</option>
           </select>
-        </div>
+        </label>
+      </template>
+      <template #actions>
+        <button type="button" class="tool-btn" :disabled="loading" title="Refresh" @click="loadData"><RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" /><span class="hidden lg:inline">Refresh</span></button>
+        <button type="button" class="tool-btn" :disabled="records.length === 0" title="Download PDF" @click="downloadPDF"><FileText class="h-4 w-4" /><span class="hidden lg:inline">PDF</span></button>
+      </template>
+    </ListToolbar>
 
-        <div>
-          <label class="mb-2.5 block text-sm font-semibold text-slate-700">Search Teacher</label>
-          <input
-            v-model="filterSearch"
-            @input="loadData"
-            type="text"
-            placeholder="Search by name..."
-            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 outline-none transition-all duration-200 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50"
-          />
-        </div>
-
-        <div class="flex items-end">
-          <div class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3">
-            <div class="h-2 w-2 animate-pulse rounded-full bg-blue-500"></div>
-            <span class="text-sm font-medium text-slate-600">
-              <span class="font-bold text-blue-600">{{ records.length }}</span> observations found
-            </span>
-          </div>
-        </div>
+    <section class="card overflow-hidden">
+      <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3 sm:px-5">
+        <p class="text-sm text-gray-600"><strong class="text-gray-900">{{ groupedRecords.length }}</strong> teacher{{ groupedRecords.length === 1 ? '' : 's' }} observed · {{ records.length }} observation{{ records.length === 1 ? '' : 's' }}</p>
       </div>
-    </div>
-
-    <div class="rounded-3xl border border-slate-200/60 bg-white/80 shadow-xl backdrop-blur-sm">
-      <div class="border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-white px-6 py-5">
-        <h2 class="text-xl font-bold text-slate-900">Observation Records</h2>
+      <div v-if="loading && records.length === 0" class="space-y-3 p-5">
+        <div v-for="i in 5" :key="i" class="flex animate-pulse items-center gap-3"><div class="h-10 w-10 rounded-full bg-gray-100"></div><div class="h-3 flex-1 rounded bg-gray-100"></div></div>
       </div>
-
-      <div class="overflow-x-auto">
-        <table class="min-w-[1200px] w-full divide-y divide-slate-200/60">
-          <thead class="bg-gradient-to-r from-slate-50 to-slate-100/50">
-            <tr class="text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-              <th class="px-6 py-4">Teacher</th>
-              <th class="px-6 py-4">Subject</th>
-              <th class="px-6 py-4">Class</th>
-              <th class="px-6 py-4">Stream</th>
-              <th class="px-6 py-4">Observations</th>
-              <th class="px-6 py-4">Avg Score</th>
-              <th class="px-6 py-4">Avg Rating</th>
-              <th class="px-6 py-4">Category</th>
-              <th class="px-6 py-4 text-right">Actions</th>
+      <div v-else-if="groupedRecords.length === 0" class="px-5 py-14 text-center">
+        <ClipboardList class="mx-auto h-9 w-9 text-gray-300" />
+        <p class="mt-2 text-sm font-medium text-gray-700">No observations found</p>
+      </div>
+      <template v-else>
+        <table class="hidden w-full text-left text-sm md:table">
+          <thead class="border-b border-gray-200 bg-gray-50/70">
+            <tr class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              <th class="px-5 py-3">Teacher</th>
+              <th class="px-4 py-3">Class</th>
+              <th class="hidden px-4 py-3 xl:table-cell">Rounds</th>
+              <th class="px-4 py-3">Average</th>
+              <th class="hidden px-4 py-3 lg:table-cell">Category</th>
+              <th class="w-12 px-3 py-3"><span class="sr-only">Actions</span></th>
             </tr>
           </thead>
-
-          <tbody class="divide-y divide-slate-100/60 bg-white">
-            <tr v-if="groupedRecords.length === 0">
-              <td colspan="9" class="px-6 py-16 text-center">
-                <div class="flex flex-col items-center gap-3">
-                  <div class="rounded-full bg-slate-100 p-4">
-                    <svg class="h-8 w-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                  </div>
-                  <p class="text-sm font-medium text-slate-500">No observation records found.</p>
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="group in groupedRecords" :key="group.teacher_id" class="transition hover:bg-brand-50/40">
+              <td class="px-5 py-3">
+                <button type="button" class="flex min-w-0 items-center gap-3 text-left" @click="viewRecord(group)">
+                  <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">{{ initials(group.teacher_name) }}</span>
+                  <span class="min-w-0">
+                    <span class="block truncate font-semibold text-gray-900 hover:text-brand-700">{{ group.teacher_name }}</span>
+                    <span class="block truncate text-xs text-gray-500">{{ group.subject || '-' }}</span>
+                  </span>
+                </button>
+              </td>
+              <td class="px-4 py-3 text-gray-700">{{ group.class }} {{ group.stream }}</td>
+              <td class="hidden px-4 py-3 xl:table-cell">
+                <div class="flex flex-wrap gap-1">
+                  <span v-for="obs in group.observations" :key="obs.id" class="rounded-md bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">T{{ obs.term }} R{{ obs.round || 1 }}: <strong class="text-gray-800">{{ Math.round(obs.total_score || 0) }}</strong></span>
                 </div>
               </td>
-            </tr>
-
-            <tr
-              v-for="group in groupedRecords"
-              :key="group.teacher_id"
-              class="transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-blue-100/30"
-            >
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-3">
-                  <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-500/30">
-                    {{ group.teacher_name?.charAt(0) || '?' }}
-                  </div>
-                  <div class="font-semibold text-slate-900">{{ group.teacher_name }}</div>
-                </div>
+              <td class="px-4 py-3">
+                <p class="tabular-nums font-semibold text-gray-900">{{ group.avg_score || 0 }}</p>
+                <p class="text-xs text-gray-500">Rating {{ group.avg_rating || 0 }}</p>
               </td>
-              <td class="px-6 py-4">
-                <span class="inline-flex items-center rounded-xl bg-gradient-to-r from-blue-50 to-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 shadow-sm">
-                  {{ group.subject }}
-                </span>
+              <td class="hidden px-4 py-3 lg:table-cell">
+                <span class="whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="getCategoryBadgeClass(group.overall_category)">{{ group.overall_category || '-' }}</span>
               </td>
-              <td class="px-6 py-4 text-sm font-medium text-slate-700">{{ group.class }}</td>
-              <td class="px-6 py-4 text-sm font-medium text-slate-700">{{ group.stream }}</td>
-              <td class="px-6 py-4">
-                <div class="space-y-1">
-                  <div v-for="obs in group.observations" :key="obs.id" class="text-xs text-slate-600">
-                    <span class="font-medium">Term {{ obs.term }}</span> - Round {{ obs.round || 1 }}: {{ Math.round(obs.total_score || 0) }}
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 text-sm font-bold text-slate-700">{{ group.avg_score || 0 }}</td>
-              <td class="px-6 py-4 text-sm font-bold text-blue-600">{{ group.avg_rating || 0 }}</td>
-              <td class="px-6 py-4">
-                <span
-                  class="inline-flex items-center rounded-xl px-3 py-1.5 text-xs font-bold shadow-sm"
-                  :class="getCategoryBadgeClass(group.overall_category)"
-                >
-                  {{ group.overall_category || '-' }}
-                </span>
-              </td>
-              <td class="px-6 py-4">
-                <div class="flex justify-end gap-2">
-                  <button
-                    @click="viewRecord(group)"
-                    class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-slate-400/20"
-                  >
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    View
-                  </button>
-
-                  <button
-                    @click="addRoundForTeacher(group)"
-                    class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-green-50 px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-emerald-500/20"
-                  >
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    
-                  </button>
-
-                  <button
-                    @click="editRecord(group.observations[0])"
-                    class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-blue-500/20"
-                  >
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit
-                  </button>
-
-                  <button
-                    @click="deleteRecord(group.observations[0].id)"
-                    class="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-pink-50 px-4 py-2 text-sm font-semibold text-rose-700 shadow-sm transition-all duration-300 hover:shadow-md hover:shadow-rose-500/20"
-                  >
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Delete
-                  </button>
-                </div>
-              </td>
+              <td class="px-3 py-3 text-right"><RowActionsMenu :label="`Actions for ${group.teacher_name}`" :items="groupActions(group)" /></td>
             </tr>
           </tbody>
         </table>
-      </div>
-    </div>
+        <ul class="divide-y divide-gray-100 md:hidden">
+          <li v-for="group in groupedRecords" :key="group.teacher_id" class="flex items-start gap-3 px-4 py-3">
+            <span class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">{{ initials(group.teacher_name) }}</span>
+            <button type="button" class="min-w-0 flex-1 text-left" @click="viewRecord(group)">
+              <p class="truncate font-semibold text-gray-900">{{ group.teacher_name }}</p>
+              <p class="truncate text-xs text-gray-500">{{ group.subject || '-' }} · {{ group.class }} {{ group.stream }} · avg {{ group.avg_score || 0 }}</p>
+              <span class="mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold" :class="getCategoryBadgeClass(group.overall_category)">{{ group.overall_category || '-' }}</span>
+            </button>
+            <RowActionsMenu :label="`Actions for ${group.teacher_name}`" :items="groupActions(group)" />
+          </li>
+        </ul>
+      </template>
+    </section>
 
     <!-- Add/Edit Modal -->
     <div
       v-if="showModal"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm"
     >
-      <div class="relative flex max-h-[90vh] w-full max-w-4xl flex-col rounded-3xl bg-white shadow-2xl ring-1 ring-white/20">
-        <div class="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-500/5 to-blue-600/5"></div>
+      <div class="relative flex max-h-[90vh] w-full max-w-4xl flex-col rounded-2xl bg-white shadow-2xl ring-1 ring-white/20">
+        <div class="pointer-events-none absolute inset-0 rounded-2xl bg-brand-500/5"></div>
 
-        <div class="relative flex-shrink-0 border-b border-slate-200/60 bg-gradient-to-r from-slate-50 to-white px-6 py-6">
+        <div class="relative flex-shrink-0 border-b border-slate-200/60 bg-slate-50 px-6 py-6">
           <h3 class="text-xl font-bold text-slate-900">
             {{ editingId ? 'Edit Observation' : 'Add Observation' }}
           </h3>
@@ -278,7 +154,7 @@
                     placeholder="Search teacher..."
                     class="input mb-2"
                   >
-                  <svg class="absolute right-3 top-3 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="absolute right-3 top-3 h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                   </svg>
                 </div>
@@ -327,9 +203,9 @@
               </div>
             </div>
 
-            <div class="rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 p-6 shadow-lg">
+            <div class="rounded-2xl border-2 border-brand-200 bg-brand-50 p-6 shadow-lg">
               <div class="mb-4 flex items-center gap-3">
-                <div class="rounded-xl bg-blue-500 p-2">
+                <div class="rounded-xl bg-brand-500 p-2">
                   <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                   </svg>
@@ -344,9 +220,9 @@
               </select>
             </div>
 
-            <div class="rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50 p-6 shadow-lg">
+            <div class="rounded-2xl border-2 border-brand-200 bg-brand-50 p-6 shadow-lg">
               <div class="mb-4 flex items-center gap-3">
-                <div class="rounded-xl bg-blue-500 p-2">
+                <div class="rounded-xl bg-brand-500 p-2">
                   <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                   </svg>
@@ -367,9 +243,9 @@
               </div>
             </div>
 
-            <div class="rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 p-6 shadow-lg">
+            <div class="rounded-2xl border-2 border-brand-200 bg-brand-50 p-6 shadow-lg">
               <div class="mb-4 flex items-center gap-3">
-                <div class="rounded-xl bg-blue-500 p-2">
+                <div class="rounded-xl bg-brand-500 p-2">
                   <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                   </svg>
@@ -377,12 +253,12 @@
                 <h3 class="text-lg font-bold text-slate-900">Automated Score Conversion</h3>
               </div>
               <div class="text-center">
-                <div class="mb-2 text-4xl font-bold text-blue-600">{{ calculatedRating }} / 4.0</div>
+                <div class="mb-2 text-4xl font-bold text-brand-600">{{ calculatedRating }} / 4.0</div>
                 <div class="text-sm text-slate-600">Final Rating</div>
               </div>
             </div>
 
-            <div class="rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-6 shadow-lg">
+            <div class="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-6 shadow-lg">
               <div class="mb-4 flex items-center gap-3">
                 <div class="rounded-xl bg-emerald-500 p-2">
                   <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -398,7 +274,7 @@
               </div>
             </div>
 
-            <div class="rounded-2xl border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-6 shadow-lg">
+            <div class="rounded-2xl border-2 border-green-200 bg-green-50 p-6 shadow-lg">
               <div class="mb-4 flex items-center gap-3">
                 <div class="rounded-xl bg-green-500 p-2">
                   <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -417,7 +293,7 @@
               </ul>
             </div>
 
-            <div class="rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-6 shadow-lg">
+            <div class="rounded-2xl border-2 border-amber-200 bg-amber-50 p-6 shadow-lg">
               <div class="mb-4 flex items-center gap-3">
                 <div class="rounded-xl bg-amber-500 p-2">
                   <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -429,7 +305,7 @@
               <p class="leading-relaxed text-slate-700">{{ generalComment }}</p>
             </div>
 
-            <div class="rounded-2xl border-2 border-rose-200 bg-gradient-to-br from-rose-50 to-pink-50 p-6 shadow-lg">
+            <div class="rounded-2xl border-2 border-rose-200 bg-rose-50 p-6 shadow-lg">
               <div class="mb-4 flex items-center gap-3">
                 <div class="rounded-xl bg-rose-500 p-2">
                   <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -446,12 +322,12 @@
               ></textarea>
             </div>
 
-            <div v-if="error" class="rounded-2xl border border-rose-200/60 bg-gradient-to-r from-rose-50 to-pink-50 px-4 py-3 text-sm font-medium text-rose-700 shadow-sm">
+            <div v-if="error" class="rounded-2xl border border-rose-200/60 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 shadow-sm">
               {{ error }}
             </div>
           </div>
 
-          <div class="relative flex-shrink-0 border-t border-slate-200/60 bg-gradient-to-r from-slate-50 to-white px-6 py-5">
+          <div class="relative flex-shrink-0 border-t border-slate-200/60 bg-slate-50 px-6 py-5">
             <div class="flex items-center justify-end gap-3">
               <button
                 type="button"
@@ -463,7 +339,7 @@
               <button
                 type="submit"
                 :disabled="saving"
-                class="rounded-2xl bg-gradient-to-r from-blue-700 to-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+                class="rounded-2xl bg-brand-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-brand-500/40 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
               >
                 {{ saving ? 'Saving...' : 'Save' }}
               </button>
@@ -478,10 +354,8 @@
       v-if="showViewModal"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/75 p-3 backdrop-blur-md sm:p-4"
     >
-      <div class="relative flex h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-[0_30px_80px_rgba(15,23,42,0.35)] ring-1 ring-white/20">
-        <div class="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-blue-50"></div>
-        <div class="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-blue-200/30 blur-3xl"></div>
-        <div class="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-blue-200/30 blur-3xl"></div>
+      <div class="relative flex h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0_30px_80px_rgba(15,23,42,0.35)] ring-1 ring-white/20">
+        <div class="absolute inset-0 bg-slate-50"></div>
 
         <div class="relative border-b border-slate-200/70 px-5 py-5 sm:px-6">
           <div class="flex items-start justify-between gap-4">
@@ -508,10 +382,10 @@
 
         <div class="relative flex-1 overflow-y-auto px-4 py-5 sm:px-6">
           <div v-if="selectedRecord" class="space-y-5">
-            <div class="rounded-[1.75rem] border border-white/80 bg-white/80 p-5 shadow-lg shadow-slate-200/40 backdrop-blur-sm sm:p-6">
+            <div class="card border-white/80 p-5 sm:p-6">
               <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div class="flex min-w-0 items-center gap-4">
-                  <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-xl font-bold text-white shadow-lg shadow-blue-500/30">
+                  <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500 text-xl font-bold text-white shadow-lg shadow-brand-500/30">
                     {{ selectedRecord.teacher_name?.charAt(0) || '?' }}
                   </div>
                   <div class="min-w-0">
@@ -522,13 +396,13 @@
                 </div>
 
                 <div class="flex flex-wrap gap-2">
-                  <span class="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+                  <span class="rounded-full bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700">
                     Total {{ selectedRecord.totalObservations || 0 }} Observations
                   </span>
                   <span class="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">
                     Avg Score {{ selectedRecord.averageScore || 0 }}
                   </span>
-                  <span class="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+                  <span class="rounded-full bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700">
                     Avg Rating {{ selectedRecord.averageRating || 0 }}
                   </span>
                   <span
@@ -542,22 +416,22 @@
             </div>
 
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <div class="rounded-3xl border border-white/80 bg-white/85 p-5 shadow-lg shadow-slate-200/40 backdrop-blur-sm">
+              <div class="card border-white/80 p-5">
                 <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Total Observations</p>
                 <p class="mt-3 text-2xl font-bold text-slate-900">{{ selectedRecord.totalObservations || 0 }}</p>
               </div>
 
-              <div class="rounded-3xl border border-white/80 bg-white/85 p-5 shadow-lg shadow-slate-200/40 backdrop-blur-sm">
+              <div class="card border-white/80 p-5">
                 <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Average Score</p>
                 <p class="mt-3 text-2xl font-bold text-slate-900">{{ selectedRecord.averageScore || 0 }}</p>
               </div>
 
-              <div class="rounded-3xl border border-white/80 bg-white/85 p-5 shadow-lg shadow-slate-200/40 backdrop-blur-sm">
+              <div class="card border-white/80 p-5">
                 <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Average Rating</p>
-                <p class="mt-3 text-2xl font-bold text-blue-600">{{ selectedRecord.averageRating || 0 }}</p>
+                <p class="mt-3 text-2xl font-bold text-brand-600">{{ selectedRecord.averageRating || 0 }}</p>
               </div>
 
-              <div class="rounded-3xl border border-white/80 bg-white/85 p-5 shadow-lg shadow-slate-200/40 backdrop-blur-sm">
+              <div class="card border-white/80 p-5">
                 <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Best Category</p>
                 <div class="mt-3 inline-flex rounded-2xl px-4 py-2 text-lg font-bold" :class="getCategoryBadgeClass(selectedRecord.overall_category)">
                   {{ selectedRecord.overall_category || '-' }}
@@ -565,7 +439,7 @@
               </div>
             </div>
 
-            <div class="rounded-3xl border border-white/80 bg-white/85 p-5 shadow-lg shadow-slate-200/40 backdrop-blur-sm">
+            <div class="card border-white/80 p-5">
               <div class="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <h3 class="text-lg font-bold text-slate-900">Observation History</h3>
@@ -601,7 +475,7 @@
                       <td class="px-4 py-3 text-sm font-medium text-slate-800">{{ obs.year || '-' }}</td>
                       <td class="px-4 py-3 text-sm font-medium text-slate-800">Round {{ obs.round || 1 }}</td>
                       <td class="px-4 py-3 text-sm font-bold text-slate-800">{{ Number(obs.total_score || 0).toFixed(2) }}</td>
-                      <td class="px-4 py-3 text-sm font-bold text-blue-600">{{ Number(obs.calculated_rating || 0).toFixed(2) }}</td>
+                      <td class="px-4 py-3 text-sm font-bold text-brand-600">{{ Number(obs.calculated_rating || 0).toFixed(2) }}</td>
                       <td class="px-4 py-3">
                         <span class="inline-flex rounded-xl px-3 py-1.5 text-xs font-bold" :class="getCategoryBadgeClass(obs.performance_category)">
                           {{ obs.performance_category || '-' }}
@@ -620,7 +494,7 @@
             </div>
 
             <div class="grid gap-4 md:grid-cols-2">
-              <div class="rounded-3xl border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-6 shadow-lg">
+              <div class="rounded-2xl border-2 border-green-200 bg-green-50 p-6 shadow-lg">
                 <div class="mb-4 flex items-center gap-3">
                   <div class="rounded-xl bg-green-500 p-2">
                     <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -634,7 +508,7 @@
                 </p>
               </div>
 
-              <div class="rounded-3xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-6 shadow-lg">
+              <div class="rounded-2xl border-2 border-amber-200 bg-amber-50 p-6 shadow-lg">
                 <div class="mb-4 flex items-center gap-3">
                   <div class="rounded-xl bg-amber-500 p-2">
                     <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -649,7 +523,7 @@
               </div>
             </div>
 
-            <div class="rounded-3xl border-2 border-rose-200 bg-gradient-to-br from-rose-50 to-pink-50 p-6 shadow-lg">
+            <div class="rounded-2xl border-2 border-rose-200 bg-rose-50 p-6 shadow-lg">
               <div class="mb-4 flex items-center gap-3">
                 <div class="rounded-xl bg-rose-500 p-2">
                   <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -686,8 +560,14 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { lessonObservationAPI, teachersAPI, classesAPI, subjectsNewAPI } from '../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useGlobalTerm } from '../composables/useGlobalTerm.js';
+import { Plus, RefreshCw, FileText, ClipboardList, Eye, Pencil, Trash2, Users as UsersIcon, Gauge, Star, PlusCircle } from 'lucide-vue-next';
+import StatCards from '../components/ui/StatCards.vue';
+import ListToolbar from '../components/ui/ListToolbar.vue';
+import RowActionsMenu from '../components/RowActionsMenu.vue';
 
 const records = ref([]);
+const loading = ref(false);
 const teachersList = ref([]);
 const teacherSearch = ref('');
 const filterYear = ref(new Date().getFullYear());
@@ -695,6 +575,7 @@ const filterTerm = ref('all');
 const filterClass = ref('');
 const filterStream = ref('');
 const filterSearch = ref('');
+useGlobalTerm((y, t) => { filterYear.value = y; filterTerm.value = t; }, () => loadData());
 const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
 const showModal = ref(false);
 const showViewModal = ref(false);
@@ -754,11 +635,11 @@ const categoryBadgeClass = computed(() => {
   const category = performanceCategory.value;
   switch (category) {
     case 'Outstanding': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-    case 'Very Good': return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'Very Good': return 'bg-brand-100 text-brand-800 border-brand-200';
     case 'Good': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     case 'Fair': return 'bg-orange-100 text-orange-800 border-orange-200';
     case 'Below Expectation': return 'bg-red-100 text-red-800 border-red-200';
-    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    default: return 'bg-slate-100 text-slate-800 border-slate-200';
   }
 });
 
@@ -815,13 +696,32 @@ const generalComment = computed(() => {
 const getCategoryBadgeClass = (category) => {
   switch (category) {
     case 'Outstanding': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-    case 'Very Good': return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'Very Good': return 'bg-brand-100 text-brand-800 border-brand-200';
     case 'Good': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     case 'Fair': return 'bg-orange-100 text-orange-800 border-orange-200';
     case 'Below Expectation': return 'bg-red-100 text-red-800 border-red-200';
-    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    default: return 'bg-slate-100 text-slate-800 border-slate-200';
   }
 };
+
+const initials = (name) => String(name || '?').split(/s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+const groupActions = (group) => [
+  { label: 'View', icon: Eye, onClick: () => viewRecord(group) },
+  { label: 'Add round', icon: PlusCircle, onClick: () => addRoundForTeacher(group) },
+  { label: 'Edit', icon: Pencil, onClick: () => editRecord(group.observations[0]) },
+  { label: 'Delete', icon: Trash2, danger: true, onClick: () => deleteRecord(group.observations[0].id) },
+];
+const summaryCards = computed(() => {
+  const scores = records.value.map((r) => Number(r.total_score)).filter((n) => !Number.isNaN(n));
+  const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+  const top = groupedRecords.value.filter((g) => ['Outstanding', 'Very Good'].includes(g.overall_category)).length;
+  return [
+    { label: 'Observations', value: records.value.length.toLocaleString(), icon: ClipboardList },
+    { label: 'Teachers observed', value: groupedRecords.value.length.toLocaleString(), icon: UsersIcon, tone: 'sky' },
+    { label: 'Average score', value: avg === null ? '-' : String(avg), icon: Gauge, tone: 'gray' },
+    { label: 'Very good or better', value: top.toLocaleString(), icon: Star, tone: 'amber' },
+  ];
+});
 
 const rankCategory = (category) => {
   switch (category) {
@@ -879,6 +779,7 @@ const groupedRecords = computed(() => {
 });
 
 const loadData = async () => {
+  loading.value = true;
   try {
     const result = await lessonObservationAPI.getAll(
       filterYear.value,
@@ -895,6 +796,8 @@ const loadData = async () => {
     }
   } catch (err) {
     console.error('Failed to load data:', err);
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -1165,7 +1068,7 @@ const downloadPDF = () => {
       cellPadding: 3
     },
     headStyles: {
-      fillColor: [59, 130, 246],
+      fillColor: [22, 163, 74],
       textColor: 255,
       fontStyle: 'bold'
     },
@@ -1212,11 +1115,43 @@ onMounted(() => {
 }
 
 .input:focus {
-  border-color: rgb(99 102 241);
-  box-shadow: 0 0 0 4px rgb(238 242 255);
+  border-color: rgb(22 163 74);
+  box-shadow: 0 0 0 4px rgb(220 252 231);
 }
 
 .input:hover:not(:focus) {
   border-color: rgb(203 213 225);
+}
+</style>
+
+<style scoped>
+.filter-label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500; }
+.filter-select { @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100; }
+.tool-btn { @apply inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50; }
+</style>
+
+<style scoped>
+/* dark mode: generated by scripts/build-dark-overrides.cjs */
+html.dark .input {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+}
+html.dark .input:hover:not(:focus) {
+  border-color: var(--d-line);
+}
+html.dark .filter-label {
+  color: var(--d-muted);
+}
+html.dark .filter-select {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+}
+html.dark .tool-btn {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+  color: var(--d-text-2);
+}
+html.dark .tool-btn:hover {
+  background-color: var(--d-sunken);
 }
 </style>

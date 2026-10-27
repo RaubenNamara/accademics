@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../config/ApiGuard.php';
+api_guard();
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
@@ -401,6 +403,22 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
     case 'GET':
+        // Whole-directory counts for the page's summary cards (not just the current page).
+        if (($_GET['action'] ?? '') === 'summary') {
+            $row = $db->query("SELECT COUNT(*) AS total,
+                    SUM(is_active = 1 OR is_active IS NULL) AS active,
+                    SUM(is_active = 0) AS inactive
+                FROM teachers")->fetch(PDO::FETCH_ASSOC);
+            $obligations = $db->query("SELECT COALESCE(NULLIF(TRIM(obligation), ''), 'Subject Teacher') AS obligation, COUNT(*) AS n
+                FROM teachers GROUP BY 1 ORDER BY n DESC")->fetchAll(PDO::FETCH_ASSOC);
+            respond(true, 'Teachers summary', [
+                'total' => (int)$row['total'],
+                'active' => (int)$row['active'],
+                'inactive' => (int)$row['inactive'],
+                'obligations' => array_map(fn($o) => ['obligation' => $o['obligation'], 'count' => (int)$o['n']], $obligations),
+            ]);
+        }
+
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
         if ($id > 0) {

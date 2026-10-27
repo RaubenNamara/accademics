@@ -1,248 +1,117 @@
 <template>
-  <div class="space-y-5">
-    <!-- Toast -->
-    <transition name="fade-slide">
-      <div
-        v-if="toast.show"
-        class="fixed right-4 top-4 z-[100] min-w-[280px] max-w-md rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-sm"
-        :class="toast.type === 'success'
-          ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-          : 'border-rose-200 bg-rose-50 text-rose-800'"
-      >
-        <div class="flex items-start gap-3">
-          <div class="mt-0.5 text-lg">
-            {{ toast.type === 'success' ? '✅' : '⚠️' }}
-          </div>
-          <div class="flex-1">
-            <p class="text-sm font-semibold">
-              {{ toast.type === 'success' ? 'Success' : 'Error' }}
-            </p>
-            <p class="text-sm">
-              {{ toast.message }}
-            </p>
-          </div>
-          <button
-            type="button"
-            class="ml-2 text-sm opacity-70 transition hover:opacity-100"
-            @click="hideToast"
-          >
-            ✕
-          </button>
-        </div>
-      </div>
-    </transition>
+  <div class="page">
+    <ToastBanner />
 
     <!-- Header -->
-    <div class="rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-5 text-white shadow-xl">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div class="page-hero">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p class="text-xs uppercase tracking-[0.22em] text-blue-200">User Management</p>
-          <h1 class="mt-2 text-2xl font-semibold sm:text-3xl">Manage Users</h1>
-          <p class="mt-2 max-w-2xl text-sm text-slate-300">
-            Add, edit, and manage admin users. Control access and roles for the system.
-          </p>
+          <h1 class="page-hero-title">System Users</h1>
         </div>
-
         <div class="flex flex-wrap gap-2">
-          <button
-            @click="reloadUsers"
-            :disabled="loading"
-            class="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-medium text-white backdrop-blur transition-all hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
-          >
-            <span v-if="!loading">🔄</span>
-            <span v-else>⏳</span>
-            Refresh
+          <button type="button" class="btn-hero px-3" :disabled="loading" title="Refresh" aria-label="Refresh" @click="reloadUsers">
+            <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': loading }" />
           </button>
-          <button
-            @click="openAddModal"
-            class="inline-flex items-center gap-2 rounded-xl bg-blue-500 px-3.5 py-2 text-xs font-medium text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-600 hover:shadow-blue-500/30 sm:text-sm"
-          >
-            ➕ Add User
-          </button>
+          <button type="button" class="btn-hero-primary" @click="openAddModal"><Plus class="h-4 w-4" />Add user</button>
         </div>
       </div>
     </div>
 
-    <!-- Stats -->
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p class="text-sm text-slate-500">Total Users</p>
-        <p class="mt-2 text-2xl font-semibold text-slate-900">{{ stats.total }}</p>
-      </div>
-      <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p class="text-sm text-slate-500">Active</p>
-        <p class="mt-2 text-2xl font-semibold text-emerald-600">{{ stats.active }}</p>
-      </div>
-      <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p class="text-sm text-slate-500">Inactive</p>
-        <p class="mt-2 text-2xl font-semibold text-rose-600">{{ stats.inactive }}</p>
-      </div>
-      <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p class="text-sm text-slate-500">Admins</p>
-        <p class="mt-2 text-2xl font-semibold text-blue-600">{{ adminCount }}</p>
-      </div>
-    </div>
+    <StatCards :cards="statCards" />
 
-    <!-- Filters -->
-    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div class="grid gap-4 xl:grid-cols-4">
-        <div class="xl:col-span-2">
-          <label class="mb-2 block text-sm font-medium text-slate-700">🔍 Search</label>
-          <input
-            v-model="filters.search"
-            type="text"
-            placeholder="Search name, email, role..."
-            class="w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none ring-0 transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-            @input="debouncedLoad"
-          />
-        </div>
-
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">👤 Role</label>
-          <select
-            v-model="filters.role"
-            @change="loadUsers"
-            class="w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          >
-            <option value="">All</option>
-            <option value="admin">Admin</option>
-            <option value="super_admin">Super Admin</option>
-            <option value="teacher">Teacher</option>
-            <option value="staff">Staff</option>
+    <ListToolbar
+      :search="filters.search"
+      placeholder="Search name, email or role"
+      :filter-count="[filters.role, filters.is_active].filter((v) => v !== '').length"
+      @update:search="(v) => { filters.search = v; debouncedLoad(); }"
+      @clear="clearFilters"
+    >
+      <template #filters>
+        <label class="block">
+          <span class="filter-label">Role</span>
+          <select v-model="filters.role" class="input py-2" @change="loadUsers">
+            <option value="">All roles</option>
+            <option v-for="(label, value) in ROLE_LABELS" :key="value" :value="value">{{ label }}</option>
           </select>
-        </div>
-
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">✅ Status</label>
-          <select
-            v-model="filters.is_active"
-            @change="loadUsers"
-            class="w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          >
-            <option value="">All</option>
+        </label>
+        <label class="block">
+          <span class="filter-label">Status</span>
+          <select v-model="filters.is_active" class="input py-2" @change="loadUsers">
+            <option value="">Any status</option>
             <option value="1">Active</option>
             <option value="0">Inactive</option>
           </select>
-        </div>
+        </label>
+      </template>
+    </ListToolbar>
+
+    <section class="card overflow-hidden">
+      <div v-if="loading && !users.length" class="space-y-3 p-5">
+        <div v-for="i in 4" :key="i" class="flex animate-pulse items-center gap-3"><div class="h-9 w-9 rounded-full bg-gray-100"></div><div class="h-3 flex-1 rounded bg-gray-100"></div></div>
       </div>
-
-      <div class="mt-4 flex flex-wrap items-center gap-2">
-        <button
-          @click="clearFilters"
-          class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-medium text-slate-700 transition-all hover:bg-slate-50 sm:text-sm"
-        >
-          🧹 Clear Filters
-        </button>
-
-        <div v-if="loading" class="inline-flex items-center gap-2 text-sm text-slate-500">
-          <span class="animate-spin">⏳</span>
-          Loading users...
-        </div>
+      <div v-else-if="!users.length" class="px-5 py-14 text-center">
+        <ShieldCheck class="mx-auto h-9 w-9 text-gray-300" />
+        <p class="mt-2 text-sm font-medium text-gray-700">No users found</p>
       </div>
-    </div>
-
-    <!-- Table -->
-    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div class="border-b border-slate-200 px-5 py-4">
-        <h2 class="text-lg font-semibold text-slate-900">Users Records</h2>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="min-w-[1200px] w-full divide-y divide-slate-200">
-          <thead class="bg-slate-50">
-            <tr class="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-              <th class="px-4 py-3">#</th>
-              <th class="px-4 py-3">Full Name</th>
-              <th class="px-4 py-3">Email</th>
+      <template v-else>
+        <table class="hidden w-full text-left text-sm md:table">
+          <thead class="border-b border-gray-200 bg-gray-50/70">
+            <tr class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              <th class="px-5 py-3">User</th>
               <th class="px-4 py-3">Role</th>
               <th class="px-4 py-3">Status</th>
-              <th class="px-4 py-3">Last Login</th>
-              <th class="px-4 py-3">Created</th>
-              <th class="px-4 py-3 text-right">Actions</th>
+              <th class="hidden px-4 py-3 lg:table-cell">Last sign-in</th>
+              <th class="hidden px-4 py-3 xl:table-cell">Created</th>
+              <th class="w-12 px-3 py-3"><span class="sr-only">Actions</span></th>
             </tr>
           </thead>
-
-          <tbody class="divide-y divide-slate-100 bg-white">
-            <tr v-if="!loading && users.length === 0">
-              <td colspan="8" class="px-4 py-12 text-center text-slate-500">
-                No users found.
-              </td>
-            </tr>
-
-            <tr
-              v-for="(user, index) in users"
-              :key="user.id"
-              class="transition hover:bg-slate-50"
-            >
-              <td class="px-4 py-3 text-sm text-slate-500">{{ index + 1 }}</td>
-              <td class="px-4 py-3">
-                <div class="font-semibold text-slate-900">{{ user.full_name }}</div>
-              </td>
-              <td class="px-4 py-3 text-sm text-slate-700">{{ user.email }}</td>
-              <td class="px-4 py-3">
-                <span
-                  class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
-                  :class="{
-                    'bg-purple-50 text-purple-700': user.role === 'super_admin',
-                    'bg-blue-50 text-blue-700': user.role === 'admin',
-                    'bg-emerald-50 text-emerald-700': user.role === 'teacher',
-                    'bg-slate-50 text-slate-700': user.role === 'staff'
-                  }"
-                >
-                  {{ formatRole(user.role) }}
-                </span>
-              </td>
-              <td class="px-4 py-3">
-                <span
-                  class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
-                  :class="Number(user.is_active) === 1 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
-                >
-                  {{ Number(user.is_active) === 1 ? 'Active' : 'Inactive' }}
-                </span>
-              </td>
-              <td class="px-4 py-3 text-sm text-slate-500">
-                {{ formatDate(user.last_login) }}
-              </td>
-              <td class="px-4 py-3 text-sm text-slate-500">
-                {{ formatDate(user.created_at) }}
-              </td>
-              <td class="px-4 py-3">
-                <div class="flex justify-end gap-2">
-                  <button
-                    @click="editUser(user)"
-                    class="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700 transition-all hover:bg-blue-100 hover:shadow-sm whitespace-nowrap"
-                  >
-                    ✏️ Edit
-                  </button>
-                  <button
-                    @click="toggleUserStatus(user)"
-                    class="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all hover:shadow-sm whitespace-nowrap"
-                    :class="Number(user.is_active) === 1
-                      ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                      : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'"
-                  >
-                    {{ Number(user.is_active) === 1 ? '⏸️ Deactivate' : '▶️ Activate' }}
-                  </button>
-                  <button
-                    @click="deleteUser(user.id)"
-                    class="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-medium text-rose-700 transition-all hover:bg-rose-100 hover:shadow-sm whitespace-nowrap"
-                  >
-                    🗑️ Delete
-                  </button>
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="user in pagedUsers" :key="user.id" class="transition hover:bg-brand-50/40">
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-3">
+                  <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">{{ initials(user.full_name) }}</span>
+                  <span class="min-w-0">
+                    <span class="block truncate font-semibold text-gray-900">{{ user.full_name }}</span>
+                    <span class="block truncate text-xs text-gray-500">{{ user.email }}</span>
+                  </span>
                 </div>
               </td>
+              <td class="px-4 py-3"><span class="whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="roleStyle(user.role)">{{ formatRole(user.role) }}</span></td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center gap-1.5 text-xs font-medium" :class="Number(user.is_active) === 1 ? 'text-brand-700' : 'text-gray-500'">
+                  <span class="h-2 w-2 rounded-full" :class="Number(user.is_active) === 1 ? 'bg-brand-500' : 'bg-gray-400'"></span>{{ Number(user.is_active) === 1 ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td class="hidden whitespace-nowrap px-4 py-3 text-gray-600 lg:table-cell">{{ formatDate(user.last_login) }}</td>
+              <td class="hidden whitespace-nowrap px-4 py-3 text-gray-600 xl:table-cell">{{ formatDate(user.created_at) }}</td>
+              <td class="px-3 py-3 text-right"><RowActionsMenu :label="`Actions for ${user.full_name}`" :items="rowActions(user)" /></td>
             </tr>
           </tbody>
         </table>
-      </div>
-    </div>
+        <ul class="divide-y divide-gray-100 md:hidden">
+          <li v-for="user in pagedUsers" :key="user.id" class="flex items-start gap-3 px-4 py-3">
+            <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">{{ initials(user.full_name) }}</span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate font-semibold text-gray-900">{{ user.full_name }}</p>
+              <p class="truncate text-xs text-gray-500">{{ user.email }}</p>
+              <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <span class="rounded-full px-2 py-0.5 text-[11px] font-semibold" :class="roleStyle(user.role)">{{ formatRole(user.role) }}</span>
+                <span class="text-[11px] font-medium" :class="Number(user.is_active) === 1 ? 'text-brand-700' : 'text-gray-500'">{{ Number(user.is_active) === 1 ? 'Active' : 'Inactive' }}</span>
+              </div>
+            </div>
+            <RowActionsMenu :label="`Actions for ${user.full_name}`" :items="rowActions(user)" />
+          </li>
+        </ul>
+        <PagerBar v-model:page="page" v-model:per-page="perPage" :total="users.length" />
+      </template>
+    </section>
 
     <!-- Add/Edit Modal -->
     <div
       v-if="showModal"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm"
     >
-      <div class="w-full max-w-2xl rounded-3xl bg-white shadow-2xl">
+      <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
         <div class="border-b border-slate-200 px-6 py-5">
           <h3 class="text-xl font-semibold text-slate-900">
             {{ editingId ? 'Edit User' : 'Add User' }}
@@ -282,10 +151,7 @@
               <label class="mb-2 block text-sm font-medium text-slate-700">Role *</label>
               <select v-model="form.role" required class="input">
                 <option value="">Select role</option>
-                <option value="super_admin">Super Admin</option>
-                <option value="admin">Admin</option>
-                <option value="teacher">Teacher</option>
-                <option value="staff">Staff</option>
+                <option v-for="(label, value) in ROLE_LABELS" :key="value" :value="value">{{ label }}</option>
               </select>
             </div>
 
@@ -312,7 +178,7 @@
             <button
               type="submit"
               :disabled="saving"
-              class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-700 hover:shadow-blue-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+              class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-brand-500/20 transition-all hover:bg-brand-700 hover:shadow-brand-500/30 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span v-if="saving">⏳</span>
               <span v-else>💾</span>
@@ -326,10 +192,21 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { usersAPI } from '../services/api';
+import { Pencil, Plus, Power, RefreshCw, ShieldCheck, Trash2, UserCheck, UserX, Users as UsersIcon } from 'lucide-vue-next';
+import ToastBanner from '../components/hr/ToastBanner.vue';
+import StatCards from '../components/ui/StatCards.vue';
+import ListToolbar from '../components/ui/ListToolbar.vue';
+import RowActionsMenu from '../components/RowActionsMenu.vue';
+import PagerBar from '../components/ui/PagerBar.vue';
+import { useToast } from '../composables/useToast.js';
+import authStore from '../services/authStore.js';
 
 const users = ref([]);
+const page = ref(1);
+const perPage = ref(10);
+const pagedUsers = computed(() => users.value.slice((page.value - 1) * perPage.value, page.value * perPage.value));
 const loading = ref(false);
 const saving = ref(false);
 const showModal = ref(false);
@@ -351,38 +228,9 @@ const form = ref({
   is_active: true
 });
 
-const toast = ref({
-  show: false,
-  type: 'success',
-  message: ''
-});
-
-let toastTimer = null;
+const { showToast } = useToast();
+const notify = (message, type = 'success') => showToast(message, type);
 let searchTimer = null;
-
-const hideToast = () => {
-  toast.value.show = false;
-  toast.value.message = '';
-  toast.value.type = 'success';
-
-  if (toastTimer) {
-    clearTimeout(toastTimer);
-    toastTimer = null;
-  }
-};
-
-const notify = (message, type = 'success') => {
-  hideToast();
-  toast.value = {
-    show: true,
-    type,
-    message
-  };
-
-  toastTimer = setTimeout(() => {
-    hideToast();
-  }, 2800);
-};
 
 const stats = computed(() => ({
   total: users.value.length,
@@ -407,6 +255,7 @@ const loadUsers = async () => {
 
     if (result.success) {
       users.value = Array.isArray(result.data) ? result.data : [];
+      if ((page.value - 1) * perPage.value >= users.value.length) page.value = 1;
       if (result.message) {
         notify(result.message, 'success');
       }
@@ -553,15 +402,37 @@ const deleteUser = async (id) => {
   }
 };
 
-const formatRole = (role) => {
-  const roleMap = {
-    'super_admin': 'Super Admin',
-    'admin': 'Admin',
-    'teacher': 'Teacher',
-    'staff': 'Staff'
-  };
-  return roleMap[role] || role;
+// "teacher" accounts are the academic office; classroom teachers use the teacher portal role.
+const ROLE_LABELS = {
+  // In a school other than the home school, the top account runs that school only.
+  super_admin: authStore.user?.school?.is_home === false ? 'School Admin' : 'Super Admin',
+  admin: 'Admin',
+  teacher: 'Academic Office',
+  subject_teacher: 'Teacher (portal)',
+  staff: 'Staff',
 };
+const formatRole = (role) => ROLE_LABELS[role] || role;
+const roleStyle = (role) => ({
+  super_admin: 'bg-violet-50 text-violet-800 ring-1 ring-violet-200',
+  admin: 'bg-sky-50 text-sky-800 ring-1 ring-sky-200',
+  teacher: 'bg-amber-50 text-amber-800 ring-1 ring-amber-200',
+  subject_teacher: 'bg-brand-50 text-brand-800 ring-1 ring-brand-100',
+}[role] || 'bg-gray-100 text-gray-700');
+const initials = (name) => String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+const rowActions = (user) => [
+  { label: 'Edit', icon: Pencil, onClick: () => editUser(user) },
+  { label: Number(user.is_active) === 1 ? 'Deactivate' : 'Activate', icon: Power, onClick: () => toggleUserStatus(user) },
+  { label: 'Delete', icon: Trash2, danger: true, onClick: () => deleteUser(user.id) },
+];
+const statCards = computed(() => {
+  const status = (v) => () => { filters.value.is_active = filters.value.is_active === v ? '' : v; loadUsers(); };
+  return [
+    { label: 'Users', value: stats.value.total, icon: UsersIcon },
+    { label: 'Active', value: stats.value.active, icon: UserCheck, onClick: status('1'), active: filters.value.is_active === '1' },
+    { label: 'Inactive', value: stats.value.inactive, icon: UserX, tone: 'gray', onClick: status('0'), active: filters.value.is_active === '0' },
+    { label: 'Admins', value: adminCount.value, icon: ShieldCheck, tone: 'amber' },
+  ];
+});
 
 const formatDate = (value) => {
   if (!value) return '-';
@@ -576,7 +447,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (searchTimer) clearTimeout(searchTimer);
-  if (toastTimer) clearTimeout(toastTimer);
 });
 </script>
 
@@ -593,8 +463,8 @@ onBeforeUnmount(() => {
 }
 
 .input:focus {
-  border-color: rgb(147 51 234);
-  box-shadow: 0 0 0 4px rgb(233 213 255);
+  border-color: rgb(22 163 74);
+  box-shadow: 0 0 0 4px rgb(220 252 231);
 }
 
 .fade-slide-enter-active,
@@ -609,3 +479,10 @@ onBeforeUnmount(() => {
 }
 </style>
 
+<style scoped>
+/* dark mode: generated by scripts/build-dark-overrides.cjs */
+html.dark .input {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+}
+</style>

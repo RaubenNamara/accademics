@@ -2,37 +2,186 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Design system shared with eSpace/Tusome: green, white and black; Inter; framed white
+ * cards with a soft green-tinted edge; plain page headers; light, calm type.
+ */
+
 [v-cloak] { display: none; }
 
+:root {
+  /* Glass surfaces: every card, the sidebar and the top bar float over a softly tinted page. */
+  --glass-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.58));
+  --glass-bg-strong: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.75);
+  --glass-edge: rgba(21, 80, 50, 0.09);
+  --glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 0 0 1px var(--glass-edge), 0 18px 38px -20px rgba(15, 40, 25, 0.32), 0 3px 8px -4px rgba(15, 40, 25, 0.1);
+  --glass-shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 0 0 1px var(--glass-edge), 0 24px 44px -20px rgba(15, 40, 25, 0.38), 0 4px 10px -4px rgba(15, 40, 25, 0.12);
+  --glass-blur: blur(16px) saturate(160%);
+  --page-wash:
+    radial-gradient(1100px 620px at 8% -12%, rgba(34, 197, 94, 0.2), transparent 62%),
+    radial-gradient(900px 560px at 102% 4%, rgba(14, 165, 233, 0.15), transparent 58%),
+    radial-gradient(1000px 700px at 55% 112%, rgba(16, 185, 129, 0.15), transparent 60%),
+    #ebf1ed;
+  --frame-border: rgba(21, 80, 50, 0.12);
+  --frame-shadow: 0 1px 2px rgba(15, 40, 25, 0.05), 0 6px 16px -8px rgba(15, 40, 25, 0.12);
+  --frame-shadow-hover: 0 2px 4px rgba(15, 40, 25, 0.07), 0 12px 26px -10px rgba(15, 40, 25, 0.2);
+}
+
+body {
+  @apply font-sans text-gray-900 antialiased;
+  background: var(--page-wash);
+  background-attachment: fixed;
+}
+
 @layer components {
+  /* ---- Page shell: a plain header, then framed cards ---- */
+  .page {
+    @apply space-y-4;
+  }
+
+  /* The page header (kept under its old name so every module picks it up): an eyebrow line,
+     the title, a one-line description and the page's actions on the right. */
+  .page-hero {
+    @apply relative text-gray-900;
+  }
+  .page-hero-eyebrow {
+    @apply text-sm font-medium text-brand-700;
+  }
+  .page-hero-title {
+    @apply text-lg font-bold leading-tight tracking-tight text-gray-900 sm:text-xl;
+  }
+  .page-hero-subtitle {
+    @apply mt-0.5 max-w-3xl text-sm text-gray-500;
+  }
+  .btn-hero {
+    @apply inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-hero-primary {
+    @apply inline-flex items-center gap-2 rounded-lg bg-brand-600 px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .card {
+    @apply rounded-xl;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
+  /* Clickable cards float up a little. */
+  button.card, a.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  button.card:hover, a.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--glass-shadow-lift);
+  }
+  .card-title {
+    @apply text-base font-semibold text-gray-900;
+  }
+
   .input {
-    @apply w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100;
+    @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 disabled:bg-gray-50 disabled:text-gray-500;
   }
   .btn-primary {
-    @apply rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none;
   }
   .btn-secondary {
-    @apply rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
   }
+
   .data-table {
     @apply w-full min-w-[640px] text-left text-sm;
   }
   .data-table thead {
-    @apply border-b border-slate-200 text-slate-500;
+    @apply border-b border-gray-200 bg-gray-50/70;
   }
   .data-table th {
-    @apply px-4 py-3 font-medium;
+    @apply px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-gray-500;
   }
   .data-table td {
-    @apply px-4 py-3;
+    @apply px-4 py-2.5 text-gray-700;
   }
   .data-table tbody tr {
-    @apply border-b border-slate-50 transition hover:bg-slate-50/80;
+    @apply border-b border-gray-100 transition hover:bg-brand-50/50;
   }
   .code-badge {
-    @apply rounded-lg bg-blue-50 px-2 py-0.5 font-mono text-xs font-semibold text-blue-700;
+    @apply rounded-md bg-brand-50 px-2 py-0.5 font-mono text-xs font-semibold text-brand-700;
+  }
+  /* A document shown as a printed A4 page (lesson plans): A4 width and height, print margins and type. */
+  .a4-sheet {
+    width: 100%;
+    max-width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    padding: 16mm 15mm;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 15px;
+    @apply rounded-sm shadow-lg;
+  }
+  @media (max-width: 640px) {
+    .a4-sheet { min-height: 0; padding: 1.25rem 1rem; }
   }
   .link-btn {
-    @apply text-sm font-medium text-blue-600 hover:underline;
+    @apply text-sm font-medium text-brand-700 hover:underline;
   }
 }
+
+/* ---------------------------------------------------------------------------------------------
+   Page headers were written for a dark green banner. On the light header, what was white on
+   green becomes dark on white: text, translucent "glass" boxes, borders and pickers.
+   --------------------------------------------------------------------------------------------- */
+/* Attribute selectors on purpose: a rule naming `.text-white` would be copied by Tailwind into
+   every class that @applies text-white (e.g. .btn-hero-primary), greying out its label. */
+.page-hero [class~="text-white"]:not([class*="bg-brand-"]):not([class*="bg-red-"]):not([class*="bg-emerald-"]),
+.page-hero [class*="text-slate-3"],
+.page-hero [class*="text-brand-1"],
+.page-hero [class*="text-brand-2"] {
+  color: theme('colors.gray.600');
+}
+.page-hero h1[class~="text-white"],
+.page-hero h2[class~="text-white"] {
+  color: theme('colors.gray.900');
+}
+.page-hero [class*="bg-white/"] {
+  background-color: #fff;
+  backdrop-filter: none;
+}
+.page-hero [class*="border-white/"] {
+  border-color: theme('colors.gray.300');
+}
+.page-hero [class*="bg-white/"]:not(button):not(select) {
+  border-color: var(--frame-border);
+  box-shadow: var(--frame-shadow);
+}
+.page-hero select {
+  color: theme('colors.gray.900');
+}
+.page-hero .shadow-xl,
+.page-hero .shadow-2xl {
+  box-shadow: none;
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Framed cards everywhere: any white bordered/shadowed rounded box gets the same quiet frame as
+   eSpace — clean white, a soft grey-green edge and a gentle shadow beneath.
+   --------------------------------------------------------------------------------------------- */
+:is(div, section, article, li, form, details, aside).bg-white.border:is(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl):is([class*="border-gray-"], [class*="border-slate-"]) {
+  border-color: var(--frame-border);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--frame-shadow);
+}
+:is(div, section, article, li).bg-white:is(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl):is(.shadow, .shadow-sm, .shadow-md, .shadow-lg):not(.border) {
+  box-shadow: 0 0 0 1px var(--frame-border), var(--frame-shadow);
+}
+:is(div, section, article, li, a, button).bg-white.border:is(.rounded-xl, .rounded-2xl):is([class*="hover:shadow"]):hover {
+  box-shadow: var(--frame-shadow-hover);
+}
+
+/* Captions a shade darker so they read well on white (as in eSpace). */
+.text-gray-400, .text-slate-400 { color: #6b7280; }
+.text-gray-500 { color: #4b5563; }
+
+/* Thin scrollbars inside panels. */
+.scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(21, 80, 50, 0.18); border-radius: 6px; }

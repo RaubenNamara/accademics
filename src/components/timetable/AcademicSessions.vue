@@ -1,7 +1,10 @@
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h2 class="text-xl font-semibold text-slate-900">Academic Sessions</h2>
+      <div>
+        <h2 class="text-xl font-semibold text-slate-900">Academic Sessions</h2>
+        <p class="text-sm text-slate-500">To open the next term or close a year, use <RouterLink to="/academic-calendar" class="link-btn">Settings → Terms &amp; Years</RouterLink>.</p>
+      </div>
       <button @click="showForm = true" class="btn-primary">+ Add Session</button>
     </div>
     
@@ -27,12 +30,11 @@
             <td class="px-6 py-4 text-sm text-slate-600">{{ formatDate(session.start_date) }}</td>
             <td class="px-6 py-4 text-sm text-slate-600">{{ formatDate(session.end_date) }}</td>
             <td class="px-6 py-4">
-              <span v-if="session.is_active" class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Active</span>
-              <span v-else-if="session.is_archived" class="px-2 py-1 bg-slate-100 text-slate-800 rounded-full text-xs font-medium">Archived</span>
-              <span v-else class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">Inactive</span>
+              <span v-if="Number(session.is_active)" class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Open</span>
+              <span v-else-if="Number(session.is_archived)" class="px-2 py-1 bg-slate-100 text-slate-800 rounded-full text-xs font-medium">Closed</span>
+              <span v-else class="px-2 py-1 bg-brand-100 text-brand-800 rounded-full text-xs font-medium">Upcoming</span>
             </td>
             <td class="px-6 py-4 text-sm">
-              <button v-if="!session.is_active" @click="activateSession(session.id)" class="text-blue-600 hover:text-blue-800 mr-3">Activate</button>
               <button @click="editSession(session)" class="text-slate-600 hover:text-slate-800 mr-3">Edit</button>
               <button @click="deleteSession(session.id)" class="text-rose-600 hover:text-rose-800">Delete</button>
             </td>
@@ -72,16 +74,6 @@
             <input v-model="form.end_date" type="date" class="input w-full" required>
           </div>
         </div>
-        <div class="flex items-center gap-4">
-          <label class="flex items-center gap-2 text-sm">
-            <input v-model="form.is_active" type="checkbox" class="rounded border-slate-300">
-            Set as active session
-          </label>
-          <label class="flex items-center gap-2 text-sm">
-            <input v-model="form.is_archived" type="checkbox" class="rounded border-slate-300">
-            Archive session
-          </label>
-        </div>
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-2">Notes</label>
           <textarea v-model="form.notes" class="input w-full" rows="3"></textarea>
@@ -96,6 +88,7 @@
 </template>
 
 <script setup>
+const emit = defineEmits(['changed']);
 import { ref, onMounted } from 'vue';
 import { academicSessionsAPI } from '../../services/api.js';
 import { useToast } from '../../composables/useToast.js';
@@ -140,6 +133,7 @@ const saveSession = async () => {
     }
     showForm.value = false;
     loadSessions();
+    emit('changed');
   } catch (error) {
     console.error('Error saving session:', error);
     showToast('Failed to save session', 'error');
@@ -151,18 +145,6 @@ const editSession = (session) => {
   showForm.value = true;
 };
 
-const activateSession = async (id) => {
-  try {
-    const session = sessions.value.find(s => s.id === id);
-    await academicSessionsAPI.update({ ...session, is_active: true });
-    showToast('Session activated');
-    loadSessions();
-  } catch (error) {
-    console.error('Error activating session:', error);
-    showToast('Failed to activate session', 'error');
-  }
-};
-
 const deleteSession = async (id) => {
   if (!confirm('Are you sure you want to delete this session?')) return;
   
@@ -170,6 +152,7 @@ const deleteSession = async (id) => {
     await academicSessionsAPI.delete(id);
     showToast('Session deleted');
     loadSessions();
+    emit('changed');
   } catch (error) {
     console.error('Error deleting session:', error);
     showToast('Failed to delete session', 'error');

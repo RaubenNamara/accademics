@@ -1,47 +1,67 @@
 <template>
-  <div class="space-y-6">
-    <!-- Header with Gradient Background -->
-    <div class="rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 p-6 shadow-lg text-white">
-      <h2 class="text-2xl font-bold">Reports</h2>
-      <p class="text-sm opacity-80 mt-1">Generate and view performance reports for teachers and modules</p>
-    </div>
-    
-    <!-- Report Selection -->
-    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
-      <div class="grid gap-4 sm:grid-cols-5">
+  <div class="page">
+    <div class="page-hero">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">Report Type</label>
-          <select v-model="reportType" @change="onReportTypeChange" class="input">
-            <option value="weekly">Weekly Lesson Monitoring</option>
-            <option value="termly">Termly Comprehensive</option>
-            <option value="yearly">Yearly Summary</option>
-            <option value="best-teachers">Best Teachers</option>
-            <option value="printable">Single Teacher Report</option>
-            <option value="top20">Top 20 Teachers - Highest Minutes Lost</option>
-            <option value="few">Teachers - Few Minutes Lost</option>
-            <option value="class-top">Classes - Most Minutes Lost</option>
-            <option value="class-few">Classes - Few Minutes Lost</option>
-          </select>
+          <h1 class="page-hero-title">Reports</h1>
         </div>
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">Year</label>
-          <select v-model="selectedYear" class="input">
+      </div>
+    </div>
+
+    <section class="card overflow-hidden">
+      <header class="flex items-center gap-3 border-b border-gray-100 px-4 py-3 sm:px-5">
+        <span class="step-dot">1</span>
+        <p class="font-semibold text-gray-900">Choose a report</p>
+      </header>
+      <div class="space-y-4 p-4 sm:p-5">
+        <div v-for="group in REPORT_GROUPS" :key="group.label">
+          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{{ group.label }}</p>
+          <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <button
+              v-for="r in group.items"
+              :key="r.value"
+              type="button"
+              class="flex items-start gap-3 rounded-xl border p-3 text-left transition"
+              :class="reportType === r.value ? 'border-brand-500 bg-brand-50/60 ring-2 ring-brand-100' : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'"
+              :aria-pressed="reportType === r.value"
+              @click="reportType = r.value; onReportTypeChange()"
+            >
+              <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg ring-1" :class="reportType === r.value ? 'bg-brand-600 text-white ring-brand-600' : 'bg-gray-50 text-gray-600 ring-gray-200'"><component :is="r.icon" class="h-4 w-4" /></span>
+              <span class="min-w-0">
+                <span class="block text-sm font-semibold text-gray-900">{{ r.label }}</span>
+                <span class="block text-xs text-gray-500">{{ r.hint }}</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card overflow-hidden">
+      <header class="flex items-center gap-3 border-b border-gray-100 px-4 py-3 sm:px-5">
+        <span class="step-dot">2</span>
+        <p class="font-semibold text-gray-900">Period and options</p>
+      </header>
+      <div class="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
+        <label class="block">
+          <span class="field-label">Year</span>
+          <select v-model="selectedYear" class="field-input">
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
-        </div>
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700">Term</label>
-          <select v-model="selectedTerm" class="input">
-            <option value="">All Terms</option>
+        </label>
+        <label class="block">
+          <span class="field-label">Term</span>
+          <select v-model="selectedTerm" class="field-input">
+            <option value="">All terms</option>
             <option :value="1">Term 1</option>
             <option :value="2">Term 2</option>
             <option :value="3">Term 3</option>
           </select>
-        </div>
-        <div v-if="reportType === 'weekly' || reportType === 'printable'">
-          <label class="mb-2 block text-sm font-medium text-slate-700">Day</label>
-          <select v-model="selectedDay" class="input">
-            <option value="">All Days</option>
+        </label>
+        <label v-if="reportType === 'weekly' || reportType === 'printable'" class="block">
+          <span class="field-label">Day</span>
+          <select v-model="selectedDay" class="field-input">
+            <option value="">All days</option>
             <option value="Mon">Monday</option>
             <option value="Tue">Tuesday</option>
             <option value="Wed">Wednesday</option>
@@ -50,51 +70,49 @@
             <option value="Sat">Saturday</option>
             <option value="Sun">Sunday</option>
           </select>
-        </div>
-        <div v-if="reportType === 'weekly' || reportType === 'printable'">
-          <label class="mb-2 block text-sm font-medium text-slate-700">Compensation Status</label>
-          <select v-model="selectedCompensationStatus" class="input">
-            <option value="">All Status</option>
+        </label>
+        <label v-if="reportType === 'weekly' || reportType === 'printable'" class="block">
+          <span class="field-label">Compensation</span>
+          <select v-model="selectedCompensationStatus" class="field-input">
+            <option value="">All</option>
             <option value="compensated">Compensated</option>
-            <option value="not-compensated">Not Compensated</option>
+            <option value="not-compensated">Not compensated</option>
           </select>
-        </div>
-        <div v-if="reportType === 'printable'">
-          <label class="mb-2 block text-sm font-medium text-slate-700">Teacher</label>
-          <select v-model="selectedTeacher" class="input">
-            <option value="">Select Teacher</option>
+        </label>
+        <label v-if="reportType === 'printable'" class="block">
+          <span class="field-label">Teacher</span>
+          <select v-model="selectedTeacher" class="field-input">
+            <option value="">Select teacher</option>
             <option v-for="t in teachersList" :key="t.id" :value="t.id">{{ t.full_name }}</option>
           </select>
-        </div>
-        <div v-if="reportType === 'best-teachers'">
-          <label class="mb-2 block text-sm font-medium text-slate-700">Award Type</label>
-          <select v-model="awardType" class="input">
+        </label>
+        <label v-if="reportType === 'best-teachers'" class="block">
+          <span class="field-label">Award</span>
+          <select v-model="awardType" class="field-input">
             <option value="week">Weekly</option>
             <option value="term">Termly</option>
           </select>
-        </div>
+        </label>
       </div>
-      <div class="mt-4 flex gap-3">
-        <button @click="generateReport" :disabled="loading" class="btn-primary">
-          <svg v-if="loading" class="mr-2 h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-          {{ loading ? 'Generating...' : 'Generate Report' }}
+      <footer class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/60 px-4 py-3 sm:px-5">
+        <p class="text-sm text-gray-600">{{ currentReportLabel }}</p>
+        <button type="button" class="tool-btn-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="loading" @click="generateReport">
+          <RefreshCw v-if="loading" class="h-4 w-4 animate-spin" /><Play v-else class="h-4 w-4" />{{ loading ? 'Generating…' : 'Generate report' }}
         </button>
-        <button v-if="reportData" @click="downloadPDF" class="rounded-xl bg-green-600 text-white px-5 py-2.5 text-sm font-medium hover:bg-green-700 transition-colors">
-          <svg class="mr-2 h-5 w-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-          Download PDF
-        </button>
-        <button v-if="reportData" @click="printReport" class="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-          <svg class="mr-2 h-5 w-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-          Print
-        </button>
-      </div>
-    </div>
-    
+      </footer>
+    </section>
+
     <!-- Report Display -->
-    <div v-if="reportData" class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-      <div class="border-b border-slate-200 bg-slate-50 px-6 py-4">
-        <h3 class="text-lg font-bold text-slate-900">{{ reportTitle }}</h3>
-        <p class="text-sm text-slate-600">{{ reportSubtitle }}</p>
+    <div v-if="reportData" class="card overflow-hidden">
+      <div class="flex flex-wrap items-center gap-3 border-b border-gray-100 px-4 py-3 sm:px-5">
+        <div class="min-w-0 flex-1">
+          <h3 class="font-semibold text-gray-900">{{ reportTitle }}</h3>
+          <p class="text-xs text-gray-500">{{ reportSubtitle }}</p>
+        </div>
+        <div class="flex gap-2">
+          <button type="button" class="tool-btn" title="Print" @click="printReport"><Printer class="h-4 w-4" /><span class="hidden sm:inline">Print</span></button>
+          <button type="button" class="tool-btn" title="Download PDF" @click="downloadPDF"><FileText class="h-4 w-4" /><span class="hidden sm:inline">PDF</span></button>
+        </div>
       </div>
       <div class="p-6" id="report-content">
         <!-- Weekly Lesson Monitoring Report -->
@@ -120,7 +138,7 @@
                   <td class="px-4 py-3">{{ record.class }}</td>
                   <td class="px-4 py-3">{{ record.stream }}</td>
                   <td class="px-4 py-3">{{ record.attendance_date }}</td>
-                  <td class="px-4 py-3 font-bold text-blue-600">{{ record.day_of_week || '-' }}</td>
+                  <td class="px-4 py-3 font-bold text-brand-600">{{ record.day_of_week || '-' }}</td>
                   <td class="px-4 py-3">{{ record.total_minutes_lost }}</td>
                   <td class="px-4 py-3">{{ record.equivalent_single_lessons }}</td>
                   <td class="px-4 py-3">{{ record.equivalent_double_lessons }}</td>
@@ -519,10 +537,29 @@ import { ref, onMounted, computed } from 'vue';
 import { reportsAPI, teachersAPI } from '../services/api.js';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useGlobalTerm } from '../composables/useGlobalTerm.js';
+import { CalendarDays, CalendarRange, CalendarCheck, Trophy, UserRound, TrendingDown, TrendingUp, School, Building2, RefreshCw, Play, Printer, FileText } from 'lucide-vue-next';
+
+const REPORT_GROUPS = [
+  { label: 'Lesson monitoring and performance', items: [
+    { value: 'weekly', label: 'Weekly lesson monitoring', hint: 'Lessons, time lost and compensation', icon: CalendarDays },
+    { value: 'termly', label: 'Termly comprehensive', hint: 'All modules for one term', icon: CalendarRange },
+    { value: 'yearly', label: 'Yearly summary', hint: 'The whole year at a glance', icon: CalendarCheck },
+    { value: 'best-teachers', label: 'Best teachers', hint: 'Weekly or termly awards', icon: Trophy },
+    { value: 'printable', label: 'Single teacher', hint: 'One teacher, ready to print', icon: UserRound },
+  ] },
+  { label: 'Minutes lost', items: [
+    { value: 'top20', label: 'Teachers losing most time', hint: 'Top 20 by minutes lost', icon: TrendingDown },
+    { value: 'few', label: 'Teachers losing least time', hint: 'Fewest minutes lost', icon: TrendingUp },
+    { value: 'class-top', label: 'Classes losing most time', hint: 'Classes with most minutes lost', icon: School },
+    { value: 'class-few', label: 'Classes losing least time', hint: 'Classes with fewest minutes lost', icon: Building2 },
+  ] },
+];
 
 const reportType = ref('weekly');
 const selectedYear = ref(new Date().getFullYear());
 const selectedTerm = ref('');
+useGlobalTerm((y, t) => { selectedYear.value = y; selectedTerm.value = t; });
 const selectedTeacher = ref('');
 const selectedDay = ref('');
 const selectedCompensationStatus = ref('');
@@ -561,6 +598,8 @@ const loadTeachers = async () => {
     console.error('Failed to load teachers:', err);
   }
 };
+
+const currentReportLabel = computed(() => REPORT_GROUPS.flatMap((g) => g.items).find((r) => r.value === reportType.value)?.label || '');
 
 const onReportTypeChange = () => {
   reportData.value = null;
@@ -663,7 +702,7 @@ const downloadPDF = () => {
   
   // Header
   doc.setFontSize(20);
-  doc.setTextColor(59, 130, 246);
+  doc.setTextColor(22, 163, 74);
   doc.text(reportTitle.value, 14, yPos);
   yPos += 10;
   
@@ -698,7 +737,7 @@ const downloadPDF = () => {
           body: tableData,
           startY: yPos,
           styles: { fontSize: 9, cellPadding: 3 },
-          headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+          headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
           alternateRowStyles: { fillColor: [245, 245, 245] },
           margin: { top: 10, right: 10, bottom: 10, left: 10 },
         });
@@ -727,7 +766,7 @@ const downloadPDF = () => {
           body: tableData,
           startY: yPos,
           styles: { fontSize: 9, cellPadding: 3 },
-          headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+          headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
           alternateRowStyles: { fillColor: [245, 245, 245] },
           margin: { top: 10, right: 10, bottom: 10, left: 10 },
         });
@@ -759,7 +798,7 @@ const downloadPDF = () => {
             body: tableData,
             startY: yPos,
             styles: { fontSize: 9, cellPadding: 3 },
-            headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
             alternateRowStyles: { fillColor: [245, 245, 245] },
             margin: { top: 10, right: 10, bottom: 10, left: 10 },
           });
@@ -794,7 +833,7 @@ const downloadPDF = () => {
           body: tableData,
           startY: yPos,
           styles: { fontSize: 9, cellPadding: 3 },
-          headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+          headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
           alternateRowStyles: { fillColor: [245, 245, 245] },
           margin: { top: 10, right: 10, bottom: 10, left: 10 },
         });
@@ -826,7 +865,7 @@ const downloadPDF = () => {
           body: tableData,
           startY: yPos,
           styles: { fontSize: 9, cellPadding: 3 },
-          headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+          headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
           alternateRowStyles: { fillColor: [245, 245, 245] },
           margin: { top: 10, right: 10, bottom: 10, left: 10 },
         });
@@ -875,7 +914,7 @@ const downloadPDF = () => {
             body: tableData,
             startY: yPos,
             styles: { fontSize: 9, cellPadding: 3 },
-            headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
             alternateRowStyles: { fillColor: [245, 245, 245] },
             margin: { top: 10, right: 10, bottom: 10, left: 10 },
           });
@@ -907,7 +946,7 @@ const downloadPDF = () => {
             body: tableData,
             startY: yPos,
             styles: { fontSize: 9, cellPadding: 3 },
-            headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
             alternateRowStyles: { fillColor: [245, 245, 245] },
             margin: { top: 10, right: 10, bottom: 10, left: 10 },
           });
@@ -939,7 +978,7 @@ const downloadPDF = () => {
             body: tableData,
             startY: yPos,
             styles: { fontSize: 9, cellPadding: 3 },
-            headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
             alternateRowStyles: { fillColor: [245, 245, 245] },
             margin: { top: 10, right: 10, bottom: 10, left: 10 },
           });
@@ -971,7 +1010,7 @@ const downloadPDF = () => {
             body: tableData,
             startY: yPos,
             styles: { fontSize: 9, cellPadding: 3 },
-            headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
             alternateRowStyles: { fillColor: [245, 245, 245] },
             margin: { top: 10, right: 10, bottom: 10, left: 10 },
           });
@@ -1000,7 +1039,7 @@ const downloadPDF = () => {
             body: tableData,
             startY: yPos,
             styles: { fontSize: 9, cellPadding: 3 },
-            headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
             alternateRowStyles: { fillColor: [245, 245, 245] },
             margin: { top: 10, right: 10, bottom: 10, left: 10 },
           });
@@ -1033,6 +1072,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.step-dot { @apply flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-bold text-brand-700 ring-1 ring-brand-100; }
+.field-label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500; }
+.field-input { @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100; }
+.tool-btn { @apply inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50; }
+.tool-btn-primary { @apply inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700; }
 .input {
   width: 100%;
   padding: 0.625rem 0.875rem;
@@ -1045,8 +1089,8 @@ onMounted(() => {
 
 .input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
 }
 
 .btn-primary {
@@ -1054,7 +1098,7 @@ onMounted(() => {
   align-items: center;
   padding: 0.625rem 1.25rem;
   border-radius: 0.75rem;
-  background: linear-gradient(to right, #2563eb, #1d4ed8);
+  background: #16a34a;
   color: white;
   font-weight: 500;
   font-size: 0.875rem;
@@ -1063,7 +1107,7 @@ onMounted(() => {
 }
 
 .btn-primary:hover {
-  background: linear-gradient(to right, #1d4ed8, #1e40af);
+  background: #15803d;
   transform: translateY(-1px);
 }
 
@@ -1073,3 +1117,40 @@ onMounted(() => {
 }
 </style>
 
+<style>
+/* dark mode: generated by scripts/build-dark-overrides.cjs */
+html.dark th,
+html.dark td {
+  border-color: var(--d-line);
+}
+html.dark th {
+  background-color: var(--d-surface);
+}
+html.dark .rounded-xl {
+  border-color: var(--d-line);
+}
+html.dark .step-dot {
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+  --tw-ring-color: rgba(34, 197, 94, 0.3);
+}
+html.dark .field-label {
+  color: var(--d-muted);
+}
+html.dark .field-input {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+}
+html.dark .tool-btn {
+  border-color: var(--d-line-strong);
+  background-color: var(--d-surface);
+  color: var(--d-text-2);
+}
+html.dark .tool-btn:hover {
+  background-color: var(--d-sunken);
+}
+html.dark .input {
+  border-color: var(--d-line);
+  background-color: var(--d-surface);
+}
+</style>

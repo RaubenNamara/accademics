@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../config/ApiGuard.php';
+// Login accounts: administrators only.
+api_guard(['super_admin', 'admin', 'hr_manager']);
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");

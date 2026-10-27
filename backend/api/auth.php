@@ -14,11 +14,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once '../config/Database.php';
 require_once '../config/JWT.php';
+require_once '../config/SchoolService.php';
 
 try {
 
     $database = new Database();
     $db = $database->getConnection();
+    tt_ensure_schema($db);
+    sf_ensure_schema($db);
 
     // Log request for debugging
     error_log("Auth request - Origin: " . ($_SERVER['HTTP_ORIGIN'] ?? 'none'));
@@ -39,7 +42,7 @@ try {
         ) {
             echo json_encode([
                 'success' => false,
-                'message' => 'Email and password required'
+                'message' => 'Enter your email (or teacher code) and password'
             ]);
             exit;
         }
@@ -47,6 +50,7 @@ try {
         $email = strtolower(trim($data->email));
         $password = (string)$data->password;
 
+        // Teachers may sign in with their email or their teacher code (e.g. TS-012).
         $stmt = $db->prepare("
             SELECT
                 id,
@@ -54,22 +58,29 @@ try {
                 email,
                 password_hash,
                 role,
-                is_active
+                is_active,
+                teacher_id,
+                must_change_password
             FROM users
             WHERE LOWER(TRIM(email)) = :email
+               OR teacher_id = (SELECT id FROM teachers WHERE LOWER(TRIM(teacher_code)) = :code LIMIT 1)
+            ORDER BY (LOWER(TRIM(email)) = :email2) DESC
             LIMIT 1
         ");
 
         $stmt->execute([
-            ':email' => $email
+            ':email' => $email,
+            ':code' => $email,
+            ':email2' => $email
         ]);
 
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user) {
+            // Same answer as a wrong password, so the form does not reveal which accounts exist.
             echo json_encode([
                 'success' => false,
-                'message' => 'User not found'
+                'message' => 'Email or password is incorrect'
             ]);
             exit;
         }
@@ -88,7 +99,7 @@ try {
         ) {
             echo json_encode([
                 'success' => false,
-                'message' => 'Invalid credentials'
+                'message' => 'Email or password is incorrect'
             ]);
             exit;
         }
@@ -103,11 +114,15 @@ try {
             ':id' => $user['id']
         ]);
 
-        $token = JWT::encode([
+        // The school is part of the token, so the session can never reach another school.
+        // A single-school install has no code; a token without one belongs to the home school.
+        $school = Tenant::current();
+        $token = JWT::encode(($school['code'] !== null ? ['school' => $school['code']] : []) + [
             'id' => $user['id'],
             'email' => $user['email'],
             'role' => $user['role'],
-            'full_name' => $user['full_name']
+            'full_name' => $user['full_name'],
+            'teacher_id' => $user['teacher_id'] ? (int)$user['teacher_id'] : null
         ]);
 
         echo json_encode([
@@ -117,11 +132,35 @@ try {
                 'id' => $user['id'],
                 'full_name' => $user['full_name'],
                 'email' => $user['email'],
-                'role' => $user['role']
+                'role' => $user['role'],
+                'teacher_id' => $user['teacher_id'] ? (int)$user['teacher_id'] : null,
+                'must_change_password' => (int)$user['must_change_password'] === 1,
+                'school' => ['code' => $school['code'], 'name' => $school['name'], 'is_home' => $school['is_home']]
             ]
         ]);
 
         exit;
+    }
+
+    if ($action === 'change-password') {
+        $payload = hr_require_auth();
+        $current = (string)($data->current_password ?? '');
+        $new = (string)($data->new_password ?? '');
+        $row = $db->prepare('SELECT password_hash FROM users WHERE id = :id AND is_active = 1');
+        $row->execute([':id' => (int)$payload['id']]);
+        $hash = $row->fetchColumn();
+        if (!$hash || !password_verify($current, (string)$hash)) {
+            hr_respond(false, 'Your current password is not correct', ['errors' => ['current_password' => 'Not correct']], 422);
+        }
+        if (strlen($new) < 8 || !preg_match('/[A-Za-z]/', $new) || !preg_match('/\d/', $new)) {
+            hr_respond(false, 'Use at least 8 characters with letters and numbers', ['errors' => ['new_password' => 'At least 8 characters, letters and numbers']], 422);
+        }
+        if (password_verify($new, (string)$hash)) {
+            hr_respond(false, 'Choose a password different from the current one', ['errors' => ['new_password' => 'Must be different']], 422);
+        }
+        $db->prepare('UPDATE users SET password_hash = :h, must_change_password = 0 WHERE id = :id')
+            ->execute([':h' => password_hash($new, PASSWORD_DEFAULT), ':id' => (int)$payload['id']]);
+        hr_respond(true, 'Password changed');
     }
 
     if ($action === 'verify') {

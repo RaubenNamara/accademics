@@ -5,7 +5,6 @@ import { canAccessRoute, getDefaultRoute, getUserRole } from '../config/accessCo
 // Import views
 import Login from '../views/Login.vue';
 import Layout from '../components/Layout.vue';
-import Dashboard from '../views/Dashboard.vue';
 import Teachers from '../views/Teachers.vue';
 import Users from '../views/Users.vue';
 import SubjectPerformance from '../views/SubjectPerformance.vue';
@@ -21,15 +20,26 @@ import StudentAcademicTrack from '../views/StudentAcademicTrack.vue';
 import SubjectsManagement from '../views/SubjectsManagement.vue';
 import BulkImportResults from '../views/BulkImportResults.vue';
 import ClassesManagement from '../views/ClassesManagement.vue';
-import ClassSubjectsAssignment from '../views/ClassSubjectsAssignment.vue';
 import HrDashboard from '../views/HrDashboard.vue';
 import NonTeachingStaff from '../views/NonTeachingStaff.vue';
 import TimetableManagement from '../views/TimetableManagement.vue';
 import ClassTeacherAssignments from '../views/ClassTeacherAssignments.vue';
 import LeaveManagement from '../views/LeaveManagement.vue';
-import PayrollManagement from '../views/PayrollManagement.vue';
 import TeachingAnalytics from '../views/TeachingAnalytics.vue';
 import DepartmentsManagement from '../views/DepartmentsManagement.vue';
+import ChangePassword from '../views/ChangePassword.vue';
+import Examinations from '../views/Examinations.vue';
+import ReportCards from '../views/ReportCards.vue';
+import ReportSettings from '../views/ReportSettings.vue';
+import LessonPlansReview from '../views/LessonPlansReview.vue';
+import AcademicCalendar from '../views/AcademicCalendar.vue';
+import CurriculumSetup from '../views/CurriculumSetup.vue';
+import MyDashboard from '../views/portal/MyDashboard.vue';
+import MyTimetable from '../views/portal/MyTimetable.vue';
+import MyLessonPlans from '../views/portal/MyLessonPlans.vue';
+import MyMarks from '../views/portal/MyMarks.vue';
+import MyPerformance from '../views/portal/MyPerformance.vue';
+import MyAttendance from '../views/portal/MyAttendance.vue';
 
 const routes = [
   {
@@ -37,6 +47,7 @@ const routes = [
     component: Login,
     meta: { public: true },
   },
+  { path: '/change-password', component: ChangePassword },
   {
     path: '/',
     component: Layout,
@@ -54,7 +65,6 @@ const routes = [
           return getDefaultRoute(role);
         },
       },
-      { path: 'dashboard', component: Dashboard, meta: { zone: 'academic' } },
       { path: 'hr-dashboard', component: HrDashboard, meta: { zone: 'hr' } },
       { path: 'teachers', component: Teachers, meta: { zone: 'hr' } },
       { path: 'non-teaching-staff', component: NonTeachingStaff, meta: { zone: 'hr' } },
@@ -62,7 +72,6 @@ const routes = [
       { path: 'class-teacher-assignments', component: ClassTeacherAssignments, meta: { zone: 'hr' } },
       { path: 'timetable', component: TimetableManagement, meta: { zone: 'academic' } },
       { path: 'leave', component: LeaveManagement, meta: { zone: 'hr' } },
-      { path: 'payroll', component: PayrollManagement, meta: { zone: 'hr' } },
       { path: 'departments', component: DepartmentsManagement, meta: { zone: 'hr' } },
       { path: 'users', component: Users, meta: { zone: 'hr' } },
       { path: 'subject-performance', component: SubjectPerformance, meta: { zone: 'academic' } },
@@ -77,10 +86,28 @@ const routes = [
       { path: 'student-academic-track', component: StudentAcademicTrack, meta: { zone: 'academic' } },
       { path: 'subjects-management', component: SubjectsManagement, meta: { zone: 'academic' } },
       { path: 'classes-management', component: ClassesManagement, meta: { zone: 'academic' } },
-      { path: 'class-subjects-assignment', component: ClassSubjectsAssignment, meta: { zone: 'academic' } },
       { path: 'bulk-import-results', component: BulkImportResults, meta: { zone: 'academic' } },
+      { path: 'examinations', component: Examinations, meta: { zone: 'school' } },
+      { path: 'report-cards', component: ReportCards, meta: { zone: 'school' } },
+      { path: 'report-settings', component: ReportSettings, meta: { zone: 'school' } },
+      { path: 'lesson-plans', component: LessonPlansReview, meta: { zone: 'school' } },
+      // Teacher logins now live on Teaching Staff (Logins view).
+      { path: 'teacher-logins', redirect: { path: '/teachers', query: { view: 'logins' } } },
+      { path: 'academic-calendar', component: AcademicCalendar, meta: { zone: 'school' } },
+      { path: 'curriculum-setup', component: CurriculumSetup, meta: { zone: 'school' } },
+      { path: 'teaching-assignments', component: () => import('../views/TeachingAssignments.vue'), meta: { zone: 'school' } },
+      { path: 'platform/schools', component: () => import('../views/PlatformSchools.vue'), meta: { zone: 'platform' } },
+      { path: 'my/dashboard', component: MyDashboard, meta: { zone: 'portal' } },
+      { path: 'my/timetable', component: MyTimetable, meta: { zone: 'portal' } },
+      { path: 'my/lesson-plans', component: MyLessonPlans, meta: { zone: 'portal' } },
+      { path: 'my/marks', component: MyMarks, meta: { zone: 'portal' } },
+      { path: 'my/performance', component: MyPerformance, meta: { zone: 'portal' } },
+      { path: 'my/attendance', component: MyAttendance, meta: { zone: 'portal' } },
+      { path: 'my/leave', component: () => import('../views/portal/MyLeave.vue'), meta: { zone: 'portal' } },
     ],
   },
+  // Unknown or removed pages (e.g. old bookmarks) go to the user's home page.
+  { path: '/:pathMatch(.*)*', redirect: () => getDefaultRoute(getUserRole(authStore.user)) },
 ];
 
 const router = createRouter({
@@ -104,7 +131,16 @@ router.beforeEach((to, from, next) => {
     return next('/login');
   }
 
-  if (isAuthenticated && to.path !== '/' && !canAccessRoute(to.path, role)) {
+  // A temporary password must be replaced before anything else.
+  const mustChange = !!authStore.user?.must_change_password;
+  if (mustChange && to.path !== '/change-password') {
+    return next('/change-password');
+  }
+  if (!mustChange && to.path === '/change-password' && to.query.voluntary !== '1') {
+    return next(home);
+  }
+
+  if (isAuthenticated && to.path !== '/' && !canAccessRoute(to.path, role, authStore.user)) {
     return next({
       path: home,
       query: { denied: '1' },

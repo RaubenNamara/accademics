@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../config/ApiGuard.php';
+api_guard();
 // Direct test of departments API
 require_once '../config/Database.php';
 

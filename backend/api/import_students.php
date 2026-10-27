@@ -1,6 +1,19 @@
 <?php
 date_default_timezone_set('Africa/Kampala');
 
+// Runs from the command line (php import_students.php) or as a POST from a signed-in
+// administrator. A plain web visit must never trigger a sync.
+if (PHP_SAPI !== 'cli') {
+    require_once __DIR__ . '/../config/ApiGuard.php';
+    api_guard(['super_admin', 'admin', 'hr_manager']);
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+        http_response_code(405);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode(['success' => false, 'message' => 'Send a POST request to run the student sync']);
+        exit;
+    }
+}
+
 require_once __DIR__ . '/../config/Database.php';
 
 $apiUrl = "https://smisug.com/STMARKLIBRARYAPI/SLISLIBRARYAPI/api/student";
@@ -230,20 +243,20 @@ $insertStmt = $conn->prepare($insertSql);
 $updateSql = "
     UPDATE students SET
         full_name = :full_name,
-        gender = :gender,
-        date_of_birth = :date_of_birth,
+        gender = COALESCE(NULLIF(:gender, ''), gender),
+        date_of_birth = COALESCE(NULLIF(:date_of_birth, ''), date_of_birth),
         `class` = :class,
         stream = :stream,
         level = :level,
-        enrollment_date = :enrollment_date,
-        lin = :lin,
-        behaviour_notes = :behaviour_notes,
-        behaviour_document = :behaviour_document,
-        medical_notes = :medical_notes,
-        special_needs = :special_needs,
-        profile_picture = :profile_picture,
-        former_school = :former_school,
-        former_school_support_doc = :former_school_support_doc,
+        enrollment_date = COALESCE(NULLIF(:enrollment_date, ''), enrollment_date),
+        lin = COALESCE(NULLIF(:lin, ''), lin),
+        behaviour_notes = COALESCE(NULLIF(:behaviour_notes, ''), behaviour_notes),
+        behaviour_document = COALESCE(NULLIF(:behaviour_document, ''), behaviour_document),
+        medical_notes = COALESCE(NULLIF(:medical_notes, ''), medical_notes),
+        special_needs = COALESCE(NULLIF(:special_needs, ''), special_needs),
+        profile_picture = COALESCE(NULLIF(:profile_picture, ''), profile_picture),
+        former_school = COALESCE(NULLIF(:former_school, ''), former_school),
+        former_school_support_doc = COALESCE(NULLIF(:former_school_support_doc, ''), former_school_support_doc),
         is_active = :is_active,
         updated_at = NOW()
     WHERE admission_number = :admission_number

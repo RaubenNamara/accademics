@@ -59,13 +59,43 @@ api.interceptors.response.use(
   }
 );
 
+/** Which teacher teaches which subject to which class, per term (stored as lesson requirements). */
+export const teachingAssignmentsAPI = {
+  get: async (sessionId) => (await api.get(`teaching_assignments.php?academic_session_id=${sessionId}`)).data,
+  assign: async (sessionId, teacherId, subjectId, classIds) => (await api.post('teaching_assignments.php?action=assign', {
+    academic_session_id: sessionId, teacher_id: teacherId, subject_id: subjectId, class_ids: classIds,
+  })).data,
+  unassign: async (id) => (await api.post('teaching_assignments.php?action=unassign', { id })).data,
+  copy: async (sessionId, fromSessionId) => (await api.post('teaching_assignments.php?action=copy', { academic_session_id: sessionId, from_session_id: fromSessionId })).data,
+};
+
+/** Skool Monitor platform: the schools on this install (SaaS). */
+const schoolQuery = (school) => (school ? `&school=${encodeURIComponent(school)}` : '');
+export const platformAPI = {
+  context: async (school = '') => (await api.get(`platform.php?action=context${schoolQuery(school)}`)).data,
+  list: async () => (await api.get('platform.php')).data,
+  setup: async (homeName = '') => (await api.post('platform.php?action=setup', { home_name: homeName })).data,
+  create: async (school) => (await api.post('platform.php?action=create', school)).data,
+  update: async (code, changes) => (await api.post('platform.php?action=update', { code, ...changes })).data,
+  saveSettings: async (settings) => (await api.post('platform.php?action=settings', settings)).data,
+};
+
 export const authAPI = {
-  login: async (email, password) => {
-    const response = await api.post('auth.php?action=login', {
+  // school: the school's code on a multi-school install; empty for the home school.
+  login: async (email, password, school = '') => {
+    const response = await api.post(`auth.php?action=login${schoolQuery(school)}`, {
       email,
       password
     });
 
+    return response.data;
+  },
+
+  changePassword: async (currentPassword, newPassword) => {
+    const response = await api.post('auth.php?action=change-password', {
+      current_password: currentPassword,
+      new_password: newPassword
+    });
     return response.data;
   },
 
@@ -76,6 +106,8 @@ export const authAPI = {
 };
 
 export const teachersAPI = {
+  summary: async () => (await api.get('teachers.php?action=summary')).data,
+
   getAll: async (filters = {}) => {
     const params = new URLSearchParams();
 
@@ -679,6 +711,8 @@ export const departmentsAPI = {
 };
 
 export const rolesAPI = {
+  create: async (data) => (await api.post('roles.php', data)).data,
+
   getAll: async (departmentId = '') => {
     const q = departmentId ? `?department_id=${encodeURIComponent(departmentId)}` : '';
     const response = await api.get(`roles.php${q}`);
@@ -738,6 +772,103 @@ export const timetableAPI = {
 
   generate: async (data) => {
     const response = await api.post('timetable.php?action=generate', data);
+    return response.data;
+  },
+
+  /** Classes, teachers, subjects, rooms, periods and sessions in one request. */
+  meta: async () => {
+    const response = await api.get('timetable.php?view=meta');
+    return response.data;
+  },
+
+  /** Server-validated issues, unscheduled lessons, stats and publication state. */
+  overview: async (sessionId) => {
+    const response = await api.get(`timetable.php?view=overview&academic_session_id=${sessionId}`);
+    return response.data;
+  },
+
+  history: async (sessionId) => {
+    const response = await api.get(`timetable.php?view=history&academic_session_id=${sessionId}`);
+    return response.data;
+  },
+
+  published: async (sessionId) => {
+    const response = await api.get(`timetable.php?view=published&academic_session_id=${sessionId}`);
+    return response.data;
+  },
+
+  /** Dry-run conflict check for the lesson form; never writes. */
+  check: async (data) => {
+    const response = await api.post('timetable.php?action=check', data);
+    return response.data;
+  },
+
+  validate: async (sessionId) => {
+    const response = await api.post('timetable.php?action=validate', { academic_session_id: sessionId });
+    return response.data;
+  },
+
+  publish: async (data) => {
+    const response = await api.post('timetable.php?action=publish', data);
+    return response.data;
+  },
+
+  restore: async (versionId) => {
+    const response = await api.post('timetable.php?action=restore', { version_id: versionId });
+    return response.data;
+  },
+
+  setLocked: async (id, locked) => {
+    const response = await api.post(`timetable.php?action=${locked ? 'lock' : 'unlock'}`, { id });
+    return response.data;
+  },
+
+  /** Setup checklist, school-day periods and class home rooms. */
+  setup: async (sessionId) => {
+    const response = await api.get(`timetable.php?view=setup&academic_session_id=${sessionId || ''}`);
+    return response.data;
+  },
+
+  savePeriods: async (periods) => {
+    const response = await api.post('timetable.php?action=save-periods', { periods });
+    return response.data;
+  },
+
+  saveRules: async (sessionId, maxLessonsPerDay) => {
+    const response = await api.post('timetable.php?action=save-rules', { academic_session_id: sessionId, max_lessons_per_day: maxLessonsPerDay });
+    return response.data;
+  },
+
+  setHomeRoom: async (classId, roomId) => {
+    const response = await api.post('timetable.php?action=home-room', { class_id: classId, room_id: roomId || null });
+    return response.data;
+  },
+
+  linkHomeRooms: async () => {
+    const response = await api.post('timetable.php?action=link-home-rooms', {});
+    return response.data;
+  }
+};
+
+/** Which teachers belong to which subject department. */
+export const subjectDepartmentsAPI = {
+  getAll: async () => {
+    const response = await api.get('subject_departments.php');
+    return response.data;
+  },
+
+  add: async (subjectId, teacherIds) => {
+    const response = await api.post('subject_departments.php?action=add', { subject_id: subjectId, teacher_ids: teacherIds });
+    return response.data;
+  },
+
+  remove: async (subjectId, teacherId, confirm = false) => {
+    const response = await api.post('subject_departments.php?action=remove', { subject_id: subjectId, teacher_id: teacherId, confirm });
+    return response.data;
+  },
+
+  syncFromTeacherRecords: async (dryRun = false) => {
+    const response = await api.post('subject_departments.php?action=sync', { dry_run: dryRun });
     return response.data;
   }
 };
@@ -888,53 +1019,6 @@ export const academicSessionsAPI = {
   }
 };
 
-export const bellSchedulesAPI = {
-  getAll: async () => {
-    const response = await api.get('bell_schedules.php');
-    return response.data;
-  },
-
-  getActive: async () => {
-    const response = await api.get('bell_schedules.php?action=active');
-    return response.data;
-  },
-
-  getPeriods: async (scheduleId) => {
-    const response = await api.get(`bell_schedules.php?action=periods&schedule_id=${scheduleId}`);
-    return response.data;
-  },
-
-  create: async (data) => {
-    const response = await api.post('bell_schedules.php', data);
-    return response.data;
-  },
-
-  addPeriod: async (data) => {
-    const response = await api.post('bell_schedules.php?action=periods', data);
-    return response.data;
-  },
-
-  bulkUpdatePeriods: async (data) => {
-    const response = await api.post('bell_schedules.php?action=bulk-periods', data);
-    return response.data;
-  },
-
-  update: async (data) => {
-    const response = await api.put('bell_schedules.php', data);
-    return response.data;
-  },
-
-  delete: async (id) => {
-    const response = await api.delete(`bell_schedules.php?id=${id}`);
-    return response.data;
-  },
-
-  deletePeriod: async (id) => {
-    const response = await api.delete(`bell_schedules.php?action=period&id=${id}`);
-    return response.data;
-  }
-};
-
 export const roomsAPI = {
   getAll: async () => {
     const response = await api.get('rooms.php');
@@ -953,6 +1037,18 @@ export const roomsAPI = {
 
   delete: async (id) => {
     const response = await api.delete(`rooms.php?id=${id}`);
+    return response.data;
+  },
+
+  /** The code a new room of this type will be given (codes are assigned by the server). */
+  nextCode: async (type) => {
+    const response = await api.get(`rooms.php?action=next-code&type=${encodeURIComponent(type)}`);
+    return response.data;
+  },
+
+  /** One classroom per class stream ("S.1 - A Class") with automatic codes. */
+  createClassRooms: async () => {
+    const response = await api.post('rooms.php?action=class-rooms', {});
     return response.data;
   }
 };
@@ -1028,178 +1124,74 @@ export const teacherAvailabilityAPI = {
   }
 };
 
-export const timetableConstraintsAPI = {
-  getAll: async (filters = {}) => {
-    const params = new URLSearchParams(filters);
-    const response = await api.get(`timetable_constraints.php?${params.toString()}`);
-    return response.data;
-  },
 
-  getBySession: async (sessionId) => {
-    const response = await api.get(`timetable_constraints.php?action=by-session&academic_session_id=${sessionId}`);
-    return response.data;
-  },
+const qs = (params = {}) => new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '')).toString();
 
-  create: async (data) => {
-    const response = await api.post('timetable_constraints.php', data);
-    return response.data;
-  },
-
-  update: async (data) => {
-    const response = await api.put('timetable_constraints.php', data);
-    return response.data;
-  },
-
-  delete: async (id) => {
-    const response = await api.delete(`timetable_constraints.php?id=${id}`);
-    return response.data;
-  }
+export const examsAPI = {
+  list: async (sessionId) => (await api.get(`exams.php?${qs({ academic_session_id: sessionId })}`)).data,
+  save: async (data) => (await api.post('exams.php', data)).data,
+  setStatus: async (id, status) => (await api.post('exams.php?action=status', { id, status })).data,
+  remove: async (id, confirm = false) => (await api.delete(`exams.php?${qs({ id, confirm: confirm ? 1 : '' })}`)).data,
+  sheet: async (examId, classId, subjectId) => (await api.get(`exams.php?${qs({ action: 'sheet', exam_id: examId, class_id: classId, subject_id: subjectId })}`)).data,
+  saveMarks: async (data) => (await api.post('exams.php?action=marks', data)).data,
+  progress: async (examId) => (await api.get(`exams.php?${qs({ action: 'progress', exam_id: examId })}`)).data
 };
 
-export const timetableConflictsAPI = {
-  getAll: async (sessionId) => {
-    const response = await api.get(`timetable_conflicts.php?academic_session_id=${sessionId}`);
-    return response.data;
-  },
-
-  check: async (params) => {
-    const queryParams = new URLSearchParams(params);
-    const response = await api.get(`timetable_conflicts.php?action=check&${queryParams.toString()}`);
-    return response.data;
-  }
+export const schoolSettingsAPI = {
+  get: async () => (await api.get('school_settings.php')).data,
+  save: async (data) => (await api.post('school_settings.php', data)).data
 };
 
-export const schoolEventsAPI = {
-  getAll: async () => {
-    const response = await api.get('school_events.php');
-    return response.data;
-  },
-
-  getByType: async (type) => {
-    const response = await api.get(`school_events.php?action=by-type&type=${type}`);
-    return response.data;
-  },
-
-  getSchedulable: async () => {
-    const response = await api.get('school_events.php?action=schedulable');
-    return response.data;
-  },
-
-  create: async (data) => {
-    const response = await api.post('school_events.php', data);
-    return response.data;
-  },
-
-  update: async (data) => {
-    const response = await api.put('school_events.php', data);
-    return response.data;
-  },
-
-  delete: async (id) => {
-    const response = await api.delete(`school_events.php?id=${id}`);
-    return response.data;
-  }
+export const reportCardsAPI = {
+  get: async (sessionId, classId, studentId) =>
+    (await api.get(`report_cards.php?${qs({ academic_session_id: sessionId, class_id: classId, student_id: studentId })}`)).data
 };
 
-export const timetableVersionsAPI = {
-  getAll: async (sessionId) => {
-    const response = await api.get(`timetable_versions.php?academic_session_id=${sessionId}`);
-    return response.data;
-  },
-
-  getBySession: async (sessionId) => {
-    const response = await api.get(`timetable_versions.php?action=by-session&academic_session_id=${sessionId}`);
-    return response.data;
-  },
-
-  getLatest: async (sessionId) => {
-    const response = await api.get(`timetable_versions.php?action=latest&academic_session_id=${sessionId}`);
-    return response.data;
-  },
-
-  create: async (data) => {
-    const response = await api.post('timetable_versions.php', data);
-    return response.data;
-  },
-
-  update: async (data) => {
-    const response = await api.put('timetable_versions.php', data);
-    return response.data;
-  },
-
-  publish: async (data) => {
-    const response = await api.post('timetable_versions.php?action=publish', data);
-    return response.data;
-  },
-
-  archive: async (data) => {
-    const response = await api.post('timetable_versions.php?action=archive', data);
-    return response.data;
-  },
-
-  restore: async (data) => {
-    const response = await api.post('timetable_versions.php?action=restore', data);
-    return response.data;
-  },
-
-  delete: async (id) => {
-    const response = await api.delete(`timetable_versions.php?id=${id}`);
-    return response.data;
-  }
+export const teacherAccountsAPI = {
+  list: async () => (await api.get('teacher_accounts.php')).data,
+  create: async (payload) => (await api.post('teacher_accounts.php?action=create', payload)).data,
+  reset: async (teacherId) => (await api.post('teacher_accounts.php?action=reset', { teacher_id: teacherId })).data,
+  setActive: async (teacherId, active) => (await api.post('teacher_accounts.php?action=active', { teacher_id: teacherId, active })).data
 };
 
-export const timetableAnalyticsAPI = {
-  getTeacherWorkload: async (sessionId) => {
-    const response = await api.get(`timetable_analytics.php?action=teacher-workload&academic_session_id=${sessionId}`);
-    return response.data;
-  },
-
-  getSubjectCoverage: async (sessionId) => {
-    const response = await api.get(`timetable_analytics.php?action=subject-coverage&academic_session_id=${sessionId}`);
-    return response.data;
-  },
-
-  getClassCoverage: async (sessionId) => {
-    const response = await api.get(`timetable_analytics.php?action=class-coverage&academic_session_id=${sessionId}`);
-    return response.data;
-  },
-
-  getRoomUtilization: async (sessionId) => {
-    const response = await api.get(`timetable_analytics.php?action=room-utilization&academic_session_id=${sessionId}`);
-    return response.data;
-  },
-
-  getConflictTrends: async (sessionId) => {
-    const response = await api.get(`timetable_analytics.php?action=conflict-trends&academic_session_id=${sessionId}`);
-    return response.data;
-  },
-
-  getDashboard: async (sessionId) => {
-    const response = await api.get(`timetable_analytics.php?action=dashboard&academic_session_id=${sessionId}`);
-    return response.data;
-  }
+export const lessonPlansAPI = {
+  list: async (filters = {}) => (await api.get(`lesson_plans.php?${qs(filters)}`)).data,
+  save: async (data) => (await api.post('lesson_plans.php', data)).data,
+  review: async (id, decision, comment) => (await api.post('lesson_plans.php?action=review', { id, decision, comment })).data,
+  seen: async (id) => (await api.post('lesson_plans.php?action=seen', { id })).data,
+  newCount: async () => (await api.get('lesson_plans.php?view=new_count')).data,
+  remove: async (id) => (await api.delete(`lesson_plans.php?${qs({ id })}`)).data
 };
 
-export const timetablePDFAPI = {
-  exportClass: async (data) => {
-    const response = await api.get(`timetable_pdf.php?action=class&academic_session_id=${data.academic_session_id}&class_id=${data.class_id}`);
-    return response.data;
-  },
+export const teacherPortalAPI = {
+  view: async (view, params = {}) => (await api.get(`teacher_portal.php?${qs({ view, ...params })}`)).data,
+  requestLeave: async (data) => (await api.post('teacher_portal.php?action=leave', data)).data,
+  cancelLeave: async (id) => (await api.post('teacher_portal.php?action=cancel-leave', { id })).data
+};
 
-  exportTeacher: async (data) => {
-    const response = await api.get(`timetable_pdf.php?action=teacher&academic_session_id=${data.academic_session_id}&teacher_id=${data.teacher_id}`);
-    return response.data;
-  },
+export const academicCalendarAPI = {
+  get: async () => (await api.get('academic_calendar.php')).data,
+  preview: async () => (await api.get('academic_calendar.php?action=preview')).data,
+  close: async (data) => (await api.post('academic_calendar.php?action=close', data)).data,
+  open: async (sessionId) => (await api.post('academic_calendar.php?action=open', { session_id: sessionId })).data,
+  compulsory: async () => (await api.get('academic_calendar.php?action=compulsory')).data,
+  saveCompulsory: async (data) => (await api.post('academic_calendar.php?action=compulsory', data)).data
+};
 
-  exportRoom: async (data) => {
-    const response = await api.get(`timetable_pdf.php?action=room&academic_session_id=${data.academic_session_id}&room_id=${data.room_id}`);
-    return response.data;
-  },
+export const studentAcademicsAPI = {
+  subjects: async (id) => (await api.get(`student_academics.php?${qs({ action: 'subjects', id })}`)).data,
+  saveSubjects: async (studentId, subjectIds) => (await api.post('student_academics.php?action=subjects', { student_id: studentId, subject_ids: subjectIds })).data,
+  awaiting: async (q = '') => (await api.get(`student_academics.php?${qs({ action: 'awaiting', q })}`)).data,
+  admitALevel: async (data) => (await api.post('student_academics.php?action=admit-a-level', data)).data
+};
 
-  exportMaster: async (data) => {
-    const response = await api.get(`timetable_pdf.php?action=master&academic_session_id=${data.academic_session_id}`);
-    return response.data;
-  }
+export const curriculumAPI = {
+  list: async (filters = {}) => (await api.get(`curriculum.php?${qs(filters)}`)).data,
+  summary: async () => (await api.get('curriculum.php?action=summary')).data,
+  forClass: async (classId, subjectId, term) => (await api.get(`curriculum.php?${qs({ action: 'for-class', class_id: classId, subject_id: subjectId, term })}`)).data,
+  save: async (data) => (await api.post('curriculum.php', data)).data,
+  remove: async (id) => (await api.delete(`curriculum.php?${qs({ id })}`)).data,
+  reimport: async () => (await api.post('curriculum.php?action=import', {})).data
 };
 
 export default api;
