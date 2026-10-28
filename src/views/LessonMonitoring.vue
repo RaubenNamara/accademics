@@ -60,189 +60,114 @@
     <Teleport to="body">
       <div
         v-if="showReports"
-        class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 backdrop-blur-sm sm:items-center sm:p-4"
+        class="fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/60 backdrop-blur-sm sm:items-center sm:p-4"
         @click.self="showReports = false"
       >
         <div
-          class="flex h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-2xl"
+          class="flex h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-auto sm:max-h-[92vh] sm:rounded-2xl"
           role="dialog"
           aria-modal="true"
           aria-labelledby="reports-title"
         >
           <!-- Header -->
-          <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-4 py-4 sm:px-6">
-            <div class="min-w-0">
-              <div class="text-[11px] font-bold uppercase tracking-wider text-brand-600">Lesson Monitoring</div>
-              <h2 id="reports-title" class="text-lg font-extrabold text-slate-900 sm:text-xl">Reports</h2>
-              <p class="mt-0.5 text-xs text-slate-500">{{ reportScope }}</p>
+          <header class="flex items-start gap-3 px-5 pb-3 pt-5 sm:px-6">
+            <span class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-100"><BarChart3 class="h-5 w-5" /></span>
+            <div class="min-w-0 flex-1">
+              <h2 id="reports-title" class="text-lg font-bold text-slate-900">Lesson Monitoring Reports</h2>
+              <div class="mt-1 flex flex-wrap gap-1.5">
+                <span v-for="chip in reportScopeChips" :key="chip" class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600">{{ chip }}</span>
+              </div>
             </div>
-            <button
-              type="button"
-              @click="showReports = false"
-              class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
-              aria-label="Close reports"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+            <button type="button" class="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Close reports" @click="showReports = false"><X class="h-5 w-5" /></button>
+          </header>
 
-          <!-- Report type tabs -->
-          <div class="border-b border-slate-100 px-4 py-3 sm:px-6">
-            <div class="grid grid-cols-2 gap-2 lg:grid-cols-4">
+          <!-- Which report: one segmented control -->
+          <div class="px-5 pb-4 sm:px-6">
+            <div class="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 lg:grid-cols-4" role="tablist" aria-label="Report">
               <button
                 v-for="(cfg, key) in reportConfig"
                 :key="key"
                 type="button"
+                role="tab"
+                :aria-selected="reportType === key"
+                class="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition"
+                :class="reportType === key ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-800'"
                 @click="reportType = key"
-                class="flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition"
-                :class="reportType === key
-                  ? (cfg.tone === 'rose' ? 'border-rose-300 bg-rose-50 ring-1 ring-rose-200' : 'border-emerald-300 bg-emerald-50 ring-1 ring-emerald-200')
-                  : 'border-slate-200 bg-white hover:bg-slate-50'"
               >
-                <span
-                  class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-sm"
-                  :class="cfg.tone === 'rose' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'"
-                >
-                  <i :class="cfg.icon"></i>
-                </span>
-                <span class="min-w-0">
-                  <span class="block truncate text-xs font-bold text-slate-900 sm:text-sm">{{ cfg.tab }}</span>
-                  <span class="block truncate text-[11px] text-slate-500">{{ cfg.tabSub }}</span>
-                </span>
+                <component :is="cfg.tone === 'rose' ? TrendingDown : TrendingUp" class="h-4 w-4" :class="cfg.tone === 'rose' ? 'text-rose-500' : 'text-emerald-500'" />
+                <span class="truncate">{{ cfg.tab }} <span class="font-normal text-slate-400">· {{ cfg.tabSub.toLowerCase() }}</span></span>
               </button>
             </div>
           </div>
 
           <!-- Body -->
-          <div class="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
-            <div class="mb-4 flex flex-wrap items-end justify-between gap-2">
-              <div>
-                <h3 class="text-base font-extrabold text-slate-900">{{ activeReport.title }}</h3>
-                <p class="text-xs text-slate-500">{{ activeReport.description }}</p>
-              </div>
-              <div v-if="reportRows.length" class="flex flex-wrap gap-2 text-xs">
-                <span class="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700">
-                  {{ reportRows.length }} {{ activeReport.entityPlural }}
-                </span>
-                <span class="rounded-full bg-rose-50 px-2.5 py-1 font-semibold text-rose-700">
-                  {{ formatMinutes(reportTotals.minutes) }} lost
-                </span>
-                <span class="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700">
-                  {{ reportTotals.lessons.toLocaleString() }} lessons
-                </span>
-              </div>
+          <div class="min-h-0 flex-1 overflow-y-auto border-t border-slate-100 bg-slate-50/60 px-5 py-5 sm:px-6">
+            <div class="mb-4">
+              <h3 class="text-base font-bold text-slate-900">{{ activeReport.title }}</h3>
+              <p class="text-xs text-slate-500">{{ activeReport.description }}</p>
             </div>
 
             <template v-if="reportRows.length">
-              <!-- Desktop / tablet table -->
-              <div class="hidden overflow-hidden rounded-2xl border border-slate-200 md:block">
-                <table class="w-full text-sm">
-                  <thead class="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th class="w-12 px-4 py-2.5">#</th>
-                      <th class="px-4 py-2.5">{{ activeReport.entity }}</th>
-                      <th class="w-56 px-4 py-2.5">Time lost</th>
-                      <th class="w-20 px-4 py-2.5 text-right">Lessons</th>
-                      <th class="w-32 px-4 py-2.5 text-right">{{ activeReport.metricLabel }}</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-100">
-                    <tr v-for="row in reportRows" :key="row.key" class="align-top hover:bg-slate-50">
-                      <td class="px-4 py-3">
-                        <span
-                          class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold"
-                          :class="row.rank <= 3 ? (activeReport.tone === 'rose' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white') : 'bg-slate-100 text-slate-600'"
-                        >{{ row.rank }}</span>
-                      </td>
-                      <td class="px-4 py-3">
-                        <div class="font-bold text-slate-900">{{ row.name }}</div>
-                        <div class="text-xs text-slate-500">{{ row.sub }}</div>
-                        <div v-if="row.notes" class="mt-1 text-[11px] leading-snug text-slate-400">{{ row.notes }}</div>
-                      </td>
-                      <td class="px-4 py-3">
-                        <div class="font-extrabold" :class="activeReport.tone === 'rose' ? 'text-rose-600' : 'text-emerald-600'">
-                          {{ formatMinutes(row.minutes) }}
-                        </div>
-                        <div class="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                          <div
-                            class="h-full rounded-full"
-                            :class="activeReport.tone === 'rose' ? 'bg-rose-400' : 'bg-emerald-400'"
-                            :style="{ width: `${reportBarPct(row)}%` }"
-                          ></div>
-                        </div>
-                      </td>
-                      <td class="px-4 py-3 text-right font-semibold text-slate-700">{{ row.lessons }}</td>
-                      <td class="px-4 py-3 text-right font-semibold text-slate-700">{{ row.metric }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <!-- Summary -->
+              <div class="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                <div v-for="k in reportKpis" :key="k.label" class="rounded-xl bg-white px-3.5 py-2.5 ring-1 ring-slate-200">
+                  <p class="text-[11px] font-medium text-slate-500">{{ k.label }}</p>
+                  <p class="text-lg font-bold tabular-nums" :class="k.accent ? tone.text : 'text-slate-900'">{{ k.value }}</p>
+                </div>
               </div>
 
-              <!-- Phone cards -->
-              <ol class="space-y-2 md:hidden">
-                <li v-for="row in reportRows" :key="row.key" class="rounded-xl border border-slate-200 p-3">
-                  <div class="flex items-start gap-3">
-                    <span
-                      class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold"
-                      :class="row.rank <= 3 ? (activeReport.tone === 'rose' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white') : 'bg-slate-100 text-slate-600'"
-                    >{{ row.rank }}</span>
+              <!-- Top three -->
+              <div class="mb-3 grid gap-2.5 sm:grid-cols-3">
+                <div v-for="row in reportRows.slice(0, 3)" :key="row.key" class="relative overflow-hidden rounded-xl bg-white p-3.5 ring-1 ring-slate-200">
+                  <span class="absolute inset-x-0 top-0 h-1" :class="tone.bar"></span>
+                  <div class="flex items-start gap-2.5">
+                    <span class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" :class="tone.solid">{{ row.rank }}</span>
                     <div class="min-w-0 flex-1">
-                      <div class="flex items-start justify-between gap-2">
-                        <div class="min-w-0">
-                          <div class="font-bold text-slate-900">{{ row.name }}</div>
-                          <div class="text-xs text-slate-500">{{ row.sub }} · {{ row.lessons }} lessons</div>
-                        </div>
-                        <div class="whitespace-nowrap text-right">
-                          <div class="text-sm font-extrabold" :class="activeReport.tone === 'rose' ? 'text-rose-600' : 'text-emerald-600'">
-                            {{ formatMinutes(row.minutes) }}
-                          </div>
-                          <div class="text-[11px] text-slate-500">{{ row.metric }}</div>
-                        </div>
-                      </div>
-                      <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          class="h-full rounded-full"
-                          :class="activeReport.tone === 'rose' ? 'bg-rose-400' : 'bg-emerald-400'"
-                          :style="{ width: `${reportBarPct(row)}%` }"
-                        ></div>
-                      </div>
-                      <div v-if="row.notes" class="mt-1.5 text-[11px] leading-snug text-slate-400">{{ row.notes }}</div>
+                      <p class="truncate text-sm font-semibold text-slate-900">{{ row.name }}</p>
+                      <p class="truncate text-[11px] text-slate-500">{{ row.sub }} · {{ row.lessons }} lessons</p>
                     </div>
                   </div>
+                  <div class="mt-3 flex items-end justify-between gap-2">
+                    <p class="text-xl font-bold tabular-nums" :class="tone.text">{{ formatMinutes(row.minutes) }}</p>
+                    <p class="text-[11px] text-slate-500">{{ activeReport.metricLabel }}: <strong class="text-slate-800">{{ row.metric }}</strong></p>
+                  </div>
+                  <div class="mt-1.5 h-1 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full" :class="tone.bar" :style="{ width: `${reportBarPct(row)}%` }"></div></div>
+                  <p v-if="row.notes" class="mt-2 line-clamp-2 text-[11px] leading-snug text-slate-500">{{ row.notes }}</p>
+                </div>
+              </div>
+
+              <!-- The rest -->
+              <ol v-if="reportRows.length > 3" class="divide-y divide-slate-100 overflow-hidden rounded-xl bg-white ring-1 ring-slate-200">
+                <li v-for="row in reportRows.slice(3)" :key="row.key" class="grid grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-3.5 py-2.5 sm:grid-cols-[1.75rem_minmax(0,1fr)_11rem_4rem_5rem]">
+                  <span class="text-xs font-semibold tabular-nums text-slate-400">{{ row.rank }}</span>
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-medium text-slate-900">{{ row.name }}</p>
+                    <p class="truncate text-[11px] text-slate-500">{{ row.sub }}<span v-if="row.notes"> · {{ row.notes }}</span></p>
+                  </div>
+                  <div class="text-right sm:text-left">
+                    <p class="text-sm font-semibold tabular-nums" :class="tone.text">{{ formatMinutes(row.minutes) }}</p>
+                    <div class="mt-1 hidden h-1 overflow-hidden rounded-full bg-slate-100 sm:block"><div class="h-full rounded-full" :class="tone.barSoft" :style="{ width: `${reportBarPct(row)}%` }"></div></div>
+                  </div>
+                  <p class="hidden text-right text-xs tabular-nums text-slate-600 sm:block">{{ row.lessons }}<span class="block text-[10px] text-slate-400">lessons</span></p>
+                  <p class="hidden text-right text-xs tabular-nums text-slate-600 sm:block">{{ row.metric }}<span class="block text-[10px] text-slate-400">{{ activeReport.metricShort }}</span></p>
                 </li>
               </ol>
             </template>
 
-            <div v-else class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center">
-              <div class="text-sm font-semibold text-slate-700">No data for this report</div>
-              <div class="mt-1 text-xs text-slate-500">{{ activeReport.emptyHint }}</div>
+            <div v-else class="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center">
+              <BarChart3 class="mx-auto h-8 w-8 text-slate-300" />
+              <p class="mt-2 text-sm font-medium text-slate-700">No data for this report</p>
+              <p class="mt-0.5 text-xs text-slate-500">{{ activeReport.emptyHint }}</p>
             </div>
           </div>
 
           <!-- Footer -->
-          <div class="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:px-6">
-            <span class="hidden text-xs text-slate-500 sm:block">PDF includes the summary and the full ranked table.</span>
-            <div class="ml-auto flex gap-2">
-              <button
-                type="button"
-                @click="showReports = false"
-                class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                @click="printReport"
-                :disabled="reportRows.length === 0"
-                class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <i class="fas fa-file-pdf"></i>
-                Download PDF
-              </button>
-            </div>
-          </div>
+          <footer class="flex items-center justify-end gap-2 border-t border-slate-100 px-5 py-3 sm:px-6">
+            <button type="button" class="btn-secondary" @click="showReports = false">Close</button>
+            <button type="button" class="btn-primary" :disabled="reportRows.length === 0 || pdfBusy" @click="printReport">
+              <Download class="h-4 w-4" />{{ pdfBusy ? 'Preparing…' : 'Download PDF' }}
+            </button>
+          </footer>
         </div>
       </div>
     </Teleport>
@@ -1015,11 +940,11 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
-import { lessonMonitoringAPI, teachersAPI, classesAPI, subjectsNewAPI, lessonCompensationsAPI } from '../services/api';
+import { schoolSettingsAPI, lessonMonitoringAPI, teachersAPI, classesAPI, subjectsNewAPI, lessonCompensationsAPI } from '../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useGlobalTerm } from '../composables/useGlobalTerm.js';
-import { Plus, RefreshCw, BarChart3, ClipboardList, Pencil, Trash2, Eye, PlusCircle, Hourglass, RotateCcw, ListChecks, AlarmClock, ChevronsUpDown, ChevronDown, Clock, X, Search, Check } from 'lucide-vue-next';
+import { Plus, RefreshCw, BarChart3, ClipboardList, Pencil, Trash2, Eye, PlusCircle, Hourglass, RotateCcw, ListChecks, AlarmClock, ChevronsUpDown, ChevronDown, Clock, X, Search, Check, Download, TrendingDown, TrendingUp } from 'lucide-vue-next';
 import PagerBar from '../components/ui/PagerBar.vue';
 import StatCards from '../components/ui/StatCards.vue';
 import ListToolbar from '../components/ui/ListToolbar.vue';
@@ -1585,6 +1510,7 @@ const reportConfig = {
     entity: 'Teacher',
     entityPlural: 'teachers',
     metricLabel: '≈ Single lessons',
+    metricShort: 'single lessons',
     emptyHint: 'No lessons match the current filters.'
   },
   'few-teachers': {
@@ -1597,6 +1523,7 @@ const reportConfig = {
     entity: 'Teacher',
     entityPlural: 'teachers',
     metricLabel: 'Time kept',
+    metricShort: 'time kept',
     emptyHint: 'No teacher has 10 or more lessons under the current filters.'
   },
   'top-classes': {
@@ -1609,6 +1536,7 @@ const reportConfig = {
     entity: 'Class',
     entityPlural: 'classes',
     metricLabel: '≈ Single lessons',
+    metricShort: 'single lessons',
     emptyHint: 'No lessons match the current filters.'
   },
   'few-classes': {
@@ -1621,6 +1549,7 @@ const reportConfig = {
     entity: 'Class',
     entityPlural: 'classes',
     metricLabel: '≈ Single lessons',
+    metricShort: 'single lessons',
     emptyHint: 'No lessons match the current filters.'
   }
 };
@@ -1716,115 +1645,174 @@ onUnmounted(() => {
   window.removeEventListener('keydown', onReportsKeydown);
 });
 
-const printReport = () => {
+// Colours of the open report: red tones for "most time lost", green for "least".
+const tone = computed(() => (activeReport.value.tone === 'rose'
+  ? { text: 'text-rose-600', bar: 'bg-rose-500', barSoft: 'bg-rose-300', solid: 'bg-rose-600' }
+  : { text: 'text-emerald-600', bar: 'bg-emerald-500', barSoft: 'bg-emerald-300', solid: 'bg-emerald-600' }));
+const reportScopeChips = computed(() => reportScope.value.split(' · '));
+const reportKpis = computed(() => {
+  const t = reportTotals.value;
+  return [
+    { label: 'Time lost', value: formatMinutes(t.minutes), accent: true },
+    { label: 'Lessons', value: t.lessons.toLocaleString() },
+    { label: `${activeReport.value.entityPlural[0].toUpperCase()}${activeReport.value.entityPlural.slice(1)} listed`, value: String(reportRows.value.length) },
+    { label: 'Average lost a lesson', value: `${t.lessons ? (t.minutes / t.lessons).toFixed(1) : '0'} min` },
+  ];
+});
+
+// School name and logo for the PDF header (from Report Settings), fetched once.
+let reportBranding = null;
+const pdfBusy = ref(false);
+
+const printReport = async () => {
   const rows = reportRows.value;
   if (rows.length === 0) return;
+  pdfBusy.value = true;
+  try {
+    reportBranding ??= await schoolSettingsAPI.get().then((r) => r.data).catch(() => ({}));
+  } finally {
+    pdfBusy.value = false;
+  }
+  const schoolName = reportBranding?.school_name || "St. Mark's College Namagoma";
 
   const cfg = activeReport.value;
   const accent = cfg.tone === 'rose' ? [225, 29, 72] : [5, 150, 105];
-  const accentSoft = cfg.tone === 'rose' ? [255, 228, 230] : [209, 250, 229];
+  const accentSoft = cfg.tone === 'rose' ? [255, 241, 242] : [236, 253, 245];
+  const brand = [22, 163, 74];
   const ink = [15, 23, 42];
   const muted = [100, 116, 139];
+  const faint = [148, 163, 184];
   const line = [226, 232, 240];
 
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const margin = 14;
+  const M = 14;
 
-  // Header band
-  doc.setFillColor(...ink);
-  doc.rect(0, 0, pageW, 34, 'F');
-  doc.setFillColor(...accent);
-  doc.rect(0, 34, pageW, 1.2, 'F');
-
-  doc.setTextColor(148, 163, 184);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.text('LESSON MONITORING REPORT', margin, 12);
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(16);
-  doc.text(cfg.title, margin, 21);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(203, 213, 225);
-  doc.text(reportScope.value, margin, 28);
-
-  const generated = new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  doc.setFontSize(8);
-  doc.text(`Generated ${generated}`, pageW - margin, 12, { align: 'right' });
-
-  // Summary cards
-  const cards = [
-    { label: 'TIME LOST', value: formatMinutes(reportTotals.value.minutes), color: accent },
-    { label: 'LESSONS', value: reportTotals.value.lessons.toLocaleString(), color: ink },
-    { label: cfg.entityPlural.toUpperCase() + ' LISTED', value: String(rows.length), color: ink },
-    {
-      label: 'AVG LOST / LESSON',
-      value: `${reportTotals.value.lessons ? (reportTotals.value.minutes / reportTotals.value.lessons).toFixed(1) : '0'} min`,
-      color: ink
+  // Brand strip, then the school (logo + name) and when it was made.
+  doc.setFillColor(...brand);
+  doc.rect(0, 0, pageW, 2.5, 'F');
+  let textX = M;
+  if (reportBranding?.logo) {
+    try {
+      const p = doc.getImageProperties(reportBranding.logo);
+      const h = 13;
+      const w = Math.min(26, (p.width / p.height) * h);
+      doc.addImage(reportBranding.logo, p.fileType || 'PNG', M, 9, w, h);
+      textX = M + w + 4;
+    } catch {
+      /* an unreadable logo should not stop the report */
     }
-  ];
-  const gap = 4;
-  const cardW = (pageW - margin * 2 - gap * (cards.length - 1)) / cards.length;
-  const cardY = 42;
-  cards.forEach((c, i) => {
-    const x = margin + i * (cardW + gap);
-    doc.setDrawColor(...line);
-    doc.setFillColor(248, 250, 252);
-    doc.roundedRect(x, cardY, cardW, 18, 2.5, 2.5, 'FD');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.setTextColor(...muted);
-    doc.text(c.label, x + 4, cardY + 6);
-    doc.setFontSize(13);
-    doc.setTextColor(...c.color);
-    doc.text(c.value, x + 4, cardY + 14);
-  });
+  }
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(...ink);
+  doc.text(schoolName.toUpperCase(), textX, 14.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...muted);
+  doc.text('Lesson Monitoring Report', textX, 19.5);
+  const generated = new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  doc.text(`Generated ${generated}`, pageW - M, 14.5, { align: 'right' });
 
-  // Section heading
+  // Title block
+  doc.setDrawColor(...line);
+  doc.line(M, 26, pageW - M, 26);
+  doc.setFillColor(...accent);
+  doc.roundedRect(M, 31.5, 1.6, 12, 0.8, 0.8, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(17);
+  doc.setTextColor(...ink);
+  doc.text(cfg.title, M + 5, 37);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(...muted);
-  doc.text(cfg.description, margin, cardY + 26);
+  doc.text(`${reportScope.value}  ·  ${cfg.description}`, M + 5, 43, { maxWidth: pageW - M * 2 - 5 });
 
-  const barCol = 3;
+  // Summary cards
+  const gap = 4;
+  const cardY = 50;
+  const cardH = 19;
+  const cardW = (pageW - M * 2 - gap * 3) / 4;
+  reportKpis.value.forEach((k, i) => {
+    const x = M + i * (cardW + gap);
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...line);
+    doc.roundedRect(x, cardY, cardW, cardH, 2.5, 2.5, 'FD');
+    doc.setFillColor(...(k.accent ? accent : line));
+    doc.roundedRect(x + 3, cardY, cardW - 6, 1, 0.5, 0.5, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...muted);
+    doc.text(k.label, x + 4, cardY + 7);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13.5);
+    doc.setTextColor(...(k.accent ? accent : ink));
+    doc.text(k.value, x + 4, cardY + 14.5);
+  });
+
+  // Ranked table: light header, thin dividers, rank badge, name over details, a bar for the minutes.
+  const metricHead = cfg.metricLabel.replace('≈ ', '~ ');
+  // Long lists (every teacher of a class) are cut to the first few, so rows stay compact.
+  const shortNotes = (notes) => {
+    if (!notes) return '';
+    const [lead, list] = notes.startsWith('Most lost: ') ? ['Most lost: ', notes.slice(11)] : ['', notes];
+    const items = list.split(', ');
+    return lead + (items.length > 6 ? `${items.slice(0, 6).join(', ')} +${items.length - 6} more` : list);
+  };
+  const pdfRows = rows.map((r) => ({ ...r, notes: shortNotes(r.notes) }));
   autoTable(doc, {
-    startY: cardY + 30,
-    margin: { left: margin, right: margin, bottom: 18 },
-    head: [['#', cfg.entity, 'Time lost', '', 'Lessons', cfg.metricLabel.replace('≈ ', '~ ')]],
-    body: rows.map(r => [
-      r.rank,
+    startY: cardY + cardH + 7,
+    margin: { left: M, right: M, bottom: 18, top: 16 },
+    head: [['#', cfg.entity, 'Time lost', '', 'Lessons', metricHead]],
+    body: pdfRows.map((r) => [
+      { content: '', raw: r },
       { content: r.notes ? `${r.name}\n${r.sub}\n${r.notes}` : `${r.name}\n${r.sub}`, raw: r },
       formatMinutes(r.minutes),
       { content: '', raw: r },
       r.lessons,
-      r.metric
+      r.metric,
     ]),
     theme: 'plain',
     rowPageBreak: 'avoid',
-    styles: { font: 'helvetica', fontSize: 8.5, textColor: ink, cellPadding: { top: 3, bottom: 3, left: 2.5, right: 2.5 }, valign: 'middle' },
-    headStyles: { fillColor: accentSoft, textColor: accent, fontStyle: 'bold', fontSize: 8 },
-    alternateRowStyles: { fillColor: [248, 250, 252] },
+    styles: { font: 'helvetica', fontSize: 8.5, textColor: ink, cellPadding: { top: 3.2, bottom: 3.2, left: 2.5, right: 2.5 }, valign: 'middle' },
+    headStyles: { textColor: muted, fontStyle: 'bold', fontSize: 7.5, fillColor: accentSoft },
     columnStyles: {
-      0: { cellWidth: 10, halign: 'center', fontStyle: 'bold' },
-      1: { cellWidth: 'auto' },
+      0: { cellWidth: 11 },
+      1: { cellWidth: 'auto', fontSize: 7.6 }, // measured at the size it is drawn
       2: { cellWidth: 22, halign: 'right', fontStyle: 'bold', textColor: accent },
       3: { cellWidth: 30 },
       4: { cellWidth: 17, halign: 'right' },
-      5: { cellWidth: 26, halign: 'right' }
+      5: { cellWidth: 26, halign: 'right' },
     },
-    // Name in bold, the class/teacher line and notes muted underneath
     willDrawCell: (data) => {
       if (data.section === 'body' && data.column.index === 1) data.cell.text = [];
     },
     didDrawCell: (data) => {
-      if (data.section !== 'body') return;
       const { cell } = data;
+      if (data.section === 'head' && data.column.index === 0) {
+        // the header row's bottom rule
+        doc.setDrawColor(...accent);
+        doc.setLineWidth(0.3);
+        doc.line(M, cell.y + cell.height, pageW - M, cell.y + cell.height);
+      }
+      if (data.section !== 'body') return;
+      const r = cell.raw?.raw;
+      if (data.column.index === 0) {
+        doc.setDrawColor(...line);
+        doc.setLineWidth(0.2);
+        doc.line(M, cell.y + cell.height, pageW - M, cell.y + cell.height);
+        const cx = cell.x + cell.width / 2;
+        const cy = cell.y + cell.height / 2;
+        const top = r.rank <= 3;
+        doc.setFillColor(...(top ? accent : [241, 245, 249]));
+        doc.circle(cx, cy, 3.1, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(...(top ? [255, 255, 255] : muted));
+        doc.text(String(r.rank), cx, cy + 1.05, { align: 'center' });
+      }
       if (data.column.index === 1) {
-        const r = cell.raw.raw;
         const x = cell.x + 2.5;
         let y = cell.y + 5;
         doc.setFont('helvetica', 'bold');
@@ -1837,13 +1825,11 @@ const printReport = () => {
         doc.setTextColor(...muted);
         doc.text(r.sub, x, y);
         if (r.notes) {
-          const wrapped = doc.splitTextToSize(r.notes, cell.width - 5);
-          doc.setTextColor(148, 163, 184);
-          doc.text(wrapped, x, y + 3.6);
+          doc.setTextColor(...faint);
+          doc.text(doc.splitTextToSize(r.notes, cell.width - 5), x, y + 3.6);
         }
       }
-      if (data.column.index === barCol) {
-        const r = cell.raw.raw;
+      if (data.column.index === 3) {
         const w = cell.width - 5;
         const y = cell.y + cell.height / 2 - 1;
         doc.setFillColor(...line);
@@ -1854,29 +1840,29 @@ const printReport = () => {
           doc.roundedRect(cell.x + 2.5, y, Math.max(2, w * pct), 2, 1, 1, 'F');
         }
       }
-      if (data.column.index === 0 && data.cell.raw <= 3) {
-        // Top three get an accent rank dot
-        doc.setFillColor(...accent);
-        doc.circle(cell.x + cell.width / 2, cell.y + cell.height / 2, 3, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8);
-        doc.text(String(cell.raw), cell.x + cell.width / 2, cell.y + cell.height / 2 + 1, { align: 'center' });
-      }
-    }
+    },
   });
 
-  // Footer on every page
+  // Footer on every page; later pages also repeat a slim header.
   const pages = doc.internal.getNumberOfPages();
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p);
+    if (p > 1) {
+      doc.setFillColor(...brand);
+      doc.rect(0, 0, pageW, 2.5, 'F');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...muted);
+      doc.text(`${cfg.title} · ${reportScope.value}`, M, 9);
+    }
     doc.setDrawColor(...line);
-    doc.line(margin, pageH - 12, pageW - margin, pageH - 12);
+    doc.setLineWidth(0.2);
+    doc.line(M, pageH - 12, pageW - M, pageH - 12);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(...muted);
-    doc.text('School HR System · Lesson Monitoring', margin, pageH - 7);
-    doc.text(`Page ${p} of ${pages}`, pageW - margin, pageH - 7, { align: 'right' });
+    doc.text(`Skool Monitor · ${schoolName}`, M, pageH - 7);
+    doc.text(`Page ${p} of ${pages}`, pageW - M, pageH - 7, { align: 'right' });
   }
 
   const termPart = filterTerm.value ? `term-${filterTerm.value}` : 'all-terms';
