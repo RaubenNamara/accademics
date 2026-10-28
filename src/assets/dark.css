@@ -81,7 +81,8 @@ html.dark .hover\:border-gray-300:hover, html.dark .hover\:border-slate-300:hove
 
 /* ---------- Brand (green) tints ---------- */
 html.dark .bg-brand-50, html.dark .bg-green-50,
-html.dark [class~="bg-brand-50/60"], html.dark [class~="bg-brand-50/50"] { background-color: rgba(16, 185, 129, 0.1); }
+html.dark [class~="bg-brand-50/70"], html.dark [class~="bg-brand-50/60"], html.dark [class~="bg-brand-50/50"] { background-color: rgba(16, 185, 129, 0.1); }
+html.dark [class~="hover:bg-gray-50/70"]:hover, html.dark [class~="hover:bg-gray-50/60"]:hover { background-color: var(--d-hover); }
 html.dark .bg-brand-100, html.dark .bg-green-100 { background-color: rgba(16, 185, 129, 0.17); }
 html.dark .hover\:bg-brand-50:hover, html.dark [class~="hover:bg-brand-50/40"]:hover,
 html.dark [class~="hover:bg-brand-50/50"]:hover, html.dark [class~="hover:bg-brand-50/30"]:hover { background-color: rgba(16, 185, 129, 0.09); }
@@ -190,3 +191,7 @@ html.dark .a4-sheet * { color: #111827 !important; border-color: #9ca3af !import
 html.dark .a4-sheet [class*="bg-"] { background-color: transparent !important; }
 html.dark .a4-sheet th, html.dark .a4-sheet thead, html.dark .a4-sheet .bg-gray-50, html.dark .a4-sheet .bg-slate-50 { background-color: #f3f4f6 !important; }
 html.dark .a4-sheet .text-gray-500, html.dark .a4-sheet .text-gray-400, html.dark .a4-sheet .italic { color: #4b5563 !important; }
+html.dark [class~="bg-sky-50/60"] { background-color: rgba(56, 189, 248, 0.08); }
+html.dark [class~="bg-violet-50/60"] { background-color: rgba(167, 139, 250, 0.08); }
+html.dark .bg-violet-100 { background-color: rgba(167, 139, 250, 0.2); }
+html.dark .text-violet-800 { color: #c4b5fd; }

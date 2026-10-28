@@ -3,8 +3,9 @@
  * Academic calendar (open / close terms and years), year-end promotion, A-Level entry and the
  * subjects each student offers.
  *
- * A term is "open" when academic_sessions.is_active = 1 (only one at a time), "closed" when
- * is_archived = 1, otherwise "upcoming". Closing the open term opens the next one; closing Term 3
+ * A term is "open" when academic_sessions.is_active = 1 (the current term, only one at a time),
+ * "reopened" when a closed term has been opened again for data entry (reopened_at set, is_archived = 0;
+ * the current term stays open), "closed" when is_archived = 1, otherwise "upcoming". Closing the open term opens the next one; closing Term 3
  * closes the year: students move up a class in the same stream, S.4 become "completed_o_level"
  * (kept, greyed, until admitted to S.5) and S.6 become "completed_a_level".
  */
@@ -33,7 +34,7 @@ function ac_ensure_schema(PDO $db): void
     sf_ensure_schema($db);
     $ready = tt_column_exists($db, 'students', 'status') && tt_table_exists($db, 'student_subjects')
         && tt_table_exists($db, 'student_promotions') && tt_column_exists($db, 'report_settings', 'compulsory_subjects') && tt_column_exists($db, 'report_settings', 'offered_subjects')
-        && tt_column_exists($db, 'academic_sessions', 'closed_at');
+        && tt_column_exists($db, 'academic_sessions', 'closed_at') && tt_column_exists($db, 'academic_sessions', 'reopened_at');
     if (!$ready) {
         ac_run_migration($db);
     }
@@ -53,6 +54,10 @@ function ac_run_migration(PDO $db, ?callable $log = null): void
     if (!tt_column_exists($db, 'academic_sessions', 'closed_at')) {
         $db->exec('ALTER TABLE academic_sessions ADD COLUMN closed_at DATETIME NULL, ADD COLUMN closed_by VARCHAR(150) NULL');
         $log('academic_sessions.closed_at / closed_by added');
+    }
+    if (!tt_column_exists($db, 'academic_sessions', 'reopened_at')) {
+        $db->exec('ALTER TABLE academic_sessions ADD COLUMN reopened_at DATETIME NULL, ADD COLUMN reopened_by VARCHAR(150) NULL');
+        $log('academic_sessions.reopened_at / reopened_by added');
     }
     if (!tt_column_exists($db, 'report_settings', 'compulsory_subjects')) {
         $db->exec('ALTER TABLE report_settings ADD COLUMN compulsory_subjects LONGTEXT NULL');
@@ -101,7 +106,10 @@ function ac_session_status(array $s): string
     if ((int)$s['is_active'] === 1) {
         return 'open';
     }
-    return (int)$s['is_archived'] === 1 ? 'closed' : 'upcoming';
+    if ((int)$s['is_archived'] === 1) {
+        return 'closed';
+    }
+    return !empty($s['reopened_at']) ? 'reopened' : 'upcoming';
 }
 
 function ac_open_session(PDO $db): ?array
@@ -150,6 +158,60 @@ function ac_calendar(PDO $db): array
     return ['open' => $open, 'next' => $next, 'years' => array_map(fn($y, $terms) => ['year' => $y, 'terms' => $terms], array_keys($years), $years)];
 }
 
+/** True once a year's students have been moved up (closing its Term 3 the first time). */
+function ac_year_promoted(PDO $db, int $year): bool
+{
+    try {
+        $q = $db->prepare("SELECT 1 FROM student_promotions WHERE academic_year = :y AND action = 'year_end' LIMIT 1");
+        $q->execute([':y' => $year]);
+        return (bool)$q->fetchColumn();
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
+/**
+ * Opens a closed term again, alongside the current term, so data can still be entered for it (marks,
+ * exams, assignments…). The current term stays open. Students are not moved; close it again when done.
+ */
+function ac_reopen_term(PDO $db, int $sessionId, string $by): array
+{
+    ac_ensure_schema($db);
+    $q = $db->prepare('SELECT * FROM academic_sessions WHERE id = :id');
+    $q->execute([':id' => $sessionId]);
+    $t = $q->fetch(PDO::FETCH_ASSOC) ?: throw new TtException('Term not found', 404);
+    if (ac_session_status($t) !== 'closed') {
+        throw new TtException('Only a closed term can be reopened', 409);
+    }
+    $db->prepare('UPDATE academic_sessions SET is_archived = 0, reopened_at = NOW(), reopened_by = :by WHERE id = :id')
+        ->execute([':by' => $by, ':id' => $sessionId]);
+    return ['id' => (int)$t['id'], 'academic_year' => (int)$t['academic_year'], 'term' => (int)$t['term']];
+}
+
+/** Closes a reopened term again: its open exams close and nothing more can be entered for it. */
+function ac_close_reopened(PDO $db, int $sessionId, string $by): array
+{
+    ac_ensure_schema($db);
+    $q = $db->prepare('SELECT * FROM academic_sessions WHERE id = :id');
+    $q->execute([':id' => $sessionId]);
+    $t = $q->fetch(PDO::FETCH_ASSOC) ?: throw new TtException('Term not found', 404);
+    if (ac_session_status($t) !== 'reopened') {
+        throw new TtException('That term is not reopened', 409);
+    }
+    $db->beginTransaction();
+    try {
+        $c = $db->prepare("UPDATE exams SET status = 'closed' WHERE academic_session_id = :s AND status = 'open'");
+        $c->execute([':s' => $sessionId]);
+        $db->prepare('UPDATE academic_sessions SET is_archived = 1, reopened_at = NULL, reopened_by = NULL, closed_at = NOW(), closed_by = :by WHERE id = :id')
+            ->execute([':by' => $by, ':id' => $sessionId]);
+        $db->commit();
+    } catch (Throwable $e) {
+        $db->rollBack();
+        throw $e;
+    }
+    return ['id' => (int)$t['id'], 'academic_year' => (int)$t['academic_year'], 'term' => (int)$t['term'], 'exams_closed' => $c->rowCount()];
+}
+
 /** What closing the open term will do, so the admin can check before confirming. */
 function ac_close_preview(PDO $db): array
 {
@@ -158,12 +220,14 @@ function ac_close_preview(PDO $db): array
     $exams = $db->query("SELECT name, status, (SELECT COUNT(*) FROM exam_marks m WHERE m.exam_id = e.id) AS marks FROM exams e WHERE academic_session_id = $sid ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
     $requirements = (int)$db->query("SELECT COUNT(*) FROM lesson_requirements WHERE academic_session_id = $sid")->fetchColumn();
     $yearEnd = (int)$open['term'] === 3;
+    $promoted = $yearEnd && ac_year_promoted($db, (int)$open['academic_year']);
     return [
         'session' => $open,
         'year_end' => $yearEnd,
+        'already_promoted' => $promoted,
         'exams' => $exams,
         'requirements' => $requirements,
-        'promotion' => $yearEnd ? ac_promotion_plan($db) : null,
+        'promotion' => $yearEnd && !$promoted ? ac_promotion_plan($db) : null,
     ];
 }
 
@@ -178,7 +242,8 @@ function ac_close_term(PDO $db, array $opts, string $by): array
     $year = (int)$open['academic_year'];
     $term = (int)$open['term'];
     $yearEnd = $term === 3;
-    if ($yearEnd && trim((string)($opts['confirm'] ?? '')) !== (string)$year) {
+    // Typing the year is asked for only when students will actually be moved up.
+    if ($yearEnd && !ac_year_promoted($db, $year) && trim((string)($opts['confirm'] ?? '')) !== (string)$year) {
         throw new TtException("Type $year to confirm closing the year", 422, ['errors' => ['confirm' => "Type $year to confirm"]]);
     }
     [$ny, $nt] = ac_next_term($year, $term);
@@ -189,7 +254,8 @@ function ac_close_term(PDO $db, array $opts, string $by): array
     if (!$isDate($start) || !$isDate($end) || $end <= $start) {
         throw new TtException('Give the new term a start date and a later end date', 422, ['errors' => ['end_date' => 'End must be after start']]);
     }
-    $plan = $yearEnd ? ac_promotion_plan($db) : null;
+    // Students move up only the first time a year's Term 3 closes (a reopened Term 3 closes without it).
+    $plan = $yearEnd && !ac_year_promoted($db, $year) ? ac_promotion_plan($db) : null;
     if ($plan) {
         foreach ($plan['missing_streams'] as $c) {
             ac_create_class_if_missing($db, $c['class_name'], $c['stream_name']);
@@ -206,7 +272,7 @@ function ac_close_term(PDO $db, array $opts, string $by): array
         $find->execute([':y' => $ny, ':t' => $nt]);
         $nextId = (int)($find->fetchColumn() ?: 0);
         if ($nextId) {
-            $db->prepare('UPDATE academic_sessions SET is_active = 1, is_archived = 0, start_date = :s, end_date = :e WHERE id = :id')
+            $db->prepare('UPDATE academic_sessions SET is_active = 1, is_archived = 0, reopened_at = NULL, reopened_by = NULL, start_date = :s, end_date = :e WHERE id = :id')
                 ->execute([':s' => $start, ':e' => $end, ':id' => $nextId]);
         } else {
             $db->prepare('INSERT INTO academic_sessions (session_name, academic_year, term, start_date, end_date, is_active, is_archived) VALUES (:n, :y, :t, :s, :e, 1, 0)')

@@ -2,7 +2,16 @@
   <div class="page">
     <ToastBanner />
     <div class="page-hero">
-      <h1 class="page-hero-title">Enter Marks</h1>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 class="page-hero-title">Enter Marks</h1>
+        <!-- Only when a past term has been reopened for marks -->
+        <label v-if="terms.length > 1" class="flex items-center gap-2 text-sm text-gray-600">
+          Term
+          <select v-model="termId" class="input w-auto py-2" @change="loadTerm(termId)">
+            <option v-for="t in terms" :key="t.id" :value="t.id">{{ t.academic_year }} Term {{ t.term }}{{ t.current ? ' (current)' : ' (reopened)' }}</option>
+          </select>
+        </label>
+      </div>
     </div>
 
     <div v-if="error" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
@@ -86,11 +95,25 @@ watch(classesForSubject, (list) => {
   if (!list.some((a) => a.class_id === classId.value)) classId.value = list.length === 1 ? list[0].class_id : null;
 });
 
+// The current term, plus earlier terms reopened under Terms & Years (marks can still go in).
+const terms = ref([]);
+const termId = ref(null);
+
+/** Exams of one term and the classes this teacher has in it. */
+async function loadTerm(id) {
+  const me = (await teacherPortalAPI.view('me', id ? { academic_session_id: id } : {})).data;
+  scope.value = me.mark_scope || me.assignments || [];
+  exams.value = me.session.id ? (await examsAPI.list(me.session.id)).data.exams : [];
+  exams.value.sort((a, b) => (a.status === 'open' ? 0 : 1) - (b.status === 'open' ? 0 : 1));
+  examId.value = exams.value.find((e) => e.status === 'open')?.id ?? null;
+  return me;
+}
+
 onMounted(async () => {
   try {
-    const me = (await teacherPortalAPI.view('me')).data;
-    scope.value = me.mark_scope || me.assignments || [];
-    if (me.session.id) exams.value = (await examsAPI.list(me.session.id)).data.exams;
+    const me = await loadTerm(null);
+    termId.value = me.session.id;
+    terms.value = [{ ...me.session, current: true }, ...(me.reopened_sessions || [])];
     // Open exams first; the newest open exam is the likely one.
     exams.value.sort((a, b) => (a.status === 'open' ? 0 : 1) - (b.status === 'open' ? 0 : 1));
     // A link may name the exam (dashboard "Continue"); otherwise the first open one.

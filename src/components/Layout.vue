@@ -125,7 +125,7 @@
                 @change="termStore.select($event.target.value)"
               >
                 <option v-for="s in termStore.state.sessions" :key="s.id" :value="s.id">
-                  {{ termStore.label(s) }}{{ termStore.statusOf(s) === 'open' ? ' · open' : termStore.statusOf(s) === 'closed' ? ' · closed' : '' }}
+                  {{ termStore.label(s) }}{{ { open: ' · open', reopened: ' · reopened', closed: ' · closed' }[termStore.statusOf(s)] || '' }}
                 </option>
               </select>
             </label>
@@ -156,7 +156,8 @@
       <main class="flex-1 px-3 py-3 sm:px-5 sm:py-4 print:p-0">
         <div class="mx-auto w-full max-w-[1920px]" :class="{ 'has-hub': currentHub }">
           <div v-if="!isPortal && termStore.selected.value && !termStore.isViewingOpen.value" class="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
-            <span>You are viewing <strong>{{ termStore.label(termStore.selected.value) }}</strong> ({{ termStore.statusOf(termStore.selected.value) }}). Marks can only be entered in the open term<template v-if="termStore.open.value">, {{ termStore.label(termStore.open.value) }}</template>.</span>
+            <span v-if="termStore.statusOf(termStore.selected.value) === 'reopened'">You are viewing <strong>{{ termStore.label(termStore.selected.value) }}</strong>, reopened for data entry. The current term<template v-if="termStore.open.value">, {{ termStore.label(termStore.open.value) }},</template> stays open.</span>
+            <span v-else>You are viewing <strong>{{ termStore.label(termStore.selected.value) }}</strong> ({{ termStore.statusOf(termStore.selected.value) }}). Marks can only be entered in the open term<template v-if="termStore.open.value">, {{ termStore.label(termStore.open.value) }}</template>.</span>
             <button v-if="termStore.open.value" type="button" class="font-semibold text-amber-900 underline" @click="termStore.reset()">Back to the open term</button>
           </div>
           <div v-if="route.query.denied === '1'" class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">

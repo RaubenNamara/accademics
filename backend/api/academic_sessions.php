@@ -47,17 +47,7 @@ try {
 function getSessions(PDO $db): void
 {
     $sql = "
-        SELECT 
-            id,
-            session_name,
-            academic_year,
-            term,
-            start_date,
-            end_date,
-            is_active,
-            is_archived,
-            created_at,
-            updated_at
+        SELECT *
         FROM academic_sessions
         ORDER BY academic_year DESC, term DESC
     ";

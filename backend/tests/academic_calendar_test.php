@@ -112,6 +112,36 @@ check('every student counted once', array_sum($after) === array_sum($before));
 check('each move is recorded', (int)$one('SELECT COUNT(*) FROM student_promotions') === array_sum($before) && $res['promotion']['promoted'] === array_sum($before) - $s4 - $s6);
 check('levels follow the class (S4→S5 none; S5→S6 A-Level)', (int)$one("SELECT COUNT(*) FROM students WHERE class = 'S6' AND status = 'active' AND level <> 'A-Level'") === 0);
 
+echo "Reopening a closed term (the current term stays open)\n";
+$current = (int)$next['id'];
+$res = ac_reopen_term($db, $sid, 'Test');
+$row = $db->query("SELECT * FROM academic_sessions WHERE id = $sid")->fetch();
+check('a closed term can be reopened', ac_session_status($row) === 'reopened', json_encode($res));
+check('the current term stays open', (int)ac_open_session($db)['id'] === $current && (int)$one("SELECT is_active FROM academic_sessions WHERE id = $current") === 1);
+check('still only one current term', (int)$one('SELECT COUNT(*) FROM academic_sessions WHERE is_active = 1') === 1);
+// The earlier student has since moved up a class, so take someone in a class now.
+$s2a = (int)$one("SELECT id FROM classes WHERE class_name = 'S2' AND stream_name = 'A'");
+$now = (int)sf_class_students($db, $s2a)[0]['id'];
+$db->exec("UPDATE exams SET status = 'open' WHERE id = $examId");
+$saved = sf_save_marks($db, sf_exam($db, $examId), $s2a, 1, [['student_id' => $now, 'marks' => 64]], null);
+check('marks can be entered in the reopened term', $saved['saved'] === 1 && (float)$one("SELECT marks FROM exam_marks WHERE exam_id = $examId AND student_id = $now") === 64.0, json_encode($saved));
+check('only a closed term can be reopened', expectError(fn() => ac_reopen_term($db, $sid, 'Test'), 409) && expectError(fn() => ac_reopen_term($db, $current, 'Test'), 409));
+check('the calendar lists it as reopened', in_array('reopened', array_column(array_merge(...array_column(ac_calendar($db)['years'], 'terms')), 'status'), true));
+
+$res = ac_close_reopened($db, $sid, 'Test');
+check('a reopened term can be closed again', (int)$one("SELECT is_archived FROM academic_sessions WHERE id = $sid") === 1 && $one("SELECT reopened_at FROM academic_sessions WHERE id = $sid") === null);
+check('closing it again closes its open exams', $one("SELECT status FROM exams WHERE id = $examId") === 'closed' && $res['exams_closed'] === 1);
+$db->exec("UPDATE exams SET status = 'open' WHERE id = $examId");
+check('marks are locked again once it is closed', expectError(fn() => sf_save_marks($db, sf_exam($db, $examId), $s2a, 1, [['student_id' => $now, 'marks' => 50]], null), 423));
+check('only a reopened term can be "closed again"', expectError(fn() => ac_close_reopened($db, $sid, 'Test'), 409) && expectError(fn() => ac_close_reopened($db, $current, 'Test'), 409));
+
+$classesBefore = $byClass();
+$movesBefore = (int)$one('SELECT COUNT(*) FROM student_promotions');
+ac_reopen_term($db, (int)$t3['id'], 'Test');
+$res = ac_close_term($db, [], 'Test');
+check('closing the current term still moves on while another term is reopened', (int)ac_open_session($db)['term'] === 2 && (int)$one("SELECT COUNT(*) FROM academic_sessions WHERE id = {$t3['id']} AND is_archived = 0 AND reopened_at IS NOT NULL") === 1);
+check('reopening never moves students', $byClass() === $classesBefore && (int)$one('SELECT COUNT(*) FROM student_promotions') === $movesBefore);
+
 echo "Subjects and A-Level entry\n";
 $comp = ac_compulsory($db);
 check('O-Level has 7 compulsory subjects by default', count($comp['O-Level']) === 7, implode(', ', array_column($comp['O-Level'], 'subject_name')));

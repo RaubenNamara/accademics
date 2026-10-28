@@ -1174,6 +1174,8 @@ export const academicCalendarAPI = {
   preview: async () => (await api.get('academic_calendar.php?action=preview')).data,
   close: async (data) => (await api.post('academic_calendar.php?action=close', data)).data,
   open: async (sessionId) => (await api.post('academic_calendar.php?action=open', { session_id: sessionId })).data,
+  reopen: async (sessionId) => (await api.post('academic_calendar.php?action=reopen', { session_id: sessionId })).data,
+  closeReopened: async (sessionId) => (await api.post('academic_calendar.php?action=close_reopened', { session_id: sessionId })).data,
   compulsory: async () => (await api.get('academic_calendar.php?action=compulsory')).data,
   saveCompulsory: async (data) => (await api.post('academic_calendar.php?action=compulsory', data)).data
 };

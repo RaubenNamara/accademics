@@ -43,7 +43,8 @@ function select(id) {
 }
 
 const label = (s) => (s ? `${s.academic_year} · Term ${s.term}` : '');
-const statusOf = (s) => (Number(s?.is_active) === 1 ? 'open' : Number(s?.is_archived) === 1 ? 'closed' : 'upcoming');
+// open = the current term; reopened = a closed term opened again for data entry (alongside the current one)
+const statusOf = (s) => (Number(s?.is_active) === 1 ? 'open' : Number(s?.is_archived) === 1 ? 'closed' : s?.reopened_at ? 'reopened' : 'upcoming');
 
 export default {
   state,

@@ -439,7 +439,7 @@ function sf_grade(array $scale, ?float $percent): array
 
 function sf_exam(PDO $db, int $id): ?array
 {
-    $stmt = $db->prepare('SELECT e.*, a.academic_year, a.term, a.session_name, a.is_active AS session_open FROM exams e JOIN academic_sessions a ON a.id = e.academic_session_id WHERE e.id = :id');
+    $stmt = $db->prepare('SELECT e.*, a.academic_year, a.term, a.session_name, (a.is_active = 1 OR (a.is_archived = 0 AND a.reopened_at IS NOT NULL)) AS session_open FROM exams e JOIN academic_sessions a ON a.id = e.academic_session_id WHERE e.id = :id');
     $stmt->execute([':id' => $id]);
     $e = $stmt->fetch(PDO::FETCH_ASSOC);
     return $e ?: null;
@@ -498,7 +498,7 @@ function sf_mark_sheet(PDO $db, array $exam, int $classId, int $subjectId): arra
 function sf_save_marks(PDO $db, array $exam, int $classId, int $subjectId, array $rows, ?int $userId): array
 {
     if (isset($exam['session_open']) && (int)$exam['session_open'] !== 1) {
-        throw new TtException("Term {$exam['term']} {$exam['academic_year']} is not the open term, marks can only be entered in the open term.", 423);
+        throw new TtException("Term {$exam['term']} {$exam['academic_year']} is closed. Marks can be entered in the open term, or in a term reopened under Terms & Years.", 423);
     }
     if ($exam['status'] !== 'open') {
         throw new TtException("Marks for {$exam['name']} are " . ($exam['status'] === 'draft' ? 'not open yet' : 'closed') . '.', 423);

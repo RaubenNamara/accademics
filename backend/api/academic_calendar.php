@@ -6,6 +6,8 @@
  * GET ?action=preview                   what closing the open term will do (exams, promotion counts)
  * POST ?action=close  {start_date, end_date, copy_requirements, confirm}   close the open term, open the next
  * POST ?action=open   {session_id}      open a term when none is open (first setup)
+ * POST ?action=reopen {session_id}      open a closed term again for data entry; the current term stays open
+ * POST ?action=close_reopened {session_id}   close a reopened term again
  * GET  ?action=compulsory               subjects offered and compulsory per level
  * POST ?action=compulsory {offered: {"O-Level": [ids], "A-Level": [ids]}, compulsory: {…}}
  */
@@ -60,6 +62,16 @@ try {
             $msg .= " {$res['promotion']['promoted']} students moved up a class.";
         }
         hr_respond(true, $msg, $res);
+    }
+
+    if ($action === 'reopen') {
+        $res = ac_reopen_term($db, (int)($data['session_id'] ?? 0), $by);
+        hr_respond(true, "Term {$res['term']} {$res['academic_year']} is reopened for data entry. The current term stays open.", $res);
+    }
+
+    if ($action === 'close_reopened') {
+        $res = ac_close_reopened($db, (int)($data['session_id'] ?? 0), $by);
+        hr_respond(true, "Term {$res['term']} {$res['academic_year']} is closed again.", $res);
     }
 
     if ($action === 'open') {

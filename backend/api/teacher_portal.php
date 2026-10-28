@@ -114,6 +114,15 @@ try {
             'teacher' => ['id' => $tid, 'full_name' => $teacher['full_name'], 'teacher_code' => $teacher['teacher_code'], 'email' => $teacher['email'],
                 'subject' => $teacher['subject'], 'department' => $teacher['department'], 'position' => $teacher['position']],
             'session' => ['id' => $sid, 'academic_year' => $year, 'term' => $term],
+            // Earlier terms reopened under Terms & Years: marks can still be entered for them.
+            'reopened_sessions' => (static function () use ($db): array {
+                try {
+                    return array_map(fn($r) => ['id' => (int)$r['id'], 'academic_year' => (int)$r['academic_year'], 'term' => (int)$r['term']],
+                        $db->query('SELECT id, academic_year, term FROM academic_sessions WHERE is_active = 0 AND is_archived = 0 AND reopened_at IS NOT NULL ORDER BY academic_year DESC, term DESC')->fetchAll(PDO::FETCH_ASSOC));
+                } catch (Throwable $e) {
+                    return [];
+                }
+            })(),
             'today' => $today,
             'today_lessons' => $todayLessons,
             'timetable_source' => $tt['source'],
