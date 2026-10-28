@@ -251,8 +251,8 @@ const allNavSections = [
     { to: '/lesson-monitoring', label: 'Lesson Monitoring', icon: Clock, zone: 'academic' },
     { to: '/lesson-plans', label: 'Lesson Plans', icon: NotebookPen, zone: 'school' },
     { label: 'Staff Evaluation', icon: Award, tabs: [
-      { to: '/observations', label: 'Lesson observations', icon: Eye },
       { to: '/duty-performance', label: 'Duty performance', icon: ListChecks },
+      { to: '/observations', label: 'Lesson observations', icon: Eye },
       { to: '/class-performance', label: 'Class teacher performance', icon: Users },
     ] },
     { to: '/reports', label: 'Reports', icon: FileText, zone: 'academic' },
