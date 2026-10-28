@@ -17,6 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 try {
     $database = new Database();
     $db = $database->getConnection();
+    require_once __DIR__ . '/../config/TermLock.php';
+    term_guard($db, 'student_results'); // a closed term is read-only
     
     // Temporarily disable authentication for debugging
     /*

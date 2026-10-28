@@ -7,6 +7,8 @@ require_once '../config/HrHelpers.php';
 hr_cors_headers();
 
 $db = (new Database())->getConnection();
+require_once __DIR__ . '/../config/TermLock.php';
+term_guard($db, 'class_teacher_assignments', ['year' => 'academic_year']); // a closed term is read-only
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 try {

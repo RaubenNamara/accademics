@@ -157,6 +157,7 @@
         <div class="mx-auto w-full max-w-[1920px]" :class="{ 'has-hub': currentHub }">
           <div v-if="!isPortal && termStore.selected.value && !termStore.isViewingOpen.value" class="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
             <span v-if="termStore.statusOf(termStore.selected.value) === 'reopened'">You are viewing <strong>{{ termStore.label(termStore.selected.value) }}</strong>, reopened for data entry. The current term<template v-if="termStore.open.value">, {{ termStore.label(termStore.open.value) }},</template> stays open.</span>
+            <span v-else-if="termStore.statusOf(termStore.selected.value) === 'closed'" class="inline-flex items-center gap-1.5"><Lock class="h-4 w-4 flex-shrink-0" /><span><strong>{{ termStore.label(termStore.selected.value) }}</strong> is closed: you can view its records but not add, change or delete them. Reopen it under Terms &amp; Years to make changes.</span></span>
             <span v-else>You are viewing <strong>{{ termStore.label(termStore.selected.value) }}</strong> ({{ termStore.statusOf(termStore.selected.value) }}). Marks can only be entered in the open term<template v-if="termStore.open.value">, {{ termStore.label(termStore.open.value) }}</template>.</span>
             <button v-if="termStore.open.value" type="button" class="font-semibold text-amber-900 underline" @click="termStore.reset()">Back to the open term</button>
           </div>
@@ -189,7 +190,7 @@ import {
   LayoutDashboard, GraduationCap, UserRound, ChartColumn, UsersRound, BookUser, PlaneTakeoff, Building2, ShieldCheck,
   CalendarDays, ChartLine, Clock, Eye, ListChecks, Users, FileText, FolderOpen, BookOpen, School, Upload,
   LogOut, Menu, Building, Sun, Moon, ChevronLeft, ChevronDown, ClipboardList, NotebookPen, PenLine, Award, FileBadge, Settings,
-  CalendarCheck, TrendingUp, House, CalendarRange, CalendarCog, BookOpenCheck,
+  CalendarCheck, TrendingUp, House, CalendarRange, CalendarCog, BookOpenCheck, Lock,
 } from 'lucide-vue-next';
 import authStore from '../services/authStore.js';
 import termStore from '../services/termStore.js';

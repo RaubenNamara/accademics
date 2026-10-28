@@ -22,6 +22,8 @@ require_once '../config/CurriculumService.php';
 
 hr_cors_headers();
 $db = (new Database())->getConnection();
+require_once __DIR__ . '/../config/TermLock.php';
+term_guard($db, 'lesson_plans', ['session' => 'academic_session_id']); // a closed term is read-only
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 const LP_PERIOD_MINUTES = 40;

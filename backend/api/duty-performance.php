@@ -16,6 +16,8 @@ require_once '../config/JWT.php';
 
 $database = new Database();
 $db = $database->getConnection();
+require_once __DIR__ . '/../config/TermLock.php';
+term_guard($db, 'duty_performance'); // a closed term is read-only
 
 // Verify token (temporarily disabled for testing)
 $headers = getallheaders();

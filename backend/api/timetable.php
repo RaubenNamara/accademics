@@ -8,6 +8,8 @@ require_once '../config/TimetableService.php';
 hr_cors_headers();
 
 $db = (new Database())->getConnection();
+require_once __DIR__ . '/../config/TermLock.php';
+term_guard($db, 'timetable', ['session' => 'academic_session_id']); // a closed term is read-only
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 try {

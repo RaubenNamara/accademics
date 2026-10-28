@@ -67,6 +67,8 @@ optionalAuth();
 
 $database = new Database();
 $db = $database->getConnection();
+require_once __DIR__ . '/../config/TermLock.php';
+term_guard($db, 'lesson_observations'); // a closed term is read-only
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
