@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const GREEN = [21, 135, 74];
+const GREEN = [5, 150, 105];
 const GREEN_TINT = [239, 251, 243];
 const DARK = [17, 24, 39];
 const MUTED = [90, 99, 112];

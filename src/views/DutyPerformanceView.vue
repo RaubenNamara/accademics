@@ -307,12 +307,12 @@ const printEvaluation = () => {
         .header p { color: #666; margin-top: 10px; }
         .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
         .summary-item { text-align: center; padding: 20px; background: #f5f5f5; border-radius: 10px; }
-        .summary-item .value { font-size: 32px; font-weight: bold; color: #16a34a; }
+        .summary-item .value { font-size: 32px; font-weight: bold; color: #059669; }
         .summary-item .label { color: #666; margin-top: 5px; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background: #f5f5f5; font-weight: bold; }
-        .score { font-weight: bold; color: #16a34a; }
+        .score { font-weight: bold; color: #059669; }
         .comment-section { background: #f9fafb; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
         .comment-section h3 { margin-top: 0; color: #333; }
         @media print { body { padding: 20px; } }

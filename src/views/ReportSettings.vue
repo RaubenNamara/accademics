@@ -7,7 +7,6 @@
           <h1 class="page-hero-title">Report Settings</h1>
         </div>
         <div class="flex gap-2">
-          <RouterLink to="/report-cards" class="btn-hero">Report cards</RouterLink>
           <button type="button" class="btn-hero-primary" :disabled="saving || loading" @click="save"><Save class="h-4 w-4" />{{ saving ? 'Saving…' : 'Save settings' }}</button>
         </div>
       </div>

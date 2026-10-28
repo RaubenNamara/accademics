@@ -284,9 +284,9 @@
                     :cx="60 + index * 90" 
                     :cy="180 - (data.average / 100) * 160" 
                     r="4" 
-                    fill="#16a34a"
+                    fill="#059669"
                   />
-                  <text :x="60 + index * 90" :cy="175 - (data.average / 100) * 160" text-anchor="middle" font-size="10" font-weight="bold" fill="#16a34a">
+                  <text :x="60 + index * 90" :cy="175 - (data.average / 100) * 160" text-anchor="middle" font-size="10" font-weight="bold" fill="#059669">
                     {{ data.average.toFixed(1) }}
                   </text>
                 </template>
@@ -296,7 +296,7 @@
                   v-if="performanceData.length > 1"
                   :points="performanceData.slice(0, isOLevel ? 4 : 2).map((data, index) => `${60 + index * 90},${180 - (data.average / 100) * 160}`).join(' ')"
                   fill="none"
-                  stroke="#16a34a"
+                  stroke="#059669"
                   stroke-width="2"
                 />
               </svg>
@@ -825,7 +825,7 @@ const downloadPDF = () => {
       cellPadding: 3,
     },
     headStyles: {
-      fillColor: [22, 163, 74],
+      fillColor: [5, 150, 105],
       textColor: 255,
       fontStyle: 'bold',
     },
@@ -885,8 +885,8 @@ onMounted(() => {
 
 .input:focus {
   outline: none;
-  border-color: #16a34a;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
 }
 </style>
 

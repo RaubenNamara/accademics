@@ -1678,7 +1678,7 @@ const printReport = async () => {
   const cfg = activeReport.value;
   const accent = cfg.tone === 'rose' ? [225, 29, 72] : [5, 150, 105];
   const accentSoft = cfg.tone === 'rose' ? [255, 241, 242] : [236, 253, 245];
-  const brand = [22, 163, 74];
+  const brand = [5, 150, 105];
   const ink = [15, 23, 42];
   const muted = [100, 116, 139];
   const faint = [148, 163, 184];
@@ -2371,7 +2371,7 @@ watch(visibleGroups, () => { if ((groupPage.value - 1) * groupsPerPage.value >= 
 }
 
 .input:focus {
-  border-color: rgb(22 163 74);
+  border-color: rgb(5 150 105);
   box-shadow: 0 0 0 4px rgb(220 252 231);
 }
 
@@ -2503,7 +2503,7 @@ watch(visibleGroups, () => { if ((groupPage.value - 1) * groupsPerPage.value >= 
   padding: 0.45rem 0.85rem;
   font-size: 11px;
   font-weight: 700;
-  color: rgb(21 128 61);
+  color: rgb(4 120 87);
   border: 1px solid rgb(187 247 208);
 }
 

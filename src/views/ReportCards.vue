@@ -6,7 +6,6 @@
         <div>
           <h1 class="page-hero-title">Report Cards</h1>
         </div>
-        <RouterLink to="/report-settings" class="btn-hero"><Settings class="h-4 w-4" />Logo, address & grading</RouterLink>
       </div>
     </div>
 

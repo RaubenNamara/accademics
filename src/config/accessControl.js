@@ -126,23 +126,34 @@ export function getRoleLabel(role, user = null) {
 
 /**
  * Filter navigation sections/items by role.
+ * Items may define `tabs` ([{ to, label, icon }]): several pages under one entry, shown as tabs above the page.
  * Items may define `zone`: 'hr' | 'academic' | 'school' (admin + academic office) | 'staff' (every staff role) | 'portal' (classroom teachers)
  */
 export function filterNavSections(sections, role, user = null) {
   const r = normalizeRole(role);
+  const allowed = (item) => {
+    if (item.zone === 'platform') return isPlatformOwner(user || { role });
+    if (r === ROLES.SUBJECT_TEACHER) return item.zone === 'portal';
+    if (item.zone === 'portal') return false;
+    if (r === ROLES.SUPER_ADMIN || item.zone === 'staff' || item.zone === 'school') return true;
+    if (r === ROLES.ADMIN) return item.zone === 'hr';
+    if (r === ROLES.TEACHER) return item.zone === 'academic';
+    return false;
+  };
 
   return sections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => {
-        if (item.zone === 'platform') return isPlatformOwner(user || { role });
-        if (r === ROLES.SUBJECT_TEACHER) return item.zone === 'portal';
-        if (item.zone === 'portal') return false;
-        if (r === ROLES.SUPER_ADMIN || item.zone === 'staff' || item.zone === 'school') return true;
-        if (r === ROLES.ADMIN) return item.zone === 'hr';
-        if (r === ROLES.TEACHER) return item.zone === 'academic';
-        return false;
-      })
+      items: section.items
+        .map((item) => {
+          // A grouped entry (tabs): keep the pages this user may open; it links to the first of them.
+          if (!item.tabs) return allowed(item) ? item : null;
+          const tabs = item.tabs.filter((t) => canAccessRoute(t.to, role, user));
+          if (!tabs.length) return null;
+          // Only one page of the group for this user: show it under its own name, without tabs.
+          return tabs.length === 1 ? { to: tabs[0].to, label: tabs[0].label.charAt(0).toUpperCase() + tabs[0].label.slice(1), icon: tabs[0].icon } : { ...item, tabs, to: tabs[0].to };
+        })
+        .filter(Boolean)
     }))
     .filter((section) => section.items.length > 0);
 }

@@ -31,7 +31,7 @@ export function useExport() {
       head: [columns.map((c) => c.label)],
       body: rows.map((row) => columns.map((c) => String(row[c.key] ?? ''))),
       styles: { fontSize: 8 },
-      headStyles: { fillColor: [22, 163, 74] }
+      headStyles: { fillColor: [5, 150, 105] }
     });
     doc.save(`${filename}.pdf`);
   };

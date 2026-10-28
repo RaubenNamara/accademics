@@ -463,7 +463,7 @@ onBeforeUnmount(() => {
 }
 
 .input:focus {
-  border-color: rgb(22 163 74);
+  border-color: rgb(5 150 105);
   box-shadow: 0 0 0 4px rgb(220 252 231);
 }
 

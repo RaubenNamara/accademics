@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const GREEN = [21, 135, 74];
+const GREEN = [5, 150, 105];
 const DARK = [17, 24, 39];
 const MUTED = [75, 85, 99];
 const MARGIN = 14;
@@ -99,7 +99,7 @@ function marksTable(doc, y, card, data) {
   const n = data.exams.length + 2; // the converted-score columns plus the AOI and exam averages
   Object.assign(examCols, {
     [data.exams.length + 1]: { halign: 'center', cellWidth: 12, fillColor: [240, 249, 255] },
-    [data.exams.length + 2]: { halign: 'center', cellWidth: 12, fillColor: [240, 253, 244] },
+    [data.exams.length + 2]: { halign: 'center', cellWidth: 12, fillColor: [236, 253, 245] },
   });
   autoTable(doc, {
     startY: y,

@@ -1453,7 +1453,7 @@ const downloadPDF = () => {
       cellPadding: 3,
     },
     headStyles: {
-      fillColor: [22, 163, 74],
+      fillColor: [5, 150, 105],
       textColor: 255,
       fontStyle: 'bold',
     },

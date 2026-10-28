@@ -19,7 +19,7 @@
   --glass-shadow-lift: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 0 0 1px var(--glass-edge), 0 24px 44px -20px rgba(15, 40, 25, 0.38), 0 4px 10px -4px rgba(15, 40, 25, 0.12);
   --glass-blur: blur(16px) saturate(160%);
   --page-wash:
-    radial-gradient(1100px 620px at 8% -12%, rgba(34, 197, 94, 0.2), transparent 62%),
+    radial-gradient(1100px 620px at 8% -12%, rgba(16, 185, 129, 0.2), transparent 62%),
     radial-gradient(900px 560px at 102% 4%, rgba(14, 165, 233, 0.15), transparent 58%),
     radial-gradient(1000px 700px at 55% 112%, rgba(16, 185, 129, 0.15), transparent 60%),
     #ebf1ed;
@@ -30,6 +30,14 @@
 
 body {
   @apply font-sans text-gray-900 antialiased;
+  /* Inter's cleaner shapes (straight-sided 1, open 4/6/9) and its optical sizes; slightly tighter
+     tracking reads sharper on screen. */
+  font-feature-settings: 'cv01', 'cv02', 'cv03', 'cv04', 'cv11';
+  font-optical-sizing: auto;
+  letter-spacing: -0.011em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   background: var(--page-wash);
   background-attachment: fixed;
 }
@@ -49,7 +57,8 @@ body {
     @apply text-sm font-medium text-brand-700;
   }
   .page-hero-title {
-    @apply text-lg font-bold leading-tight tracking-tight text-gray-900 sm:text-xl;
+    @apply text-lg font-bold leading-tight text-gray-900 sm:text-xl;
+    letter-spacing: -0.022em;
   }
   .page-hero-subtitle {
     @apply mt-0.5 max-w-3xl text-sm text-gray-500;
@@ -185,3 +194,33 @@ body {
 /* Thin scrollbars inside panels. */
 .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
 .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(21, 80, 50, 0.18); border-radius: 6px; }
+
+
+/* Pages opened from a tab (sidebar entries that group several pages): the selected tab already names the
+   page, so its big title is kept for screen readers only, and a header holding nothing else is dropped. */
+.has-hub .page-hero-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.has-hub .page-hero:not(:has(button, a, select, input, .page-hero-subtitle)) {
+  display: none;
+}
+/* On wide screens the page's buttons sit on the tabs' row (tabs left, buttons right). */
+@media (min-width: 1280px) {
+  .has-hub .page > .page-hero:first-child,
+  .has-hub .page > :not(.page-hero) + .page-hero {
+    margin-top: calc(-2rem - 1rem - 4px);
+    pointer-events: none;
+  }
+  .has-hub .page > .page-hero button,
+  .has-hub .page > .page-hero a,
+  .has-hub .page > .page-hero select,
+  .has-hub .page > .page-hero input,
+  .has-hub .page > .page-hero [role="menu"] {
+    pointer-events: auto;
+  }
+}

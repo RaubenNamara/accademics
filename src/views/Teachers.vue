@@ -1587,7 +1587,7 @@ const downloadPDF = () => {
     body: displayedTeachers.value.map(exportRow),
     startY: 42,
     styles: { fontSize: 7, cellPadding: 2 },
-    headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
+    headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [248, 250, 252] }
   });
   doc.save(`teachers-${new Date().toISOString().split('T')[0]}.pdf`);
@@ -1635,8 +1635,8 @@ onBeforeUnmount(() => {
 .page-btn { @apply inline-flex h-8 min-w-[2rem] items-center justify-center rounded-lg border border-gray-200 px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40; }
 .page-btn--on { @apply border-brand-600 bg-brand-600 text-white hover:bg-brand-600; }
 .teachers-page {
-  --blue: #16a34a;
-  --blue-dark: #14532d;
+  --blue: #059669;
+  --blue-dark: #064e3b;
 }
 
 /* Header buttons */
@@ -1892,7 +1892,7 @@ onBeforeUnmount(() => {
 }
 .pagination-btn:hover:not(:disabled) {
   background-color: #f1f5f9;
-  color: #16a34a;
+  color: #059669;
   border-color: #cbd5e1;
 }
 .pagination-btn:disabled {
@@ -1916,16 +1916,16 @@ onBeforeUnmount(() => {
 }
 .pagination-page-btn:hover {
   background-color: #f1f5f9;
-  color: #16a34a;
+  color: #059669;
   border-color: #cbd5e1;
 }
 .pagination-page-btn--active {
-  background-color: #16a34a;
+  background-color: #059669;
   color: white;
-  border-color: #16a34a;
+  border-color: #059669;
 }
 .pagination-page-btn--active:hover {
-  background-color: #15803d;
+  background-color: #047857;
 }
 
 /* Transitions */

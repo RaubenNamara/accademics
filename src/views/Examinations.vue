@@ -19,23 +19,21 @@
       This term is closed: its exams and marks are kept for report cards but can no longer be changed.
     </div>
 
-    <!-- How the final mark is worked out -->
-    <div class="grid gap-3 md:grid-cols-3">
-      <div class="card p-4 md:col-span-2">
-        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">How each subject's final mark is worked out</p>
-        <div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
-          <span class="rounded-xl bg-sky-50 px-3 py-2 text-sky-800 ring-1 ring-sky-100"><strong class="text-lg tabular-nums">20</strong> AOIs<span class="block text-[11px] opacity-80">each AOI out of 20, then averaged</span></span>
-          <span class="text-lg font-semibold text-gray-400">+</span>
-          <span class="rounded-xl bg-brand-50 px-3 py-2 text-brand-800 ring-1 ring-brand-100"><strong class="text-lg tabular-nums">80</strong> Exams<span class="block text-[11px] opacity-80">BOT, mid term, end of term: each out of 80, averaged</span></span>
-          <span class="text-lg font-semibold text-gray-400">=</span>
-          <span class="rounded-xl bg-gray-900 px-3 py-2 text-white"><strong class="text-lg tabular-nums">100</strong><span class="block text-[11px] opacity-80">final mark</span></span>
-        </div>
-        <p class="mt-2 text-xs text-gray-500">A learner who has only done AOIs, or only exams, so far is scaled to 100 on what they have done.</p>
+    <!-- How the final mark is worked out, and how far marks entry has got -->
+    <div class="card flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
+      <div
+        class="flex flex-wrap items-center gap-2 text-sm"
+        title="Each AOI is out of 20 and the AOIs are averaged; BOT, mid term and end of term are each out of 80 and averaged. A learner with only AOIs or only exams so far is scaled to 100."
+      >
+        <span class="rounded-lg bg-sky-50 px-2.5 py-1 text-sky-800 ring-1 ring-sky-100">AOIs <strong class="tabular-nums">20</strong></span>
+        <span class="text-gray-400">+</span>
+        <span class="rounded-lg bg-brand-50 px-2.5 py-1 text-brand-800 ring-1 ring-brand-100">Exams <strong class="tabular-nums">80</strong></span>
+        <span class="text-gray-400">=</span>
+        <span class="rounded-lg bg-gray-900 px-2.5 py-1 text-white">Final <strong class="tabular-nums">100</strong></span>
       </div>
-      <div class="card p-4">
-        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Marks entered</p>
-        <p class="mt-1 text-2xl font-bold tabular-nums text-gray-900">{{ marksEntered.toLocaleString() }}</p>
-        <p class="mt-1 text-xs text-gray-500">{{ openCount }} exam(s) open for teachers right now.</p>
+      <div class="ml-auto flex items-center gap-5 text-sm text-gray-500">
+        <span>Marks entered <strong class="text-base tabular-nums text-gray-900">{{ marksEntered.toLocaleString() }}</strong></span>
+        <span>Open exams <strong class="text-base tabular-nums text-gray-900">{{ openCount }}</strong></span>
       </div>
     </div>
 
@@ -48,7 +46,6 @@
       <div v-else-if="!exams.length" class="px-5 py-12 text-center">
         <ClipboardList class="mx-auto h-8 w-8 text-gray-300" />
         <p class="mt-2 text-sm font-medium text-gray-700">No exams set for this term</p>
-        <p v-if="!termClosed" class="mt-1 text-sm text-gray-500">Start with the AOIs, then Mid Term and End of Term.</p>
         <button v-if="!termClosed" type="button" class="btn-primary mt-4" @click="openForm()"><Plus class="h-4 w-4" />New exam</button>
       </div>
       <div v-else class="overflow-x-auto">

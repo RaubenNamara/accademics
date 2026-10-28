@@ -45,7 +45,7 @@
             <span class="card-label">Time lost this term</span>
             <div class="mt-1 flex items-end justify-between gap-3">
               <p class="text-2xl font-bold text-white">-32%</p>
-              <svg viewBox="0 0 90 32" class="h-8 w-24" fill="none"><path class="spark-path" pathLength="100" d="M2 6 C14 8 18 4 28 12 S44 14 52 20 S70 22 88 28" stroke="#86efac" stroke-width="2.5" stroke-linecap="round" /></svg>
+              <svg viewBox="0 0 90 32" class="h-8 w-24" fill="none"><path class="spark-path" pathLength="100" d="M2 6 C14 8 18 4 28 12 S44 14 52 20 S70 22 88 28" stroke="#6ee7b7" stroke-width="2.5" stroke-linecap="round" /></svg>
             </div>
           </div>
           <div class="glass-card float f3 flex items-center gap-3">
@@ -343,7 +343,7 @@ const login = async () => {
 /* ---------- Hero: deep green, drifting light, a grid and a heartbeat ---------- */
 .hero {
   background:
-    radial-gradient(900px 520px at 0% 0%, rgba(34, 197, 94, 0.28), transparent 60%),
+    radial-gradient(900px 520px at 0% 0%, rgba(16, 185, 129, 0.28), transparent 60%),
     linear-gradient(140deg, #03200f 0%, #064e3b 48%, #065f46 100%);
   color: #fff;
   isolation: isolate;
@@ -356,7 +356,7 @@ const login = async () => {
   opacity: 0.5;
   animation: drift 18s ease-in-out infinite alternate;
 }
-.b1 { width: 34rem; height: 34rem; background: #16a34a; top: -12rem; left: -10rem; }
+.b1 { width: 34rem; height: 34rem; background: #059669; top: -12rem; left: -10rem; }
 .b2 { width: 28rem; height: 28rem; background: #10b981; bottom: -12rem; right: 5%; animation-duration: 23s; }
 .b3 { width: 20rem; height: 20rem; background: #a3e635; top: 38%; left: 46%; opacity: 0.18; animation-duration: 27s; }
 @keyframes drift {
@@ -421,32 +421,32 @@ const login = async () => {
   gap: 0.6rem;
   border-radius: 9999px;
   border: 1px solid rgba(134, 239, 172, 0.25);
-  background: rgba(34, 197, 94, 0.1);
+  background: rgba(16, 185, 129, 0.1);
   padding: 0.4rem 0.95rem;
   font-size: 0.8rem;
   font-weight: 500;
   letter-spacing: 0.01em;
-  color: #bbf7d0;
+  color: #a7f3d0;
 }
 .live-dot {
   position: relative;
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 9999px;
-  background: #4ade80;
+  background: #34d399;
 }
 .live-dot::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 9999px;
-  background: #4ade80;
+  background: #34d399;
   animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 @keyframes ping { 75%, 100% { transform: scale(2.6); opacity: 0; } }
 
 .shine {
-  background: linear-gradient(90deg, #86efac 0%, #ecfccb 25%, #4ade80 50%, #bef264 75%, #86efac 100%);
+  background: linear-gradient(90deg, #6ee7b7 0%, #ecfccb 25%, #34d399 50%, #bef264 75%, #6ee7b7 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -505,7 +505,7 @@ const login = async () => {
   padding: 0.1rem 0.45rem;
   font-size: 0.68rem;
   font-weight: 600;
-  color: #bbf7d0;
+  color: #a7f3d0;
 }
 .bars {
   display: flex;
@@ -517,7 +517,7 @@ const login = async () => {
 .bars span {
   flex: 1;
   border-radius: 0.3rem 0.3rem 0.15rem 0.15rem;
-  background: linear-gradient(180deg, #86efac, rgba(34, 197, 94, 0.35));
+  background: linear-gradient(180deg, #6ee7b7, rgba(16, 185, 129, 0.35));
   transform-origin: bottom;
   transform: scaleY(0);
   animation: grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
@@ -529,7 +529,7 @@ const login = async () => {
 /* ---------- Form side ---------- */
 .form-side {
   background:
-    radial-gradient(600px 300px at 100% 0%, rgba(34, 197, 94, 0.07), transparent 70%),
+    radial-gradient(600px 300px at 100% 0%, rgba(16, 185, 129, 0.07), transparent 70%),
     radial-gradient(500px 300px at 0% 100%, rgba(16, 185, 129, 0.06), transparent 70%),
     #ffffff;
 }
@@ -553,7 +553,7 @@ const login = async () => {
 .field:hover { @apply border-gray-300; }
 .field:focus-within {
   @apply border-brand-500 bg-white;
-  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.14);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.14);
 }
 .field-icon {
   @apply flex w-12 flex-shrink-0 items-center justify-center text-gray-400 transition-colors;
@@ -572,12 +572,12 @@ const login = async () => {
   gap: 0.5rem;
   overflow: hidden;
   border-radius: 1rem;
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 45%, #15803d 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 45%, #047857 100%);
   padding: 0.95rem 1rem;
   font-size: 0.95rem;
   font-weight: 600;
   color: #fff;
-  box-shadow: 0 14px 30px -12px rgba(22, 163, 74, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow: 0 14px 30px -12px rgba(5, 150, 105, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 .submit-btn::after {
@@ -588,11 +588,11 @@ const login = async () => {
   transform: translateX(-120%);
   transition: transform 0.7s ease;
 }
-.submit-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 18px 36px -12px rgba(22, 163, 74, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.25); }
+.submit-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 18px 36px -12px rgba(5, 150, 105, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.25); }
 .submit-btn:hover:not(:disabled)::after { transform: translateX(120%); }
 .submit-btn:hover:not(:disabled) .arrow { transform: translateX(3px); }
 .submit-btn:active:not(:disabled) { transform: translateY(0); filter: brightness(0.97); }
-.submit-btn:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.3); }
+.submit-btn:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3); }
 .submit-btn:disabled { cursor: not-allowed; opacity: 0.65; }
 .arrow { transition: transform 0.2s ease; }
 
@@ -615,8 +615,8 @@ const login = async () => {
   backdrop-filter: blur(8px);
   transition: background-color 0.2s, color 0.2s, transform 0.3s;
 }
-.theme-switch:hover { color: rgb(21 128 61); transform: rotate(-12deg); }
-.theme-switch:focus-visible { outline: 2px solid #22c55e; outline-offset: 2px; }
+.theme-switch:hover { color: rgb(4 120 87); transform: rotate(-12deg); }
+.theme-switch:focus-visible { outline: 2px solid #10b981; outline-offset: 2px; }
 html.dark .theme-switch { background: rgba(22, 33, 28, 0.9); border-color: #31413a; color: #fcd34d; }
 @media (max-width: 1023px) {
   /* On phones the switch sits on the green header. */
@@ -626,7 +626,7 @@ html.dark .theme-switch { background: rgba(22, 33, 28, 0.9); border-color: #3141
 
 html.dark .form-side {
   background:
-    radial-gradient(600px 300px at 100% 0%, rgba(34, 197, 94, 0.1), transparent 70%),
+    radial-gradient(600px 300px at 100% 0%, rgba(16, 185, 129, 0.1), transparent 70%),
     radial-gradient(500px 300px at 0% 100%, rgba(16, 185, 129, 0.08), transparent 70%),
     #0a110e;
 }
@@ -640,12 +640,12 @@ html.dark .form-card {
 }
 html.dark .field { border-color: #31413a; background: #0d1512; }
 html.dark .field:hover { border-color: #3d4e46; }
-html.dark .field:focus-within { border-color: #22c55e; background: #111a16; box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18); }
+html.dark .field:focus-within { border-color: #10b981; background: #111a16; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18); }
 html.dark .field-icon { color: #66746e; }
-html.dark .field:focus-within .field-icon { color: #4ade80; }
+html.dark .field:focus-within .field-icon { color: #34d399; }
 html.dark .field-input { color: #e6efea; }
 html.dark .field-input::placeholder { color: #66746e; }
-html.dark .submit-btn { box-shadow: 0 14px 30px -12px rgba(34, 197, 94, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2); }
+html.dark .submit-btn { box-shadow: 0 14px 30px -12px rgba(16, 185, 129, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2); }
 
 /* Calm version for people who ask their device for less motion. */
 @media (prefers-reduced-motion: reduce) {

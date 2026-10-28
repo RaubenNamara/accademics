@@ -6,7 +6,7 @@ import autoTable from 'jspdf-autotable';
  * least 4.5:1 contrast. A subject always gets the same colour.
  */
 const SUBJECT_COLOURS = [
-  { bg: '#DCFCE7', border: '#86EFAC', text: '#14532D' },
+  { bg: '#d1fae5', border: '#6ee7b7', text: '#064e3b' },
   { bg: '#DBEAFE', border: '#93C5FD', text: '#1E3A8A' },
   { bg: '#FEF3C7', border: '#FCD34D', text: '#78350F' },
   { bg: '#FCE7F3', border: '#F9A8D4', text: '#831843' },
@@ -116,7 +116,7 @@ export function exportGridPdf({ title, subtitle, filename, entries, periods, day
     body: gridRows(entries, periods, days, describe),
     theme: 'grid',
     styles: { fontSize: 7.5, cellPadding: 1.8, valign: 'middle', textColor: [15, 23, 42], lineColor: [226, 232, 240] },
-    headStyles: { fillColor: [21, 128, 61], textColor: 255, fontStyle: 'bold', halign: 'center' },
+    headStyles: { fillColor: [4, 120, 87], textColor: 255, fontStyle: 'bold', halign: 'center' },
     columnStyles: { 0: { cellWidth: 26, fontStyle: 'bold', fillColor: [248, 250, 252] } },
     didParseCell: (data) => {
       const p = periods[data.row.index];

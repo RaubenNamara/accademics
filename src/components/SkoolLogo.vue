@@ -6,17 +6,17 @@
       <span class="ink">sk</span><svg class="oo" viewBox="0 0 46 26" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient :id="gid" x1="0" y1="0" x2="46" y2="26" gradientUnits="userSpaceOnUse">
-            <stop :stop-color="light ? '#bbf7d0' : '#22c55e'" />
-            <stop offset="1" :stop-color="light ? '#4ade80' : '#15803d'" />
+            <stop :stop-color="light ? '#a7f3d0' : '#10b981'" />
+            <stop offset="1" :stop-color="light ? '#34d399' : '#047857'" />
           </linearGradient>
         </defs>
         <circle cx="12.5" cy="13" r="9.6" :stroke="`url(#${gid})`" stroke-width="4.4" />
         <circle cx="33.5" cy="13" r="9.6" :stroke="`url(#${gid})`" stroke-width="4.4" />
-        <path d="M5.5 13.6h4l2.2-4.6 3.3 9.4 2.6-6.2 1.6 1.4h8.2l2.2-4.6 3.3 9.4 2.6-6.2 1.6 1.4h3.4" :stroke="light ? '#ffffff' : '#14532d'" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M5.5 13.6h4l2.2-4.6 3.3 9.4 2.6-6.2 1.6 1.4h8.2l2.2-4.6 3.3 9.4 2.6-6.2 1.6 1.4h3.4" :stroke="light ? '#ffffff' : '#064e3b'" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
       </svg><span class="ink">l</span>
     </span>
     <span v-if="!compact" class="monitor" aria-hidden="true">monitor<svg class="spark" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M10 1.5c.6 4.3 1.9 6.3 4.2 7.4 1.2.5 2.6.9 4.3 1.1-1.7.2-3.1.6-4.3 1.1-2.3 1.1-3.6 3.1-4.2 7.4-.6-4.3-1.9-6.3-4.2-7.4C4.6 10.6 3.2 10.2 1.5 10c1.7-.2 3.1-.6 4.3-1.1C8.1 7.8 9.4 5.8 10 1.5z" :fill="light ? '#86efac' : '#22c55e'" />
+        <path d="M10 1.5c.6 4.3 1.9 6.3 4.2 7.4 1.2.5 2.6.9 4.3 1.1-1.7.2-3.1.6-4.3 1.1-2.3 1.1-3.6 3.1-4.2 7.4-.6-4.3-1.9-6.3-4.2-7.4C4.6 10.6 3.2 10.2 1.5 10c1.7-.2 3.1-.6 4.3-1.1C8.1 7.8 9.4 5.8 10 1.5z" :fill="light ? '#6ee7b7' : '#10b981'" />
       </svg></span>
   </span>
 </template>
@@ -49,7 +49,7 @@ const gid = `skool-oo-${Math.random().toString(36).slice(2, 9)}`;
   align-items: baseline;
 }
 .ink {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 45%, #15803d 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 45%, #047857 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -75,7 +75,7 @@ const gid = `skool-oo-${Math.random().toString(36).slice(2, 9)}`;
   height: 0.42em;
 }
 .light .ink {
-  background: linear-gradient(135deg, #dcfce7 0%, #86efac 50%, #4ade80 100%);
+  background: linear-gradient(135deg, #d1fae5 0%, #6ee7b7 50%, #34d399 100%);
   -webkit-background-clip: text;
   background-clip: text;
 }

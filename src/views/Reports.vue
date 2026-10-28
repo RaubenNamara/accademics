@@ -737,7 +737,7 @@ const downloadPDF = () => {
           body: tableData,
           startY: yPos,
           styles: { fontSize: 9, cellPadding: 3 },
-          headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
+          headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
           alternateRowStyles: { fillColor: [245, 245, 245] },
           margin: { top: 10, right: 10, bottom: 10, left: 10 },
         });
@@ -766,7 +766,7 @@ const downloadPDF = () => {
           body: tableData,
           startY: yPos,
           styles: { fontSize: 9, cellPadding: 3 },
-          headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
+          headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
           alternateRowStyles: { fillColor: [245, 245, 245] },
           margin: { top: 10, right: 10, bottom: 10, left: 10 },
         });
@@ -798,7 +798,7 @@ const downloadPDF = () => {
             body: tableData,
             startY: yPos,
             styles: { fontSize: 9, cellPadding: 3 },
-            headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
             alternateRowStyles: { fillColor: [245, 245, 245] },
             margin: { top: 10, right: 10, bottom: 10, left: 10 },
           });
@@ -833,7 +833,7 @@ const downloadPDF = () => {
           body: tableData,
           startY: yPos,
           styles: { fontSize: 9, cellPadding: 3 },
-          headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
+          headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
           alternateRowStyles: { fillColor: [245, 245, 245] },
           margin: { top: 10, right: 10, bottom: 10, left: 10 },
         });
@@ -865,7 +865,7 @@ const downloadPDF = () => {
           body: tableData,
           startY: yPos,
           styles: { fontSize: 9, cellPadding: 3 },
-          headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
+          headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
           alternateRowStyles: { fillColor: [245, 245, 245] },
           margin: { top: 10, right: 10, bottom: 10, left: 10 },
         });
@@ -914,7 +914,7 @@ const downloadPDF = () => {
             body: tableData,
             startY: yPos,
             styles: { fontSize: 9, cellPadding: 3 },
-            headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
             alternateRowStyles: { fillColor: [245, 245, 245] },
             margin: { top: 10, right: 10, bottom: 10, left: 10 },
           });
@@ -946,7 +946,7 @@ const downloadPDF = () => {
             body: tableData,
             startY: yPos,
             styles: { fontSize: 9, cellPadding: 3 },
-            headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
             alternateRowStyles: { fillColor: [245, 245, 245] },
             margin: { top: 10, right: 10, bottom: 10, left: 10 },
           });
@@ -978,7 +978,7 @@ const downloadPDF = () => {
             body: tableData,
             startY: yPos,
             styles: { fontSize: 9, cellPadding: 3 },
-            headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
             alternateRowStyles: { fillColor: [245, 245, 245] },
             margin: { top: 10, right: 10, bottom: 10, left: 10 },
           });
@@ -1010,7 +1010,7 @@ const downloadPDF = () => {
             body: tableData,
             startY: yPos,
             styles: { fontSize: 9, cellPadding: 3 },
-            headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
             alternateRowStyles: { fillColor: [245, 245, 245] },
             margin: { top: 10, right: 10, bottom: 10, left: 10 },
           });
@@ -1039,7 +1039,7 @@ const downloadPDF = () => {
             body: tableData,
             startY: yPos,
             styles: { fontSize: 9, cellPadding: 3 },
-            headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
             alternateRowStyles: { fillColor: [245, 245, 245] },
             margin: { top: 10, right: 10, bottom: 10, left: 10 },
           });
@@ -1089,8 +1089,8 @@ onMounted(() => {
 
 .input:focus {
   outline: none;
-  border-color: #16a34a;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
 }
 
 .btn-primary {
@@ -1098,7 +1098,7 @@ onMounted(() => {
   align-items: center;
   padding: 0.625rem 1.25rem;
   border-radius: 0.75rem;
-  background: #16a34a;
+  background: #059669;
   color: white;
   font-weight: 500;
   font-size: 0.875rem;
@@ -1107,7 +1107,7 @@ onMounted(() => {
 }
 
 .btn-primary:hover {
-  background: #15803d;
+  background: #047857;
   transform: translateY(-1px);
 }
 

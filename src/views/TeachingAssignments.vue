@@ -315,7 +315,7 @@ onMounted(load);
 .pick.is-taken { @apply border-dashed border-amber-300 bg-amber-50 text-amber-900; }
 .pick-key { @apply mr-1 inline-block h-3 w-3 rounded border border-dashed border-amber-300 bg-amber-50 align-middle; }
 html.dark .pick { background-color: #0d1512; border-color: #31413a; color: #c9d5cf; }
-html.dark .pick.is-on { background-color: #16a34a; border-color: #16a34a; color: #fff; }
+html.dark .pick.is-on { background-color: #059669; border-color: #059669; color: #fff; }
 html.dark .pick.is-taken, html.dark .pick-key.is-taken { background-color: rgba(245, 158, 11, 0.14); border-color: rgba(251, 191, 36, 0.4); color: #fcd34d; }
 </style>
 

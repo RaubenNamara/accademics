@@ -1,20 +1,20 @@
 /** @type {import('tailwindcss').Config} */
 import colors from 'tailwindcss/colors';
 
-// Same design system as eSpace/Tusome (http://localhost:3001): green, white and black,
-// Inter throughout, nothing heavier than semi-bold.
+// Green, white and black; Inter throughout, with real weights so text renders crisply.
+// Modern emerald (was a muted forest green #15874a).
 const green = {
-  50: '#effbf3',
-  100: '#d7f5e1',
-  200: '#b0eac6',
-  300: '#7dd8a3',
-  400: '#46bf7b',
-  500: '#22a45d',
-  600: '#15874a',
-  700: '#126c3d',
-  800: '#115633',
-  900: '#0f472b',
-  950: '#062a18',
+  50: '#ecfdf5',
+  100: '#d1fae5',
+  200: '#a7f3d0',
+  300: '#6ee7b7',
+  400: '#34d399',
+  500: '#10b981',
+  600: '#059669',
+  700: '#047857',
+  800: '#065f46',
+  900: '#064e3b',
+  950: '#022c22',
 };
 
 export default {
@@ -31,17 +31,19 @@ export default {
         primary: green,
         // eSpace uses neutral grey; the pages here were written with slate, so slate is grey.
         slate: colors.gray,
+        // Any plain green-* class follows the same emerald.
+        green: colors.emerald,
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         brand: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
       },
-      // Light, calm type: "semibold" labels read as medium, nothing heavier than 600.
+      // Real weights (the font loads 400–700), so nothing is faux-bolded or blurred.
       fontWeight: {
-        semibold: '500',
-        bold: '600',
-        extrabold: '600',
-        black: '600',
+        semibold: '600',
+        bold: '700',
+        extrabold: '700',
+        black: '700',
       },
     },
   },

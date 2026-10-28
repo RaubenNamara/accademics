@@ -40,22 +40,22 @@
             <div class="nav-fold-inner space-y-0.5">
               <RouterLink
                 v-for="item in group.items"
-                :key="item.to"
+                :key="item.label"
                 :to="item.to"
                 class="group flex items-center gap-2.5 rounded-xl py-1.5 pl-3 pr-2.5 text-sm font-medium transition-all duration-150"
                 :class="[
-                  isActive(item.to)
+                  itemActive(item)
                     ? 'bg-brand-100 font-semibold text-brand-900 ring-1 ring-brand-200'
                     : 'text-gray-800 hover:bg-brand-50 hover:text-brand-800',
                   collapsed ? 'lg:justify-center lg:px-0' : ''
                 ]"
                 :title="collapsed ? item.label : undefined"
-                :aria-current="isActive(item.to) ? 'page' : undefined"
+                :aria-current="itemActive(item) ? 'page' : undefined"
                 @click="mobileOpen = false"
               >
                 <span
                   class="relative flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md transition-all duration-150"
-                  :class="isActive(item.to) ? 'bg-brand-600 text-white shadow-sm' : 'text-brand-700 group-hover:text-brand-800'"
+                  :class="itemActive(item) ? 'bg-brand-600 text-white shadow-sm' : 'text-brand-700 group-hover:text-brand-800'"
                 >
                   <component :is="item.icon" class="h-4 w-4" :stroke-width="1.9" />
                   <span v-if="navBadge(item.to) && collapsed" class="absolute -right-1 -top-1 hidden h-2.5 w-2.5 rounded-full bg-red-600 ring-2 ring-white lg:block"></span>
@@ -154,7 +154,7 @@
       </header>
 
       <main class="flex-1 px-3 py-3 sm:px-5 sm:py-4 print:p-0">
-        <div class="mx-auto w-full max-w-[1920px]">
+        <div class="mx-auto w-full max-w-[1920px]" :class="{ 'has-hub': currentHub }">
           <div v-if="!isPortal && termStore.selected.value && !termStore.isViewingOpen.value" class="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
             <span>You are viewing <strong>{{ termStore.label(termStore.selected.value) }}</strong> ({{ termStore.statusOf(termStore.selected.value) }}). Marks can only be entered in the open term<template v-if="termStore.open.value">, {{ termStore.label(termStore.open.value) }}</template>.</span>
             <button v-if="termStore.open.value" type="button" class="font-semibold text-amber-900 underline" @click="termStore.reset()">Back to the open term</button>
@@ -162,6 +162,18 @@
           <div v-if="route.query.denied === '1'" class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             You do not have permission to access that page.
           </div>
+          <nav v-if="currentHub" class="hub-tabs mb-4 print:hidden" :aria-label="currentHub.label">
+            <RouterLink
+              v-for="t in currentHub.tabs"
+              :key="t.to"
+              :to="t.to"
+              class="hub-tab"
+              :class="isActive(t.to) ? 'is-active' : ''"
+              :aria-current="isActive(t.to) ? 'page' : undefined"
+            >
+              <component :is="t.icon" class="flex-shrink-0" :stroke-width="2" /><span>{{ t.label }}</span>
+            </RouterLink>
+          </nav>
           <router-view />
         </div>
       </main>
@@ -203,6 +215,7 @@ const folded = ref(stored('acc.sidebar.folded', []));
 const mobileOpen = ref(false);
 const currentYear = new Date().getFullYear();
 
+// Related pages share one entry; their pages show as tabs above the page (each keeps its own address).
 const allNavSections = [
   { title: 'Overview', items: [
     { to: '/hr-dashboard', label: 'HR Dashboard', icon: LayoutDashboard, zone: 'staff' },
@@ -218,44 +231,54 @@ const allNavSections = [
     { to: '/my/attendance', label: 'Lesson Attendance', icon: CalendarCheck, zone: 'portal' },
     { to: '/my/leave', label: 'My Leave', icon: PlaneTakeoff, zone: 'portal' },
   ] },
-  { title: 'Staff Management', items: [
-    { to: '/teachers', label: 'Teaching Staff', icon: GraduationCap, zone: 'hr' },
-    { to: '/non-teaching-staff', label: 'Non-Teaching Staff', icon: UserRound, zone: 'hr' },
+  { title: 'Staff', items: [
+    { label: 'Staff', icon: GraduationCap, tabs: [
+      { to: '/teachers', label: 'Teaching staff', icon: GraduationCap },
+      { to: '/non-teaching-staff', label: 'Non-teaching staff', icon: UserRound },
+      { to: '/departments', label: 'Departments', icon: Building2 },
+    ] },
+    { label: 'Assignments', icon: BookUser, tabs: [
+      { to: '/teaching-assignments', label: 'Subjects & classes', icon: BookUser },
+      { to: '/class-teacher-assignments', label: 'Class teachers', icon: UsersRound },
+    ] },
     { to: '/teaching-analytics', label: 'Teaching Analytics', icon: ChartColumn, zone: 'hr' },
-    { to: '/class-teacher-assignments', label: 'Class Teachers', icon: UsersRound, zone: 'hr' },
-    { to: '/teaching-assignments', label: 'Teaching Assignments', icon: BookUser, zone: 'school' },
-  ] },
-  { title: 'HR Operations', items: [
     { to: '/leave', label: 'Leave Management', icon: PlaneTakeoff, zone: 'hr' },
-    { to: '/departments', label: 'Departments', icon: Building2, zone: 'hr' },
     { to: '/users', label: 'System Users', icon: ShieldCheck, zone: 'hr' },
   ] },
-  { title: 'Exams & Reports', items: [
-    { to: '/examinations', label: 'Examinations', icon: ClipboardList, zone: 'school' },
-    { to: '/report-cards', label: 'Report Cards', icon: FileBadge, zone: 'school' },
-    { to: '/lesson-plans', label: 'Lesson Plans', icon: Award, zone: 'school' },
-  ] },
-  { title: 'Settings', items: [
-    { to: '/academic-calendar', label: 'Terms & Years', icon: CalendarCog, zone: 'school' },
-    { to: '/curriculum-setup', label: 'Curriculum Setup', icon: BookOpenCheck, zone: 'school' },
-    { to: '/report-settings', label: 'Report Settings', icon: Settings, zone: 'school' },
-    { to: '/platform/schools', label: 'Schools', icon: Building, zone: 'platform' },
-  ] },
-  { title: 'Academic Performance', items: [
+  { title: 'Teaching', items: [
     { to: '/timetable', label: 'Timetable', icon: CalendarDays, zone: 'academic' },
-    { to: '/subject-performance', label: 'Subject Performance', icon: ChartLine, zone: 'academic' },
     { to: '/lesson-monitoring', label: 'Lesson Monitoring', icon: Clock, zone: 'academic' },
-    { to: '/observations', label: 'Observations', icon: Eye, zone: 'academic' },
-    { to: '/duty-performance', label: 'Duty Performance', icon: ListChecks, zone: 'academic' },
-    { to: '/class-performance', label: 'Class Performance', icon: Users, zone: 'academic' },
+    { to: '/lesson-plans', label: 'Lesson Plans', icon: NotebookPen, zone: 'school' },
+    { label: 'Staff Evaluation', icon: Award, tabs: [
+      { to: '/observations', label: 'Lesson observations', icon: Eye },
+      { to: '/duty-performance', label: 'Duty performance', icon: ListChecks },
+      { to: '/class-performance', label: 'Class teacher performance', icon: Users },
+    ] },
     { to: '/reports', label: 'Reports', icon: FileText, zone: 'academic' },
+  ] },
+  { title: 'Exams & Results', items: [
+    { to: '/examinations', label: 'Examinations', icon: ClipboardList, zone: 'school' },
+    { label: 'Report Cards', icon: FileBadge, tabs: [
+      { to: '/report-cards', label: 'Report cards', icon: FileBadge },
+      { to: '/report-settings', label: 'Logo, address & grading', icon: Settings },
+    ] },
+    { label: 'Results', icon: ChartLine, tabs: [
+      { to: '/student-academic-track', label: 'Student marks', icon: GraduationCap },
+      { to: '/subject-performance', label: 'Subject performance', icon: ChartLine },
+      { to: '/bulk-import-results', label: 'Bulk import', icon: Upload },
+    ] },
   ] },
   { title: 'Students', items: [
     { to: '/digital-register', label: 'Student E-files', icon: FolderOpen, zone: 'academic' },
-    { to: '/student-academic-track', label: 'Academic Track', icon: GraduationCap, zone: 'academic' },
-    { to: '/subjects-management', label: 'Subjects', icon: BookOpen, zone: 'academic' },
-    { to: '/classes-management', label: 'Classes', icon: School, zone: 'academic' },
-    { to: '/bulk-import-results', label: 'Bulk Import', icon: Upload, zone: 'academic' },
+    { label: 'Classes & Subjects', icon: School, tabs: [
+      { to: '/classes-management', label: 'Classes', icon: School },
+      { to: '/subjects-management', label: 'Subjects', icon: BookOpen },
+      { to: '/curriculum-setup', label: 'Curriculum', icon: BookOpenCheck },
+    ] },
+  ] },
+  { title: 'Settings', items: [
+    { to: '/academic-calendar', label: 'Terms & Years', icon: CalendarCog, zone: 'school' },
+    { to: '/platform/schools', label: 'Schools', icon: Building, zone: 'platform' },
   ] },
 ];
 
@@ -270,6 +293,9 @@ const userInitials = computed(() => {
 });
 
 const isActive = (path) => route.path === path || route.path.startsWith(`${path}/`);
+const itemActive = (item) => (item.tabs ? item.tabs.some((t) => isActive(t.to)) : isActive(item.to));
+// The grouped entry the current page belongs to: its pages show as tabs above the page.
+const currentHub = computed(() => navSections.value.flatMap((g) => g.items).find((i) => i.tabs && i.tabs.length > 1 && itemActive(i)) || null);
 const isFolded = (title) => folded.value.includes(title);
 const toggleFold = (title) => {
   folded.value = isFolded(title) ? folded.value.filter((t) => t !== title) : [...folded.value, title];
@@ -286,7 +312,7 @@ const toggleMenu = () => {
 
 // Opening a page inside a folded group unfolds it, so you can always see where you are.
 watch(() => route.path, () => {
-  const group = navSections.value.find((g) => g.items.some((i) => isActive(i.to)));
+  const group = navSections.value.find((g) => g.items.some((i) => itemActive(i)));
   if (group && isFolded(group.title)) toggleFold(group.title);
 }, { immediate: true });
 
@@ -305,6 +331,33 @@ const logout = () => {
 </script>
 
 <style scoped>
+/* Tabs for the pages of one sidebar entry: small buttons with a deep orange border. */
+.hub-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.hub-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border: 1.5px solid #ea580c;
+  border-radius: 0.5rem;
+  background: #fff;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #9a3412;
+  white-space: nowrap;
+  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.hub-tab svg { width: 0.9rem; height: 0.9rem; }
+.hub-tab:hover { background: #fff7ed; }
+.hub-tab.is-active { background: #ffedd5; color: #9a3412; font-weight: 600; }
+html.dark .hub-tab { background: transparent; border-color: #f97316; color: #fdba74; }
+html.dark .hub-tab:hover { background: rgba(249, 115, 22, 0.12); }
+html.dark .hub-tab.is-active { background: rgba(249, 115, 22, 0.2); border-color: #f97316; color: #fed7aa; }
+
 .theme-toggle {
   display: inline-flex;
   height: 2.4rem;
@@ -318,8 +371,8 @@ const logout = () => {
   color: rgb(75 85 99);
   transition: background-color 0.2s, color 0.2s, transform 0.3s;
 }
-.theme-toggle:hover { background: rgb(240 253 244); color: rgb(21 128 61); transform: rotate(-12deg); }
-.theme-toggle:focus-visible { outline: 2px solid #22c55e; outline-offset: 2px; }
+.theme-toggle:hover { background: rgb(236 253 245); color: rgb(4 120 87); transform: rotate(-12deg); }
+.theme-toggle:focus-visible { outline: 2px solid #10b981; outline-offset: 2px; }
 html.dark .theme-toggle { background: #16211c; border-color: #31413a; color: #fcd34d; }
 html.dark .theme-toggle:hover { background: #1a2621; color: #fde68a; }
 
@@ -352,11 +405,11 @@ html.dark .theme-toggle:hover { background: #1a2621; color: #fde68a; }
   color: rgb(100 116 139);
   transition: background-color 0.2s, padding 0.3s ease, margin 0.3s ease;
 }
-.nav-fold:focus-visible { outline: 2px solid rgb(21 135 74); outline-offset: 1px; }
+.nav-fold:focus-visible { outline: 2px solid rgb(5 150 105); outline-offset: 1px; }
 .nav-fold-line {
   flex: 1 1 auto;
   height: 1px;
-  background: rgba(21, 135, 74, 0.2);
+  background: rgba(5, 150, 105, 0.2);
   transition: transform 0.3s ease, opacity 0.2s ease;
   transform-origin: left;
 }
@@ -385,16 +438,16 @@ html.dark .theme-toggle:hover { background: #1a2621; color: #fde68a; }
 }
 .nav-fold:hover .nav-fold-chevron,
 .nav-fold:focus-visible .nav-fold-chevron { opacity: 0.75; }
-.nav-fold:hover .nav-fold-line { background: rgba(21, 135, 74, 0.45); }
+.nav-fold:hover .nav-fold-line { background: rgba(5, 150, 105, 0.45); }
 @media (hover: none) { .nav-fold-chevron { opacity: 0.45; } }
 
 .is-folded .nav-fold {
   min-height: 2rem;
   margin-bottom: 0;
   padding: 0 0.6rem 0 0.9rem;
-  background: rgba(21, 135, 74, 0.06);
+  background: rgba(5, 150, 105, 0.06);
 }
-.is-folded .nav-fold:hover { background: rgba(21, 135, 74, 0.12); color: rgb(17 86 51); }
+.is-folded .nav-fold:hover { background: rgba(5, 150, 105, 0.12); color: rgb(6 95 70); }
 .is-folded .nav-fold-line { transform: scaleX(0); opacity: 0; flex: 0 0 0; }
 .is-folded .nav-fold-label { flex: 1 1 auto; max-width: 100%; opacity: 1; }
 .is-folded .nav-fold-chevron { opacity: 0.6; transform: rotate(-90deg); }
@@ -411,6 +464,6 @@ html.dark .theme-toggle:hover { background: #1a2621; color: #fde68a; }
 <style scoped>
 /* dark mode: generated by scripts/build-dark-overrides.cjs */
 html.dark .is-folded .nav-fold:hover {
-  color: var(--d-text-2);
+  color: var(--d-text);
 }
 </style>
