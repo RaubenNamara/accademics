@@ -626,7 +626,7 @@ const deleteResult = async (result) => {
     loadResults();
   } catch (error) {
     console.error('Error deleting result:', error);
-    alert('Error deleting result');
+    alert((error?.response?.data?.message || 'Error deleting result'));
   }
 };
 

@@ -2243,7 +2243,7 @@ const saveRecord = async () => {
   } catch (err) {
     console.error('SAVE ERROR:', err);
     console.error('Error response:', err?.response);
-    error.value = 'Failed to save record';
+    error.value = (err?.response?.data?.message || 'Failed to save record');
   } finally {
     saving.value = false;
   }
@@ -2263,7 +2263,7 @@ const deleteRecord = async (id) => {
     }
   } catch (err) {
     console.error('DELETE ERROR:', err);
-    alert('Failed to delete record');
+    alert((err?.response?.data?.message || 'Failed to delete record'));
   }
 };
 

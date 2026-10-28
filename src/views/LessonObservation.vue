@@ -1013,7 +1013,7 @@ const saveRecord = async () => {
       error.value = `Failed to save: ${errorMsg}`;
     }
   } catch (err) {
-    error.value = err.message || 'An error occurred while saving';
+    error.value = err.message || (err?.response?.data?.message || 'An error occurred while saving');
   } finally {
     saving.value = false;
   }
@@ -1032,7 +1032,7 @@ const deleteRecord = async (id) => {
     }
   } catch (error) {
     console.error('Failed to delete record:', error);
-    alert('Failed to delete record. Please try again.');
+    alert((error?.response?.data?.message || 'Failed to delete record. Please try again.'));
   }
 };
 

@@ -678,7 +678,7 @@ const saveTerm1 = async () => {
     }
   } catch (err) {
     console.error('Failed to save Term 1:', err);
-    error.value = 'Failed to save Term 1';
+    error.value = (err?.response?.data?.message || 'Failed to save Term 1');
   } finally {
     savingTerm1.value = false;
   }
@@ -756,7 +756,7 @@ const saveTerm2 = async () => {
     }
   } catch (err) {
     console.error('Failed to save Term 2:', err);
-    error.value = 'Failed to save Term 2';
+    error.value = (err?.response?.data?.message || 'Failed to save Term 2');
   } finally {
     savingTerm2.value = false;
   }
@@ -834,7 +834,7 @@ const saveTerm3 = async () => {
     }
   } catch (err) {
     console.error('Failed to save Term 3:', err);
-    error.value = 'Failed to save Term 3';
+    error.value = (err?.response?.data?.message || 'Failed to save Term 3');
   } finally {
     savingTerm3.value = false;
   }
@@ -914,7 +914,7 @@ const saveRecord = async () => {
     }
   } catch (err) {
     console.error('Failed to save record:', err);
-    error.value = 'Failed to save';
+    error.value = (err?.response?.data?.message || 'Failed to save');
   } finally {
     saving.value = false;
   }
@@ -933,7 +933,7 @@ const deleteRecord = async (id) => {
     }
   } catch (error) {
     console.error('Failed to delete record:', error);
-    alert('Failed to delete record. Please try again.');
+    alert((error?.response?.data?.message || 'Failed to delete record. Please try again.'));
   }
 };
 

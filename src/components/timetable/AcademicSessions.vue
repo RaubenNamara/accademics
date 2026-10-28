@@ -136,7 +136,7 @@ const saveSession = async () => {
     emit('changed');
   } catch (error) {
     console.error('Error saving session:', error);
-    showToast('Failed to save session', 'error');
+    showToast((error?.response?.data?.message || 'Failed to save session'), 'error');
   }
 };
 
@@ -155,7 +155,7 @@ const deleteSession = async (id) => {
     emit('changed');
   } catch (error) {
     console.error('Error deleting session:', error);
-    showToast('Failed to delete session', 'error');
+    showToast((error?.response?.data?.message || 'Failed to delete session'), 'error');
   }
 };
 

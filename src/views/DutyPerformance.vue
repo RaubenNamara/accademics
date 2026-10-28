@@ -886,8 +886,8 @@ const saveRecord = async () => {
     }
   } catch (err) {
     console.error('Save error:', err);
-    error.value = 'An error occurred while saving';
-    alert('An error occurred while saving');
+    error.value = (err?.response?.data?.message || 'An error occurred while saving');
+    alert((err?.response?.data?.message || 'An error occurred while saving'));
   }
   
   saving.value = false;
@@ -902,7 +902,7 @@ const deleteRecord = async (id) => {
     alert('Evaluation deleted successfully!');
   } catch (err) {
     console.error('Delete error:', err);
-    alert('Failed to delete evaluation');
+    alert((err?.response?.data?.message || 'Failed to delete evaluation'));
   }
 };
 
