@@ -82,9 +82,7 @@
             <span v-if="activeFilterCount" class="rounded-full bg-brand-600 px-1.5 text-xs text-white">{{ activeFilterCount }}</span>
           </button>
           <div class="flex items-center gap-1">
-            <button type="button" class="tool-btn" :disabled="!displayedTeachers.length || loading" title="Download PDF" @click="downloadPDF"><FileText class="h-4 w-4" /><span class="hidden xl:inline">PDF</span></button>
-            <button type="button" class="tool-btn" :disabled="!displayedTeachers.length || loading" title="Download Excel" @click="downloadExcel"><FileSpreadsheet class="h-4 w-4" /><span class="hidden xl:inline">Excel</span></button>
-            <button type="button" class="tool-btn" :disabled="!displayedTeachers.length || loading" title="Download CSV" @click="downloadCSV"><Download class="h-4 w-4" /><span class="hidden xl:inline">CSV</span></button>
+            <DownloadMenu :scopes="STAFF_SCOPES" scope-label="Staff" default-scope="teaching" :busy="downloading" @download="onDownload" />
             <router-link v-if="canViewAnalytics" to="/teaching-analytics" class="tool-btn" title="Teaching analytics"><BarChart3 class="h-4 w-4" /><span class="hidden xl:inline">Analytics</span></router-link>
           </div>
         </template>
@@ -618,6 +616,9 @@
 </template>
 
 <script setup>
+import DownloadMenu from '../components/ui/DownloadMenu.vue';
+import { STAFF_SCOPES, downloadStaff } from '../utils/staffExport.js';
+
 import { computed, onMounted, onBeforeUnmount, ref, h, defineComponent, watch } from 'vue';
 import { teachersAPI, subjectsNewAPI } from '../services/api';
 import TeachersByDepartment from '../components/teachers/TeachersByDepartment.vue';
@@ -1628,6 +1629,18 @@ onBeforeUnmount(() => {
   if (searchTimer) clearTimeout(searchTimer);
   if (toastTimer) clearTimeout(toastTimer);
 });
+// Download every staff member (not just this page), as Excel or PDF.
+const downloading = ref(false);
+const onDownload = async (format, scope) => {
+  downloading.value = true;
+  try {
+    await downloadStaff(format, scope);
+  } catch (e) {
+    alert(e?.response?.data?.message || 'Could not prepare the download');
+  } finally {
+    downloading.value = false;
+  }
+};
 </script>
 <style scoped>
 .tool-btn { @apply inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50; }

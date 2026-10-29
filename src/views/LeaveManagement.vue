@@ -8,6 +8,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
           <button type="button" class="btn-hero px-3" :disabled="loading" title="Refresh" aria-label="Refresh" @click="reload"><RefreshCw class="h-4 w-4" :class="{ 'animate-spin': loading }" /></button>
+          <DownloadMenu :scopes="LEAVE_SCOPES" scope-label="Include" :busy="downloading" @download="downloadLeave" />
           <button type="button" class="btn-hero-primary" @click="openRequest"><Plus class="h-4 w-4" />New request</button>
         </div>
       </div>
@@ -264,6 +265,8 @@
 </template>
 
 <script setup>
+import DownloadMenu from '../components/ui/DownloadMenu.vue';
+import { downloadExcel, downloadPdf } from '../utils/downloads.js';
 import { computed, onMounted, ref } from 'vue';
 import { CalendarDays, Check, Clock, Eye, Plane, PlaneTakeoff, Plus, RefreshCw, Trash2, X } from 'lucide-vue-next';
 import { leaveAPI, employeesAPI } from '../services/api.js';
@@ -419,6 +422,51 @@ onMounted(async () => {
   const e = await employeesAPI.getAll();
   employees.value = e.success ? e.data || [] : [];
 });
+
+// Leave requests and balances as Excel (one sheet each) or a PDF of the requests.
+const LEAVE_SCOPES = [
+  { value: 'year', label: `Requests in ${year}` },
+  { value: 'all', label: 'Every request' },
+  { value: 'pending', label: 'Waiting for a decision' },
+];
+const downloading = ref(false);
+const downloadLeave = async (format, scope) => {
+  downloading.value = true;
+  try {
+    const all = requests.value.filter((r) => (scope === 'pending' ? r.status === 'pending' : scope === 'year' ? String(r.start_date || '').startsWith(String(year)) || String(r.end_date || '').startsWith(String(year)) : true));
+    const rows = all.map((r) => ({
+      name: `${r.first_name || ''} ${r.last_name || ''}`.trim(), code: r.hr_code, staff: r.staff_type === 'teaching' ? 'Teaching' : 'Non-teaching',
+      type: leaveType(r.leave_type).label, from: r.start_date, to: r.end_date, days: Number(r.days || 0),
+      status: leaveStatus(r.status).label, decided_by: r.approved_by_name || '', reason: r.reason || '',
+    }));
+    const label = LEAVE_SCOPES.find((x) => x.value === scope)?.label || 'Leave';
+    if (format === 'excel') {
+      downloadExcel(`leave ${label}`, [
+        { name: 'Requests', columns: [{ key: 'name', label: 'Staff' }, { key: 'code', label: 'Code' }, { key: 'staff', label: 'Staff type' }, { key: 'type', label: 'Leave type' }, { key: 'from', label: 'From' }, { key: 'to', label: 'To' }, { key: 'days', label: 'Days' }, { key: 'status', label: 'Status' }, { key: 'decided_by', label: 'Decided by' }, { key: 'reason', label: 'Reason', width: 50 }], rows },
+        { name: `Balances ${year}`, columns: [{ key: 'name', label: 'Staff' }, { key: 'code', label: 'Code' }, { key: 'type', label: 'Leave type' }, { key: 'entitled', label: 'Entitled' }, { key: 'used', label: 'Used' }, { key: 'left', label: 'Left' }],
+          rows: balances.value.map((b) => ({ name: `${b.first_name || ''} ${b.last_name || ''}`.trim(), code: b.hr_code, type: leaveType(b.leave_type).label, entitled: Number(b.entitled_days || 0), used: Number(b.used_days || 0), left: Number(b.remaining_days || 0) })) },
+      ]);
+    } else {
+      await downloadPdf({
+        title: 'Leave',
+        subtitle: label,
+        filename: `leave ${label}`,
+        columns: [{ key: 'name', label: 'Staff' }, { key: 'type', label: 'Leave type' }, { key: 'from', label: 'From' }, { key: 'to', label: 'To' }, { key: 'days', label: 'Days', align: 'right' }, { key: 'status', label: 'Status' }, { key: 'reason', label: 'Reason' }],
+        rows,
+        summary: [
+          { label: 'Requests', value: rows.length },
+          { label: 'Approved', value: all.filter((r) => r.status === 'approved').length },
+          { label: 'Waiting', value: all.filter((r) => r.status === 'pending').length },
+          { label: 'Days approved', value: all.filter((r) => r.status === 'approved').reduce((t, r) => t + Number(r.days || 0), 0) },
+        ],
+      });
+    }
+  } catch (e) {
+    alert(e?.response?.data?.message || 'Could not prepare the download');
+  } finally {
+    downloading.value = false;
+  }
+};
 </script>
 
 <style scoped>

@@ -6,6 +6,7 @@
           <h1 class="page-hero-title">Duty Performance</h1>
         </div>
         <div class="flex flex-wrap gap-2">
+          <DownloadMenu :scopes="periodScopes" scope-label="Period" :default-scope="periodDefault" :busy="downloading" @download="downloadDuty" />
           <button type="button" class="btn-hero-primary" @click="openAddModal"><Plus class="h-4 w-4" />Add evaluation</button>
         </div>
       </div>
@@ -492,6 +493,8 @@
 </template>
 
 <script setup>
+import DownloadMenu from '../components/ui/DownloadMenu.vue';
+import { downloadExcel, downloadPdf } from '../utils/downloads.js';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { dutyPerformanceAPI, teachersAPI } from '../services/api.js';
@@ -914,6 +917,68 @@ onMounted(() => {
   loadData();
   loadTeachers();
 });
+
+// The whole year of the page's year filter, or one of its terms.
+const periodScopes = computed(() => [
+  { value: 'year', label: `Whole year ${filterYear.value}` },
+  ...[1, 2, 3].map((t) => ({ value: String(t), label: `${filterYear.value} Term ${t}` })),
+]);
+const periodDefault = computed(() => (filterTerm.value ? String(filterTerm.value) : 'year'));
+const periodLabel = (scope) => (scope === 'year' ? `${filterYear.value}, whole year` : `${filterYear.value} Term ${scope}`);
+const downloading = ref(false);
+
+// Every evaluation of the period, with each teacher's average and rating.
+const downloadDuty = async (format, scope) => {
+  downloading.value = true;
+  try {
+    const res = await dutyPerformanceAPI.getAll(filterYear.value, scope === 'year' ? '' : scope);
+    const raw = res?.data?.data || res?.data || [];
+    const list = Array.isArray(raw) ? raw : [];
+    const evals = list.map((r) => ({
+      teacher: r.teacher_name, term: r.term, week: r.week_number,
+      ...Object.fromEntries(DUTY_FIELDS.map((f) => [f.key, Number(r[f.key] || 0)])),
+      total: Number(r.total_score || 0), pct: Number(r.percentage || 0), rating: getStatusFromPercentage(Number(r.percentage || 0)),
+      supervisor: r.supervisor || '', remarks: r.general_remarks || r.comment || '',
+    }));
+    const byTeacher = Object.values(evals.reduce((m, e) => {
+      const k = e.teacher || '-';
+      m[k] ||= { teacher: k, evaluations: 0, sum: 0, best: 0, lowest: 100 };
+      m[k].evaluations += 1; m[k].sum += e.pct; m[k].best = Math.max(m[k].best, e.pct); m[k].lowest = Math.min(m[k].lowest, e.pct);
+      return m;
+    }, {})).map((t) => {
+      const avg = Math.round(t.sum / t.evaluations);
+      return { teacher: t.teacher, evaluations: t.evaluations, average: `${avg}%`, best: `${t.best}%`, lowest: `${t.lowest}%`, rating: getStatusFromPercentage(avg), _avg: avg };
+    }).sort((a, b) => b._avg - a._avg).map((t, i) => ({ rank: i + 1, ...t }));
+    const label = periodLabel(scope);
+    const teacherCols = [{ key: 'rank', label: '#', align: 'right' }, { key: 'teacher', label: 'Teacher' }, { key: 'evaluations', label: 'Evaluations', align: 'right' }, { key: 'average', label: 'Average', align: 'right' }, { key: 'best', label: 'Best', align: 'right' }, { key: 'lowest', label: 'Lowest', align: 'right' }, { key: 'rating', label: 'Rating' }];
+    const avgAll = evals.length ? Math.round(evals.reduce((t, e) => t + e.pct, 0) / evals.length) : 0;
+    if (format === 'excel') {
+      downloadExcel(`duty performance ${label}`, [
+        { name: 'By teacher', columns: teacherCols, rows: byTeacher },
+        { name: 'Every evaluation', columns: [{ key: 'teacher', label: 'Teacher' }, { key: 'term', label: 'Term' }, { key: 'week', label: 'Week' }, ...DUTY_FIELDS.map((f) => ({ key: f.key, label: `${f.label} (/20)` })), { key: 'total', label: 'Total /100' }, { key: 'rating', label: 'Rating' }, { key: 'supervisor', label: 'Supervisor' }, { key: 'remarks', label: 'Remarks', width: 50 }], rows: evals },
+      ]);
+    } else {
+      await downloadPdf({
+        title: 'Duty performance',
+        subtitle: `${label}, teachers ranked by average`,
+        filename: `duty performance ${label}`,
+        columns: teacherCols,
+        rows: byTeacher,
+        landscape: false,
+        summary: [
+          { label: 'Evaluations', value: evals.length },
+          { label: 'Teachers', value: byTeacher.length },
+          { label: 'School average', value: `${avgAll}%` },
+          { label: 'Outstanding (90%+)', value: byTeacher.filter((t) => t._avg >= 90).length },
+        ],
+      });
+    }
+  } catch (e) {
+    alert(e?.response?.data?.message || 'Could not prepare the download');
+  } finally {
+    downloading.value = false;
+  }
+};
 </script>
 
 <style scoped>

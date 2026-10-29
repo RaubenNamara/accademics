@@ -6,6 +6,7 @@
           <h1 class="page-hero-title">Lesson Monitoring</h1>
         </div>
         <div class="flex flex-wrap gap-2">
+          <DownloadMenu :scopes="periodScopes" scope-label="Period" :default-scope="periodDefault" :busy="downloading" @download="downloadTimeLost" />
           <button type="button" class="btn-hero" @click="showReports = !showReports"><BarChart3 class="h-4 w-4" />Reports</button>
           <button type="button" class="btn-hero-primary" @click="openAddModal"><Plus class="h-4 w-4" />Add record</button>
         </div>
@@ -939,6 +940,8 @@
 </template>
 
 <script setup>
+import DownloadMenu from '../components/ui/DownloadMenu.vue';
+import { downloadExcel, downloadPdf } from '../utils/downloads.js';
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { schoolSettingsAPI, lessonMonitoringAPI, teachersAPI, classesAPI, subjectsNewAPI, lessonCompensationsAPI } from '../services/api';
 import jsPDF from 'jspdf';
@@ -2350,6 +2353,67 @@ onMounted(() => {
 });
 // Back to page 1 when filtering leaves the current page empty (declared last: it reads groupedRecords).
 watch(visibleGroups, () => { if ((groupPage.value - 1) * groupsPerPage.value >= visibleGroups.value.length) groupPage.value = 1; });
+
+// The whole year of the page's year filter, or one of its terms.
+const periodScopes = computed(() => [
+  { value: 'year', label: `Whole year ${filterYear.value}` },
+  ...[1, 2, 3].map((t) => ({ value: String(t), label: `${filterYear.value} Term ${t}` })),
+]);
+const periodDefault = computed(() => (filterTerm.value ? String(filterTerm.value) : 'year'));
+const periodLabel = (scope) => (scope === 'year' ? `${filterYear.value}, whole year` : `${filterYear.value} Term ${scope}`);
+const downloading = ref(false);
+
+// Every lesson record of the period (not only the page's filters), with totals per teacher and per class.
+const downloadTimeLost = async (format, scope) => {
+  downloading.value = true;
+  try {
+    const lessons = normalizeRows(await lessonMonitoringAPI.getAll(filterYear.value, scope === 'year' ? '' : scope)).map((r) => ({
+      date: r.attendance_date, week: r.week_number, day: r.day_of_week, term: r.term, teacher: r.teacher_name, subject: r.subject,
+      class: `${r.class || ''} ${r.stream || ''}`.trim(), time_in: shortTime(r.time_in), time_out: shortTime(r.time_out),
+      expected: Number(r.expected_minutes || 0), taught: Number(r.actual_minutes || 0), lost: Number(r.minutes_lost || 0),
+      made_up: Number(r.minutes_compensated || 0), status: Number(r.minutes_lost || 0) === 0 ? 'Complete' : (r.compensation_status || 'Not compensated'),
+    }));
+    const group = (keyOf) => Object.values(lessons.reduce((m, l) => {
+      const k = keyOf(l);
+      m[k] ||= { name: k, lessons: 0, expected: 0, lost: 0, made_up: 0 };
+      Object.assign(m[k], { lessons: m[k].lessons + 1, expected: m[k].expected + l.expected, lost: m[k].lost + l.lost, made_up: m[k].made_up + l.made_up });
+      return m;
+    }, {})).map((g) => ({ ...g, owed: Math.max(0, g.lost - g.made_up), kept: g.expected ? `${Math.max(0, Math.round(100 - (g.lost / g.expected) * 100))}%` : '-' }))
+      .sort((a, b) => b.lost - a.lost);
+    const byTeacher = group((l) => l.teacher || '-');
+    const byClass = group((l) => l.class || '-');
+    const sumCols = (first) => [{ key: 'name', label: first }, { key: 'lessons', label: 'Lessons', align: 'right' }, { key: 'expected', label: 'Planned min', align: 'right' }, { key: 'lost', label: 'Min lost', align: 'right' }, { key: 'made_up', label: 'Made up', align: 'right' }, { key: 'owed', label: 'Still owed', align: 'right' }, { key: 'kept', label: 'Time kept', align: 'right' }];
+    const label = periodLabel(scope);
+    const lost = lessons.reduce((t, l) => t + l.lost, 0);
+    const madeUp = lessons.reduce((t, l) => t + l.made_up, 0);
+    if (format === 'excel') {
+      downloadExcel(`lesson time lost ${label}`, [
+        { name: 'By teacher', columns: sumCols('Teacher'), rows: byTeacher },
+        { name: 'By class', columns: sumCols('Class'), rows: byClass },
+        { name: 'Every lesson', columns: [{ key: 'date', label: 'Date' }, { key: 'term', label: 'Term' }, { key: 'week', label: 'Week' }, { key: 'day', label: 'Day' }, { key: 'teacher', label: 'Teacher' }, { key: 'subject', label: 'Subject' }, { key: 'class', label: 'Class' }, { key: 'time_in', label: 'In' }, { key: 'time_out', label: 'Out' }, { key: 'expected', label: 'Planned min' }, { key: 'taught', label: 'Taught min' }, { key: 'lost', label: 'Min lost' }, { key: 'made_up', label: 'Made up' }, { key: 'status', label: 'Status' }], rows: lessons },
+      ]);
+    } else {
+      await downloadPdf({
+        title: 'Lesson time lost',
+        subtitle: `${label}, by teacher`,
+        filename: `lesson time lost ${label}`,
+        columns: sumCols('Teacher'),
+        rows: byTeacher,
+        landscape: false,
+        summary: [
+          { label: 'Lessons recorded', value: lessons.length.toLocaleString() },
+          { label: 'Time lost', value: `${lost.toLocaleString()} min` },
+          { label: 'Made up', value: `${madeUp.toLocaleString()} min` },
+          { label: 'Still owed', value: `${Math.max(0, lost - madeUp).toLocaleString()} min` },
+        ],
+      });
+    }
+  } catch (e) {
+    alert(e?.response?.data?.message || 'Could not prepare the download');
+  } finally {
+    downloading.value = false;
+  }
+};
 </script>
 
 <style scoped>

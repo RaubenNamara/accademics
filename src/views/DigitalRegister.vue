@@ -65,8 +65,7 @@
         </label>
       </template>
       <template #actions>
-        <button type="button" class="tool-btn" :disabled="students.length === 0 || loading" title="Download PDF" @click="downloadPDF"><FileText class="h-4 w-4" /><span class="hidden lg:inline">PDF</span></button>
-        <button type="button" class="tool-btn" :disabled="pagination.total === 0 || loading || exportingExcel" title="Download Excel" @click="downloadExcel"><FileSpreadsheet class="h-4 w-4" /><span class="hidden lg:inline">{{ exportingExcel ? 'Exporting…' : 'Excel' }}</span></button>
+        <DownloadMenu :scopes="STUDENT_SCOPES" scope-label="Students" :busy="exportingExcel" :disabled="loading" @download="downloadStudents" />
       </template>
     </ListToolbar>
 
@@ -833,6 +832,8 @@
 </template>
 
 <script setup>
+import DownloadMenu from '../components/ui/DownloadMenu.vue';
+import { downloadExcel as saveExcel, downloadPdf as savePdf } from '../utils/downloads.js';
 import { ref, onMounted, computed, watch } from 'vue';
 import api from '../services/api.js';
 import { classesAPI } from '../services/api';
@@ -1557,6 +1558,51 @@ onMounted(() => {
   loadClasses();
   loadStudents();
 });
+
+// Download every student (or those matching the filters on this page), as Excel or PDF.
+const STUDENT_SCOPES = [{ value: 'all', label: 'All students' }, { value: 'filters', label: 'Students matching the filters' }];
+const STUDENT_COLS = [
+  { key: 'sn', label: '#', align: 'right' }, { key: 'admission_number', label: 'Admission no' }, { key: 'full_name', label: 'Name' },
+  { key: 'gender', label: 'Gender' }, { key: 'date_of_birth', label: 'Date of birth' }, { key: 'class', label: 'Class' },
+  { key: 'stream', label: 'Stream' }, { key: 'level', label: 'Level' }, { key: 'enrollment_date', label: 'Enrolled' },
+  { key: 'lin', label: 'LIN' }, { key: 'former_school', label: 'Former school' }, { key: 'aggregate', label: 'Aggregate' },
+  { key: 'division', label: 'Division' }, { key: 'parent_count', label: 'Parents' },
+];
+const downloadStudents = async (format, scope) => {
+  exportingExcel.value = true;
+  errorMessage.value = '';
+  try {
+    const f = scope === 'filters' ? filters.value : {};
+    const params = new URLSearchParams({ action: 'export', class: f.class || '', stream: f.stream || '', level: f.level || '', status: f.status || '' });
+    const response = await api.get(`students.php?${params.toString()}`);
+    const list = (Array.isArray(response.data?.data) ? response.data.data : []).map((st, i) => ({ ...st, sn: i + 1, parent_count: st.parent_count || 0 }));
+    const label = scope === 'filters' ? [f.level, f.class, f.stream].filter(Boolean).join(' ') || 'Filtered students' : 'All students';
+    if (format === 'excel') {
+      saveExcel(`students ${label}`, [{ name: 'Students', columns: STUDENT_COLS, rows: list }]);
+    } else {
+      const count = (lv) => list.filter((x) => x.level === lv).length;
+      const girls = list.filter((x) => /^f/i.test(x.gender || '')).length;
+      const boys = list.filter((x) => /^m/i.test(x.gender || '')).length;
+      await savePdf({
+        title: 'Students',
+        subtitle: label,
+        filename: `students ${label}`,
+        columns: STUDENT_COLS.filter((c) => !['lin', 'former_school', 'parent_count', 'date_of_birth'].includes(c.key)),
+        rows: list,
+        summary: [
+          { label: 'Students', value: list.length.toLocaleString() },
+          { label: 'O-Level', value: count('O-Level') },
+          { label: 'A-Level', value: count('A-Level') },
+          { label: 'Girls / boys', value: `${girls} / ${boys}` },
+        ],
+      });
+    }
+  } catch (error) {
+    errorMessage.value = error.response?.data?.error || error.response?.data?.message || 'Could not prepare the download';
+  } finally {
+    exportingExcel.value = false;
+  }
+};
 </script>
 
 <style scoped>

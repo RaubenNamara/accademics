@@ -10,6 +10,7 @@
           <button type="button" class="btn-hero" :disabled="!copySources.length" @click="copyOpen = !copyOpen">
             <Copy class="h-4 w-4" />Copy from another term
           </button>
+          <button type="button" class="btn-hero-primary" @click="openNew()"><Plus class="h-4 w-4" />New assignment</button>
           <div v-if="copyOpen" class="absolute right-0 top-full z-30 mt-2 w-72 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
             <p class="border-b border-gray-100 px-4 py-2.5 text-xs text-gray-500">Adds that term's assignments for classes nobody teaches yet. Nothing already set is changed.</p>
             <button v-for="s in copySources" :key="s.id" type="button" class="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm hover:bg-brand-50" @click="copyFrom(s)">
@@ -92,6 +93,60 @@
       </div>
     </section>
 
+    <!-- One assignment: a teacher for a subject in one class stream -->
+    <Teleport to="body">
+      <div v-if="newForm" class="fixed inset-0 z-[60] flex items-end justify-center bg-gray-900/60 backdrop-blur-sm sm:items-center sm:p-4" @click.self="newForm = null">
+        <form class="w-full max-w-lg overflow-hidden bg-white shadow-2xl sm:rounded-2xl" role="dialog" aria-modal="true" aria-labelledby="new-title" @submit.prevent="saveNew">
+          <header class="flex items-start gap-3 border-b border-gray-100 px-5 py-4">
+            <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-100"><BookUser class="h-5 w-5" /></span>
+            <div class="min-w-0 flex-1">
+              <h3 id="new-title" class="text-lg font-semibold text-gray-900">New assignment</h3>
+              <p class="text-sm text-gray-500">Choose the class stream, the subject and the teacher who teaches it.</p>
+            </div>
+            <button type="button" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" aria-label="Close" @click="newForm = null"><X class="h-5 w-5" /></button>
+          </header>
+          <div class="space-y-4 px-5 py-4">
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium text-gray-700">Class stream</span>
+              <select v-model.number="newForm.class_id" class="input" required>
+                <option :value="null" disabled>Choose a class stream</option>
+                <optgroup v-for="g in classGroups" :key="g.name" :label="g.name">
+                  <option v-for="c in g.classes" :key="c.id" :value="c.id">{{ c.full_class_name }}</option>
+                </optgroup>
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium text-gray-700">Subject</span>
+              <select v-model.number="newForm.subject_id" class="input" required :disabled="!newForm.class_id">
+                <option :value="null" disabled>{{ newForm.class_id ? 'Choose a subject' : 'Choose the class stream first' }}</option>
+                <option v-for="d in subjectsForClass" :key="d.subject_id" :value="d.subject_id">{{ d.name }}{{ holderName(d.subject_id) ? ` (now ${holderName(d.subject_id)})` : '' }}</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium text-gray-700">Teacher</span>
+              <select v-model.number="newForm.teacher_id" class="input" required :disabled="!newForm.subject_id">
+                <option :value="null" disabled>{{ newForm.subject_id ? 'Choose a teacher' : 'Choose the subject first' }}</option>
+                <optgroup v-if="teacherChoices.dept.length" :label="`${subjectName} department`">
+                  <option v-for="t in teacherChoices.dept" :key="t.id" :value="t.id">{{ t.full_name }} · {{ t.teacher_code }}</option>
+                </optgroup>
+                <optgroup label="Other teachers">
+                  <option v-for="t in teacherChoices.others" :key="t.id" :value="t.id">{{ t.full_name }} · {{ t.teacher_code }}</option>
+                </optgroup>
+              </select>
+            </label>
+            <p v-if="newForm.subject_id && holderName(newForm.subject_id) && currentHolderId !== newForm.teacher_id" class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
+              {{ className(newForm.class_id) }} {{ subjectName }} is taught by {{ holderName(newForm.subject_id) }} now. Saving moves it to the teacher you choose.
+            </p>
+            <p v-else-if="newForm.subject_id && currentHolderId && currentHolderId === newForm.teacher_id" class="rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600 ring-1 ring-gray-200">This teacher already teaches it.</p>
+          </div>
+          <footer class="flex justify-end gap-2 border-t border-gray-100 bg-gray-50/70 px-5 py-3">
+            <button type="button" class="btn-secondary" @click="newForm = null">Cancel</button>
+            <button type="submit" class="btn-primary" :disabled="saving || !newForm.class_id || !newForm.subject_id || !newForm.teacher_id || currentHolderId === newForm.teacher_id"><Check class="h-4 w-4" />{{ saving ? 'Saving…' : 'Assign' }}</button>
+          </footer>
+        </form>
+      </div>
+    </Teleport>
+
     <!-- Choose classes for a teacher in one subject -->
     <div v-if="picker" class="fixed inset-0 z-50 flex items-end justify-center bg-gray-900/60 p-0 backdrop-blur-sm sm:items-center sm:p-4" @click.self="picker = null" @keydown.esc="picker = null">
       <div class="flex max-h-[100dvh] w-full max-w-2xl flex-col overflow-hidden bg-white shadow-2xl sm:max-h-[92vh] sm:rounded-2xl" role="dialog" aria-modal="true" aria-labelledby="picker-title">
@@ -141,8 +196,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
-import { Check, ChevronDown, ChevronsUpDown, ClipboardCheck, Copy, Plus, School, UserCheck, UserX, Users, X } from 'lucide-vue-next';
+import { computed, onMounted, ref, watch } from 'vue';
+import { BookUser, Check, ChevronDown, ChevronsUpDown, ClipboardCheck, Copy, Plus, School, UserCheck, UserX, Users, X } from 'lucide-vue-next';
 import ToastBanner from '../components/hr/ToastBanner.vue';
 import StatCards from '../components/ui/StatCards.vue';
 import ListToolbar from '../components/ui/ListToolbar.vue';
@@ -288,6 +343,49 @@ const copyFrom = async (s) => {
     showToast(res.message);
   } catch (e) {
     showToast(e?.response?.data?.message || 'Could not copy', 'error');
+  }
+};
+
+// ---- New assignment: class stream, then subject, then teacher ----
+const newForm = ref(null);
+const openNew = () => { newForm.value = { class_id: null, subject_id: null, teacher_id: null }; };
+// Class streams grouped by form (S1, S2, ...).
+const classGroups = computed(() => {
+  const groups = new Map();
+  for (const c of data.value?.classes || []) {
+    if (!groups.has(c.class_name)) groups.set(c.class_name, { name: c.class_name, classes: [] });
+    groups.get(c.class_name).classes.push(c);
+  }
+  return [...groups.values()];
+});
+// Subjects the chosen stream's level offers.
+const subjectsForClass = computed(() => (data.value?.departments || []).filter((d) => d.class_ids.includes(newForm.value?.class_id)));
+const subjectName = computed(() => (data.value?.departments || []).find((d) => d.subject_id === newForm.value?.subject_id)?.name || '');
+const currentHolderId = computed(() => assignedTo(newForm.value?.subject_id).get(newForm.value?.class_id)?.teacher_id || null);
+const holderName = (subjectId) => {
+  const a = assignedTo(subjectId).get(newForm.value?.class_id);
+  return a ? teacherById.value.get(a.teacher_id)?.full_name || 'another teacher' : '';
+};
+// The subject's department first, then every other active teacher.
+const teacherChoices = computed(() => {
+  const dept = (data.value?.departments || []).find((d) => d.subject_id === newForm.value?.subject_id)?.teachers || [];
+  const ids = new Set(dept.map((t) => t.id));
+  return { dept, others: (data.value?.teachers || []).filter((t) => !ids.has(t.id)) };
+});
+watch(() => newForm.value?.class_id, () => { if (newForm.value && !subjectsForClass.value.some((d) => d.subject_id === newForm.value.subject_id)) newForm.value.subject_id = null; });
+watch(() => newForm.value?.subject_id, () => { if (newForm.value) newForm.value.teacher_id = currentHolderId.value; });
+const saveNew = async () => {
+  const { class_id: classId, subject_id: subjectId, teacher_id: teacherId } = newForm.value;
+  saving.value = true;
+  try {
+    const res = await teachingAssignmentsAPI.assign(sessionId.value, teacherId, subjectId, [classId]);
+    data.value = res.data;
+    showToast(res.message);
+    newForm.value = null;
+  } catch (e) {
+    showToast(e?.response?.data?.message || 'Could not save', 'error');
+  } finally {
+    saving.value = false;
   }
 };
 

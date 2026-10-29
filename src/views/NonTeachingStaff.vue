@@ -49,7 +49,7 @@
         </label>
       </template>
       <template #actions>
-        <button type="button" class="tool-btn" :disabled="!filteredStaff.length" title="Download Excel" @click="exportToExcel"><FileSpreadsheet class="h-4 w-4" /><span class="hidden lg:inline">Excel</span></button>
+        <DownloadMenu :scopes="STAFF_SCOPES" scope-label="Staff" default-scope="non_teaching" :busy="downloading" @download="onDownload" />
       </template>
     </ListToolbar>
 
@@ -951,6 +951,9 @@
 </template>
 
 <script setup>
+import DownloadMenu from '../components/ui/DownloadMenu.vue';
+import { STAFF_SCOPES, downloadStaff } from '../utils/staffExport.js';
+
 import { ref, computed, onMounted, watch } from 'vue';
 import { nonTeachingStaffAPI, departmentsAPI, rolesAPI } from '../services/api.js';
 import { useToast } from '../composables/useToast.js';
@@ -1628,6 +1631,18 @@ onMounted(async () => {
   await loadMeta();
   await load();
 });
+// Download every staff member (not just this page), as Excel or PDF.
+const downloading = ref(false);
+const onDownload = async (format, scope) => {
+  downloading.value = true;
+  try {
+    await downloadStaff(format, scope);
+  } catch (e) {
+    alert(e?.response?.data?.message || 'Could not prepare the download');
+  } finally {
+    downloading.value = false;
+  }
+};
 </script>
 
 <style scoped>

@@ -6,7 +6,10 @@
         <div>
           <h1 class="page-hero-title">Departments</h1>
         </div>
-        <button type="button" class="btn-hero-primary" @click="openForm()"><Plus class="h-4 w-4" />Add department</button>
+        <div class="flex flex-wrap gap-2">
+          <DownloadMenu :busy="downloading" :disabled="!departments.length" @download="downloadDepartments" />
+          <button type="button" class="btn-hero-primary" @click="openForm()"><Plus class="h-4 w-4" />Add department</button>
+        </div>
       </div>
     </div>
 
@@ -194,6 +197,8 @@
 </template>
 
 <script setup>
+import DownloadMenu from '../components/ui/DownloadMenu.vue';
+import { downloadExcel, downloadPdf } from '../utils/downloads.js';
 import { computed, onMounted, ref } from 'vue';
 import { Briefcase, Building2, ChevronRight, CircleCheck, Pencil, Plus, Search, Trash2, Users, X } from 'lucide-vue-next';
 import ToastBanner from '../components/hr/ToastBanner.vue';
@@ -331,6 +336,41 @@ async function addRole() {
 }
 
 onMounted(load);
+
+// Departments as Excel (a sheet of departments and a sheet of every role) or a PDF list.
+const downloading = ref(false);
+const downloadDepartments = async (format) => {
+  downloading.value = true;
+  try {
+    const rows = departments.value.map((d) => ({
+      name: d.name, status: Number(d.is_active) ? 'Active' : 'Inactive', staff: Number(d.staff_count || 0),
+      roles: (d.roles || []).length, role_list: (d.roles || []).map((r) => r.name).join(', '), description: d.description || '',
+    }));
+    if (format === 'excel') {
+      downloadExcel('departments', [
+        { name: 'Departments', columns: [{ key: 'name', label: 'Department' }, { key: 'status', label: 'Status' }, { key: 'staff', label: 'Staff' }, { key: 'roles', label: 'Roles' }, { key: 'role_list', label: 'Role names', width: 60 }, { key: 'description', label: 'Description', width: 50 }], rows },
+        { name: 'Roles', columns: [{ key: 'department', label: 'Department' }, { key: 'role', label: 'Role' }], rows: departments.value.flatMap((d) => (d.roles || []).map((r) => ({ department: d.name, role: r.name }))) },
+      ]);
+    } else {
+      await downloadPdf({
+        title: 'Departments',
+        subtitle: 'Departments, staff and roles',
+        columns: [{ key: 'name', label: 'Department' }, { key: 'status', label: 'Status' }, { key: 'staff', label: 'Staff', align: 'right' }, { key: 'role_list', label: 'Roles' }],
+        rows,
+        summary: [
+          { label: 'Departments', value: rows.length },
+          { label: 'Active', value: rows.filter((r) => r.status === 'Active').length },
+          { label: 'Staff', value: rows.reduce((t, r) => t + r.staff, 0) },
+          { label: 'Roles', value: rows.reduce((t, r) => t + r.roles, 0) },
+        ],
+      });
+    }
+  } catch (e) {
+    alert(e?.response?.data?.message || 'Could not prepare the download');
+  } finally {
+    downloading.value = false;
+  }
+};
 </script>
 
 <style scoped>

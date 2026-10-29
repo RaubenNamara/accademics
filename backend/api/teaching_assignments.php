@@ -162,6 +162,13 @@ function ta_overview(PDO $db, int $sid): array
         $classIds = array_values(array_map(fn($c) => $c['id'], array_filter($classes, fn($c) => in_array($id, $offered[$c['level']] ?? [], true))));
         $members = array_values(array_filter(array_map(fn($l) => (int)$l['subject_id'] === $id ? ($byTeacher[(int)$l['teacher_id']] ?? null) : null, $links)));
         $mine = array_values(array_filter($assignments, fn($a) => $a['subject_id'] === $id));
+        // A teacher given this subject from outside its department is listed with it too.
+        $listed = array_column($members, 'id');
+        foreach (array_unique(array_column($mine, 'teacher_id')) as $tid) {
+            if (!in_array($tid, $listed, true) && isset($byTeacher[$tid])) {
+                $members[] = $byTeacher[$tid] + ['outside_department' => true];
+            }
+        }
         if (!$members && !$mine) {
             continue;
         }
