@@ -157,9 +157,13 @@ function ta_overview(PDO $db, int $sid): array
 
     $subjects = $db->query('SELECT id, subject_name, subject_code FROM subjects_new ORDER BY subject_name')->fetchAll(PDO::FETCH_ASSOC);
     $departments = [];
+    $allSubjects = []; // every subject with the classes that offer it, for assigning even before a department has teachers
     foreach ($subjects as $s) {
         $id = (int)$s['id'];
         $classIds = array_values(array_map(fn($c) => $c['id'], array_filter($classes, fn($c) => in_array($id, $offered[$c['level']] ?? [], true))));
+        if ($classIds) {
+            $allSubjects[] = ['subject_id' => $id, 'name' => $s['subject_name'], 'code' => $s['subject_code'], 'class_ids' => $classIds];
+        }
         $members = array_values(array_filter(array_map(fn($l) => (int)$l['subject_id'] === $id ? ($byTeacher[(int)$l['teacher_id']] ?? null) : null, $links)));
         $mine = array_values(array_filter($assignments, fn($a) => $a['subject_id'] === $id));
         // A teacher given this subject from outside its department is listed with it too.
@@ -192,6 +196,7 @@ function ta_overview(PDO $db, int $sid): array
         'closed' => (int)$db->query("SELECT is_archived FROM academic_sessions WHERE id = $sid")->fetchColumn() === 1,
         'classes' => $classes,
         'departments' => $departments,
+        'subjects' => $allSubjects,
         'assignments' => $assignments,
         'teachers' => array_values($byTeacher),
         'sessions' => $sessions,

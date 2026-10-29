@@ -359,8 +359,8 @@ const classGroups = computed(() => {
   return [...groups.values()];
 });
 // Subjects the chosen stream's level offers.
-const subjectsForClass = computed(() => (data.value?.departments || []).filter((d) => d.class_ids.includes(newForm.value?.class_id)));
-const subjectName = computed(() => (data.value?.departments || []).find((d) => d.subject_id === newForm.value?.subject_id)?.name || '');
+const subjectsForClass = computed(() => (data.value?.subjects || data.value?.departments || []).filter((d) => d.class_ids.includes(newForm.value?.class_id)));
+const subjectName = computed(() => (data.value?.subjects || data.value?.departments || []).find((d) => d.subject_id === newForm.value?.subject_id)?.name || '');
 const currentHolderId = computed(() => assignedTo(newForm.value?.subject_id).get(newForm.value?.class_id)?.teacher_id || null);
 const holderName = (subjectId) => {
   const a = assignedTo(subjectId).get(newForm.value?.class_id);
