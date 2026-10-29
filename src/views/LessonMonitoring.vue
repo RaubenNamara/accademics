@@ -1057,6 +1057,7 @@ const LESSON_LENGTHS = [
   { label: 'Single', minutes: 40 },
   { label: 'Double', minutes: 80 },
   { label: 'Triple', minutes: 120 },
+  { label: 'Quadruple', minutes: 160 },
 ];
 const selectedFormTeacher = computed(() => teachersList.value.find((t) => String(t.id) === String(form.value.teacher_id)) || null);
 const initials = (name) => String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
