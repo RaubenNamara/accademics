@@ -221,7 +221,7 @@ const currentYear = new Date().getFullYear();
 const allNavSections = [
   { title: 'Overview', items: [
     { to: '/hr-dashboard', label: 'HR Dashboard', icon: LayoutDashboard, zone: 'staff' },
-    { to: '/academic-dashboard', label: 'Academic Dashboard', icon: LayoutGrid, zone: 'academic' },
+    { to: '/academic-dashboard', label: 'Academics', icon: LayoutGrid, zone: 'academic' },
   ] },
   { title: 'My Work', items: [
     { to: '/my/dashboard', label: 'My Dashboard', icon: House, zone: 'portal' },
