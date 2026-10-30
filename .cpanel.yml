@@ -1,8 +1,8 @@
 ---
+# cPanel Git Version Control: "Deploy HEAD Commit" runs these tasks.
+# deploy/deploy.sh copies dist/ and backend/ into the live site and keeps the server's own
+# files (.htaccess, php.ini, backend/config/*.local.php, uploads). cPanel has already pulled,
+# so the script does not pull again. Database migrations are still run by hand after a backup.
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/smacon/public_html/accademics
-    - /bin/mkdir -p $DEPLOYPATH/backend
-    - rsync -a --exclude='config/Database.php' backend/. $DEPLOYPATH/backend/
-    - /bin/cp -R dist/. $DEPLOYPATH/
-    - /bin/cp -f .htaccess $DEPLOYPATH/.htaccess
+    - /bin/bash "$HOME/repositories/accademics/deploy/deploy.sh" --no-pull
