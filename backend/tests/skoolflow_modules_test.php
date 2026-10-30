@@ -127,7 +127,7 @@ try {
     }
     check('admin sets up AOI 1, AOI 2, Mid Term and End of Term', count(array_filter($ids)) === 4);
     $shares = $db->query('SELECT exam_type, weight FROM exams WHERE id IN (' . implode(',', array_map('intval', $ids)) . ')')->fetchAll(PDO::FETCH_KEY_PAIR);
-    check('AOIs count out of 20 and exams out of 80, set from the type', (float)($shares['AOI'] ?? 0) === 20.0 && (float)($shares['EOT'] ?? 0) === 80.0 && (float)($shares['MOT'] ?? 0) === 80.0, json_encode($shares));
+    check('each AOI counts out of 10 and exams out of 80, set from the type', (float)($shares['AOI'] ?? 0) === 10.0 && (float)($shares['EOT'] ?? 0) === 80.0 && (float)($shares['MOT'] ?? 0) === 80.0, json_encode($shares));
     [$st] = call('POST', 'exams.php', ['academic_session_id' => $sid, 'name' => 'SFTEST Hack', 'exam_type' => 'EOT', 'max_marks' => 100, 'weight' => 50], $teacherToken);
     check('a teacher cannot set up exams', $st === 403, (string)$st);
     [, $list] = call('GET', "exams.php?academic_session_id=$sid", null, $teacherToken);
@@ -205,14 +205,46 @@ try {
     $s2 = $byStudent[$students[2]['student_id']] ?? null;
     $s3 = $byStudent[$students[3]['student_id']] ?? null;
     $row = fn($c) => $c['subjects'][0] ?? [];
-    // Learner 1: AOIs 3/3, 3/3 -> 20, 20 (avg 20); Mid Term 70 -> 56, End of Term 90 -> 72 (avg 64); final 20 + 64 = 84.
-    check('each AOI is converted to 20 and each exam to 80', ($row($s0)['scores'][$ids['AOI 1']] ?? null) == 20 && ($row($s0)['scores'][$ids['Mid Term']] ?? null) == 56 && ($row($s0)['scores'][$ids['End of Term']] ?? null) == 72, json_encode($row($s0)));
-    check('final = AOI average (/20) + exam average (/80)', ($row($s0)['aoi'] ?? null) == 20 && ($row($s0)['exam'] ?? null) == 64 && ($row($s0)['final'] ?? null) == 84, json_encode($row($s0)));
-    // Learner 2: AOIs 2/3, 1/3 -> 13.3, 6.7 (avg 10); End of Term 60 -> 48; final 58.
+    // Learner 1: AOIs 3/3, 3/3 -> 10, 10 (best two make 20); Mid Term 70 -> 56, End of Term 90 -> 72 (avg 64); final 20 + 64 = 84.
+    check('each AOI is converted to 10 and each exam to 80', ($row($s0)['scores'][$ids['AOI 1']] ?? null) == 10 && ($row($s0)['scores'][$ids['Mid Term']] ?? null) == 56 && ($row($s0)['scores'][$ids['End of Term']] ?? null) == 72, json_encode($row($s0)));
+    check('final = best two AOIs (/20) + exam average (/80)', ($row($s0)['aoi'] ?? null) == 20 && ($row($s0)['exam'] ?? null) == 64 && ($row($s0)['final'] ?? null) == 84, json_encode($row($s0)));
+    // Learner 2: AOIs 2/3, 1/3 -> 6.7, 3.3 (20 x 15/30 = 10); End of Term 60 -> 48; final 58.
     check('a learner who missed the Mid Term is averaged on the exams they sat', ($row($s1)['final'] ?? null) == 58, json_encode($row($s1)));
     // Learner 4: End of Term 72 only -> 57.6 of 80 -> scaled to 72 out of 100.
     check('a learner with only one exam is scaled to 100', array_key_exists('aoi', $row($s3)) && $row($s3)['aoi'] === null && ($row($s3)['final'] ?? null) == 72, json_encode($row($s3)));
     check('grade and comment come from the school’s grade scale', ($s0['subjects'][0]['grade'] ?? '') === 'A' && ($s2['subjects'][0]['grade'] ?? '') === 'C');
+    // The scheme itself: best two of three AOIs, and the admin's choice of where the 80 comes from.
+    $three = sf_final_mark([10, 4, 8], [72]);
+    check('three AOIs: the best two make the 20 (10 + 8 = 18)', $three['aoi'] == 18 && $three['final'] == 90, json_encode($three));
+    $one = sf_final_mark([7], [40]);
+    check('a single AOI so far counts double (7 -> 14)', $one['aoi'] == 14 && $one['final'] == 54, json_encode($one));
+    check('basis both: MOT and EOT count, BOT does not', sf_counts_to_final('MOT', 'both') && sf_counts_to_final('EOT', 'both') && !sf_counts_to_final('BOT', 'both'));
+    check('basis EOT: only the end of term counts', sf_counts_to_final('EOT', 'EOT') && !sf_counts_to_final('MOT', 'EOT') && sf_counts_to_final('AOI', 'EOT'));
+    $oldBasis = sf_exam_basis($db);
+    [$st] = call('POST', 'exams.php?action=scheme', ['exam_basis' => 'EOT'], $teacherToken);
+    check('a teacher cannot change where the 80 comes from', $st === 403, "status $st");
+    [$st, $r] = call('POST', 'exams.php?action=scheme', ['exam_basis' => 'EOT'], $admin);
+    [, $rcE] = call('GET', "report_cards.php?" . http_build_query(['academic_session_id' => $sid, 'class_id' => $class['id']]), null, $admin);
+    $s0e = array_values(array_filter($rcE['data']['students'] ?? [], fn($c) => $c['student']['id'] === $students[0]['student_id']))[0] ?? [];
+    $rowE = $s0e['subjects'][0] ?? [];
+    check('admin sets the 80 to come from the end of term only (20 + 72 = 92)', $st === 200 && ($rowE['exam'] ?? null) == 72 && ($rowE['final'] ?? null) == 92, json_encode([$st, $rowE]));
+    sf_save_exam_basis($db, $oldBasis);
+
+    // Primary school: no AOIs, the mid term and end of term make the whole 100, grades D1 to F9.
+    $oldType = (string)$db->query('SELECT school_type FROM report_settings WHERE id = 1')->fetchColumn() ?: 'secondary';
+    sf_save_exam_basis($db, 'both');
+    $db->exec("UPDATE report_settings SET school_type = 'primary' WHERE id = 1");
+    [$st] = call('POST', 'exams.php', ['academic_session_id' => $sid, 'name' => 'SFTEST Primary AOI', 'exam_type' => 'AOI', 'max_marks' => 100], $admin);
+    check('a primary school cannot set up an AOI', $st === 422, "status $st");
+    [, $rcP] = call('GET', "report_cards.php?" . http_build_query(['academic_session_id' => $sid, 'class_id' => $class['id']]), null, $admin);
+    $s0p = array_values(array_filter($rcP['data']['students'] ?? [], fn($c) => $c['student']['id'] === $students[0]['student_id']))[0] ?? [];
+    $rowP = $s0p['subjects'][0] ?? [];
+    // Learner 1: Mid Term 70, End of Term 90 (each out of 100) -> 80; the AOIs are ignored.
+    check('primary: AOIs ignored, MOT + EOT averaged out of 100 (80)', array_key_exists('aoi', $rowP) && $rowP['aoi'] === null && ($rowP['final'] ?? null) == 80 && ($rowP['scores'][$ids['Mid Term']] ?? null) == 70, json_encode($rowP));
+    check('primary: the scheme says exams make 100', ($rcP['data']['scheme']['exam_out_of'] ?? 0) === 100 && ($rcP['data']['scheme']['school_type'] ?? '') === 'primary');
+    $db->prepare('UPDATE report_settings SET school_type = :t WHERE id = 1')->execute([':t' => $oldType]);
+    sf_save_exam_basis($db, $oldBasis);
+
     check('positions rank the class by average', ($s0['position'] ?? 0) === 1 && ($s3['position'] ?? 0) === 2 && ($s0['out_of'] ?? 0) === 4, json_encode([$s0['position'] ?? null, $s3['position'] ?? null, $s0['out_of'] ?? null]));
     [$st, $one] = call('GET', "report_cards.php?academic_session_id=$sid&class_id={$class['id']}&student_id={$students[1]['student_id']}", null, $admin);
     check('a single student’s report card can be generated', $st === 200 && count($one['data']['students'] ?? []) === 1);

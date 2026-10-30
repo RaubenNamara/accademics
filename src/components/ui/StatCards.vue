@@ -1,5 +1,5 @@
 <template>
-  <div class="grid grid-cols-2 gap-3" :class="cards.length >= 4 ? 'xl:grid-cols-4' : cards.length === 3 ? 'lg:grid-cols-3' : ''">
+  <div class="grid grid-cols-2 gap-3" :class="cards.length >= 6 ? 'md:grid-cols-3 xl:grid-cols-6' : cards.length === 5 ? 'md:grid-cols-3 xl:grid-cols-5' : cards.length === 4 ? 'xl:grid-cols-4' : cards.length === 3 ? 'lg:grid-cols-3' : ''">
     <component
       :is="card.onClick ? 'button' : 'div'"
       v-for="card in cards"

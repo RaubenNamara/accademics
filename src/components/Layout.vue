@@ -187,7 +187,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
-  LayoutDashboard, GraduationCap, UserRound, ChartColumn, UsersRound, BookUser, PlaneTakeoff, Building2, ShieldCheck,
+  LayoutDashboard, LayoutGrid, GraduationCap, UserRound, ChartColumn, UsersRound, BookUser, PlaneTakeoff, Building2, ShieldCheck,
   CalendarDays, ChartLine, Clock, Eye, ListChecks, Users, FileText, FolderOpen, BookOpen, School, Upload,
   LogOut, Menu, Building, Sun, Moon, ChevronLeft, ChevronDown, ClipboardList, NotebookPen, PenLine, Award, FileBadge, Settings,
   CalendarCheck, TrendingUp, House, CalendarRange, CalendarCog, BookOpenCheck, Lock,
@@ -221,6 +221,7 @@ const currentYear = new Date().getFullYear();
 const allNavSections = [
   { title: 'Overview', items: [
     { to: '/hr-dashboard', label: 'HR Dashboard', icon: LayoutDashboard, zone: 'staff' },
+    { to: '/academic-dashboard', label: 'Academic Dashboard', icon: LayoutGrid, zone: 'academic' },
   ] },
   { title: 'My Work', items: [
     { to: '/my/dashboard', label: 'My Dashboard', icon: House, zone: 'portal' },

@@ -205,7 +205,8 @@ try {
         $requests = [];
         $balances = [];
         if ($employeeId) {
-            $r = $db->prepare('SELECT id, leave_type, start_date, end_date, days, reason, status, approved_at, created_at FROM leave_requests WHERE employee_id = :e ORDER BY start_date DESC, id DESC LIMIT 100');
+            $r = $db->prepare('SELECT lr.id, lr.leave_type, lr.start_date, lr.end_date, lr.days, lr.reason, lr.status, lr.approved_at, lr.created_at, u.full_name AS approved_by_name
+                FROM leave_requests lr LEFT JOIN users u ON u.id = lr.approved_by WHERE lr.employee_id = :e ORDER BY lr.start_date DESC, lr.id DESC LIMIT 100');
             $r->execute([':e' => $employeeId]);
             $requests = $r->fetchAll(PDO::FETCH_ASSOC);
             $b = $db->prepare('SELECT leave_type, entitled_days, used_days, remaining_days FROM leave_balances WHERE employee_id = :e AND year = :y');

@@ -26,6 +26,20 @@ const SF_DEFAULT_SCALE = [
     ['min' => 0, 'grade' => 'E', 'comment' => 'Elementary'],
 ];
 
+/** Primary schools grade D1 to F9 (no AOI descriptors such as "Exceptional"). */
+const SF_PRIMARY_SCALE = [
+    ['min' => 90, 'grade' => 'D1', 'comment' => 'Distinction'],
+    ['min' => 80, 'grade' => 'D2', 'comment' => 'Distinction'],
+    ['min' => 70, 'grade' => 'C3', 'comment' => 'Credit'],
+    ['min' => 60, 'grade' => 'C4', 'comment' => 'Credit'],
+    ['min' => 55, 'grade' => 'C5', 'comment' => 'Credit'],
+    ['min' => 50, 'grade' => 'C6', 'comment' => 'Credit'],
+    ['min' => 45, 'grade' => 'P7', 'comment' => 'Pass'],
+    ['min' => 40, 'grade' => 'P8', 'comment' => 'Pass'],
+    ['min' => 0, 'grade' => 'F9', 'comment' => 'Fail'],
+];
+const SF_SCHOOL_TYPES = ['secondary', 'primary'];
+
 /* ------------------------------------------------------------------ */
 /* Schema                                                              */
 /* ------------------------------------------------------------------ */
@@ -38,7 +52,7 @@ function sf_ensure_schema(PDO $db): void
     }
     $ready = tt_table_exists($db, 'exam_marks') && tt_table_exists($db, 'lesson_plans') && tt_table_exists($db, 'report_settings')
         && tt_column_exists($db, 'users', 'teacher_id') && tt_column_exists($db, 'lesson_plans', 'procedure_json') && tt_column_exists($db, 'lesson_plans', 'content')
-        && tt_column_exists($db, 'lesson_plans', 'staff_seen_at');
+        && tt_column_exists($db, 'lesson_plans', 'staff_seen_at') && tt_column_exists($db, 'report_settings', 'exam_basis') && tt_column_exists($db, 'report_settings', 'school_type');
     if (!$ready) {
         sf_run_migration($db);
     }
@@ -157,6 +171,16 @@ function sf_run_migration(PDO $db, ?callable $log = null): void
         // Review queue: when it was last submitted, and when a reviewer first opened it since (the department's "new" badge).
         'submitted_at' => 'DATETIME NULL', 'staff_seen_at' => 'DATETIME NULL',
     ];
+    // Where the 80 comes from: mid term only, end of term only, or both averaged (set on Examinations).
+    if (!tt_column_exists($db, 'report_settings', 'exam_basis')) {
+        $db->exec("ALTER TABLE report_settings ADD COLUMN exam_basis VARCHAR(10) NOT NULL DEFAULT 'both'");
+        $log('report_settings.exam_basis added');
+    }
+    // Secondary (AOIs + exams) or primary (exams only, D1 to F9).
+    if (!tt_column_exists($db, 'report_settings', 'school_type')) {
+        $db->exec("ALTER TABLE report_settings ADD COLUMN school_type VARCHAR(10) NOT NULL DEFAULT 'secondary'");
+        $log('report_settings.school_type added');
+    }
     foreach ($planColumns as $col => $type) {
         if (!tt_column_exists($db, 'lesson_plans', $col)) {
             $db->exec("ALTER TABLE lesson_plans ADD COLUMN $col $type");
@@ -279,7 +303,7 @@ function sf_teacher_marks_progress(PDO $db, int $teacherId, int $sessionId): arr
         }
         if ($subjects) {
             $out[] = ['exam_id' => (int)$e['id'], 'name' => $e['name'], 'exam_type' => $e['exam_type'], 'max_marks' => (float)$e['max_marks'],
-                'out_of' => sf_component_out_of($e['exam_type']), 'subjects' => array_values($subjects)];
+                'out_of' => sf_component_out_of($e['exam_type'], sf_is_primary($db)), 'subjects' => array_values($subjects)];
         }
     }
     return $out;
@@ -325,6 +349,7 @@ function sf_settings(PDO $db): array
 {
     $row = $db->query('SELECT * FROM report_settings WHERE id = 1')->fetch(PDO::FETCH_ASSOC) ?: [];
     $scale = json_decode((string)($row['grade_scale'] ?? ''), true);
+    $type = in_array($row['school_type'] ?? '', SF_SCHOOL_TYPES, true) ? $row['school_type'] : 'secondary';
     return [
         'school_name' => $row['school_name'] ?? "St Mark's College Namagoma",
         'motto' => $row['motto'] ?? null,
@@ -336,8 +361,50 @@ function sf_settings(PDO $db): array
         'head_teacher' => $row['head_teacher'] ?? null,
         'next_term_begins' => $row['next_term_begins'] ?? null,
         'footer_note' => $row['footer_note'] ?? null,
-        'grade_scale' => is_array($scale) && $scale ? $scale : SF_DEFAULT_SCALE,
+        'grade_scale' => is_array($scale) && $scale ? $scale : ($type === 'primary' ? SF_PRIMARY_SCALE : SF_DEFAULT_SCALE),
+        'exam_basis' => in_array($row['exam_basis'] ?? '', SF_EXAM_BASES, true) ? $row['exam_basis'] : 'both',
+        'school_type' => $type,
     ];
+}
+
+/** Where the exam part (80) comes from: the mid term, the end of term, or both averaged. */
+const SF_EXAM_BASES = ['MOT', 'EOT', 'both'];
+
+function sf_exam_basis(PDO $db): string
+{
+    $v = (string)$db->query('SELECT exam_basis FROM report_settings WHERE id = 1')->fetchColumn();
+    return in_array($v, SF_EXAM_BASES, true) ? $v : 'both';
+}
+
+function sf_save_exam_basis(PDO $db, string $basis): string
+{
+    if (!in_array($basis, SF_EXAM_BASES, true)) {
+        throw new TtException('Choose mid term, end of term or both', 422);
+    }
+    $db->prepare('INSERT INTO report_settings (id, exam_basis) VALUES (1, :b) ON DUPLICATE KEY UPDATE exam_basis = VALUES(exam_basis)')->execute([':b' => $basis]);
+    return $basis;
+}
+
+function sf_is_primary(PDO $db): bool
+{
+    return (string)$db->query('SELECT school_type FROM report_settings WHERE id = 1')->fetchColumn() === 'primary';
+}
+
+/** Whether an exam type counts towards the final mark (secondary AOIs always do, towards the 20; primary has no AOIs). */
+function sf_counts_to_final(string $examType, string $basis, bool $primary = false): bool
+{
+    if ($examType === 'AOI') {
+        return !$primary;
+    }
+    return $basis === 'both' ? in_array($examType, ['MOT', 'EOT'], true) : $examType === $basis;
+}
+
+/** The marking scheme as the screens show it. Primary: the mid term / end of term make the whole 100. */
+function sf_scheme(PDO $db): array
+{
+    $primary = sf_is_primary($db);
+    return ['school_type' => $primary ? 'primary' : 'secondary', 'aoi_each_out_of' => SF_AOI_EACH_OUT_OF, 'aoi_out_of' => $primary ? 0 : SF_AOI_OUT_OF,
+        'aoi_best' => SF_AOI_BEST, 'exam_out_of' => $primary ? 100 : SF_EXAM_OUT_OF, 'exam_basis' => sf_exam_basis($db)];
 }
 
 /** Validates and stores settings. The logo must be a PNG/JPEG data URL under 600 KB. */
@@ -399,10 +466,15 @@ function sf_save_settings(PDO $db, array $data): array
             $scale = $clean;
         }
     }
+    $type = (string)($data['school_type'] ?? (sf_is_primary($db) ? 'primary' : 'secondary'));
+    if (!in_array($type, SF_SCHOOL_TYPES, true)) {
+        $errors['school_type'] = 'Choose secondary or primary';
+    }
     if ($errors) {
         throw new TtException((string)reset($errors), 422, ['errors' => $errors]);
     }
 
+    $values['school_type'] = $type;
     $cols = array_keys($values);
     $sql = 'INSERT INTO report_settings (id, ' . implode(', ', $cols) . ', grade_scale' . ($logo !== null ? ', logo' : '') . ')
         VALUES (1, ' . implode(', ', array_map(fn($c) => ":$c", $cols)) . ', :grade_scale' . ($logo !== null ? ', :logo' : '') . ')
@@ -557,34 +629,45 @@ function sf_save_marks(PDO $db, array $exam, int $classId, int $subjectId, array
 /* Report cards                                                        */
 /* ------------------------------------------------------------------ */
 
-/** AOIs count out of 20, every other assessment (BOT, mid term, end of term, other) out of 80. */
+/**
+ * Teachers enter raw marks (out of the exam's max, normally 100). Each AOI converts to 10 and the
+ * best two make the AOI part (20); the mid term / end of term (as the admin sets it) convert to 80.
+ */
+const SF_AOI_EACH_OUT_OF = 10;
+const SF_AOI_BEST = 2;
 const SF_AOI_OUT_OF = 20;
 const SF_EXAM_OUT_OF = 80;
 
-function sf_component_out_of(string $examType): int
+function sf_component_out_of(string $examType, bool $primary = false): int
 {
-    return $examType === 'AOI' ? SF_AOI_OUT_OF : SF_EXAM_OUT_OF;
+    if ($primary) {
+        return 100; // primary: no AOIs, the exams make the whole mark
+    }
+    return $examType === 'AOI' ? SF_AOI_EACH_OUT_OF : SF_EXAM_OUT_OF;
 }
 
 /**
  * A subject's final mark out of 100 from the learner's converted scores.
- * $aoi: each AOI out of 20; $exam: each exam out of 80.
- * AOI part = average of the AOIs (/20); exam part = average of the exams (/80); final = both added.
+ * $aoi: each AOI out of 10; $exam: each counted exam out of 80.
+ * AOI part (/20) = average of the best two AOIs, doubled (a single AOI so far counts double);
+ * exam part = average of the counted exams (/80); final = both added.
  * When only one part exists it is scaled to 100, so a learner who has sat only exams (or only
  * AOIs) so far is marked on what they have done.
  *
  * @return array{aoi: ?float, exam: ?float, final: ?float}
  */
-function sf_final_mark(array $aoi, array $exam): array
+function sf_final_mark(array $aoi, array $exam, int $examOutOf = SF_EXAM_OUT_OF): array
 {
-    $aoiPart = $aoi ? array_sum($aoi) / count($aoi) : null;
+    rsort($aoi);
+    $best = array_slice($aoi, 0, SF_AOI_BEST);
+    $aoiPart = $best ? array_sum($best) / count($best) * (SF_AOI_OUT_OF / SF_AOI_EACH_OUT_OF) : null;
     $examPart = $exam ? array_sum($exam) / count($exam) : null;
     if ($aoiPart !== null && $examPart !== null) {
         $final = $aoiPart + $examPart;
     } elseif ($aoiPart !== null) {
         $final = $aoiPart / SF_AOI_OUT_OF * 100;
     } elseif ($examPart !== null) {
-        $final = $examPart / SF_EXAM_OUT_OF * 100;
+        $final = $examPart / $examOutOf * 100;
     } else {
         $final = null;
     }
@@ -594,7 +677,7 @@ function sf_final_mark(array $aoi, array $exam): array
 
 /**
  * Report-card data for a class stream (or one student in it) for a term.
- * Final subject mark: see sf_final_mark() (AOIs /20 + exams /80).
+ * Final subject mark: see sf_final_mark() (best two AOIs /20 + mid/end of term /80).
  * Position is by average among students of the stream who have marks.
  */
 function sf_report_cards(PDO $db, int $sessionId, int $classId, ?int $studentId = null): array
@@ -608,6 +691,8 @@ function sf_report_cards(PDO $db, int $sessionId, int $classId, ?int $studentId 
     $exams = array_values(array_filter($stmt->fetchAll(PDO::FETCH_ASSOC), fn($e) => sf_exam_applies($e, $class['level'])));
     $settings = sf_settings($db);
     $scale = $settings['grade_scale'];
+    $basis = $settings['exam_basis'];
+    $primary = $settings['school_type'] === 'primary';
     $students = sf_class_students($db, $classId);
     if (!$exams) {
         return ['class' => $class, 'exams' => [], 'students' => [], 'settings' => $settings, 'message' => 'No exams are open or closed for this term yet.'];
@@ -642,17 +727,20 @@ function sf_report_cards(PDO $db, int $sessionId, int $classId, ?int $studentId 
             $exam = [];
             foreach ($examMarks as $examId => $m) {
                 $e = $byId[$examId];
-                $outOf = sf_component_out_of($e['exam_type']);
+                $outOf = sf_component_out_of($e['exam_type'], $primary);
                 $score = (float)$m['marks'] / max(0.01, (float)$e['max_marks']) * $outOf;
                 $cells[$examId] = (float)$m['marks'];
                 $scores[$examId] = round($score, 1);
+                if (!sf_counts_to_final($e['exam_type'], $basis, $primary)) {
+                    continue;
+                }
                 if ($e['exam_type'] === 'AOI') {
                     $aoi[] = $score;
                 } else {
                     $exam[] = $score;
                 }
             }
-            $parts = sf_final_mark($aoi, $exam);
+            $parts = sf_final_mark($aoi, $exam, $primary ? 100 : SF_EXAM_OUT_OF);
             $g = sf_grade($scale, $parts['final']);
             $rows[] = [
                 'subject_id' => $subjectId,
@@ -707,8 +795,8 @@ function sf_report_cards(PDO $db, int $sessionId, int $classId, ?int $studentId 
     return [
         'class' => $class,
         'session' => $session->fetch(PDO::FETCH_ASSOC),
-        'exams' => array_map(fn($e) => ['id' => (int)$e['id'], 'name' => $e['name'], 'exam_type' => $e['exam_type'], 'max_marks' => (float)$e['max_marks'], 'out_of' => sf_component_out_of($e['exam_type'])], $exams),
-        'scheme' => ['aoi_out_of' => SF_AOI_OUT_OF, 'exam_out_of' => SF_EXAM_OUT_OF],
+        'exams' => array_map(fn($e) => ['id' => (int)$e['id'], 'name' => $e['name'], 'exam_type' => $e['exam_type'], 'max_marks' => (float)$e['max_marks'], 'out_of' => sf_component_out_of($e['exam_type'], $primary), 'counts' => sf_counts_to_final($e['exam_type'], $basis, $primary)], $exams),
+        'scheme' => sf_scheme($db),
         'students' => $cards,
         'settings' => $settings,
     ];

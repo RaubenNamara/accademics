@@ -15,6 +15,19 @@
     <div v-if="loading" class="card px-5 py-10 text-center text-sm text-gray-500">Loading…</div>
     <div v-else class="grid gap-5 xl:grid-cols-[1fr_24rem]">
       <div class="min-w-0 space-y-5">
+        <section class="card flex flex-wrap items-center justify-between gap-3 p-5">
+          <div>
+            <h2 class="card-title">School type</h2>
+            <p class="text-xs text-gray-500">{{ form.school_type === 'primary' ? 'No AOIs. Mid term, end of term or both make the final mark (100). Grades D1 to F9.' : 'AOIs make 20 and the mid term / end of term make 80.' }}</p>
+          </div>
+          <div class="inline-flex rounded-xl bg-gray-100 p-1 ring-1 ring-gray-200" role="radiogroup" aria-label="School type">
+            <button v-for="t in SCHOOL_TYPES" :key="t.value" type="button" role="radio" :aria-checked="form.school_type === t.value"
+              class="rounded-lg px-4 py-1.5 text-sm font-semibold transition"
+              :class="form.school_type === t.value ? 'bg-white text-brand-800 shadow-sm ring-1 ring-brand-200' : 'text-gray-600 hover:text-gray-900'"
+              @click="setType(t.value)">{{ t.label }}</button>
+          </div>
+        </section>
+
         <section class="card p-5">
           <h2 class="card-title">School details</h2>
           <div class="mt-4 grid gap-4 sm:grid-cols-2">
@@ -34,7 +47,7 @@
               <p class="text-xs text-gray-500">A final mark gets the first grade whose minimum it reaches. Keep one grade starting at 0.</p>
             </div>
             <div class="flex gap-2">
-              <button type="button" class="btn-secondary px-3 py-1.5 text-xs" @click="resetScale">Use default A–E</button>
+              <button type="button" class="btn-secondary px-3 py-1.5 text-xs" @click="resetScale">{{ form.school_type === 'primary' ? 'Use primary D1–F9' : 'Use default A–E' }}</button>
               <button type="button" class="btn-secondary px-3 py-1.5 text-xs" :disabled="form.grade_scale.length >= 12" @click="addGrade"><Plus class="h-3.5 w-3.5" />Add grade</button>
             </div>
           </div>
@@ -45,7 +58,7 @@
                 <tr v-for="(g, i) in form.grade_scale" :key="i">
                   <td><input v-model.number="g.min" type="number" min="0" max="100" step="0.5" class="input py-1.5"></td>
                   <td><input v-model="g.grade" maxlength="5" class="input py-1.5 font-semibold uppercase"></td>
-                  <td><input v-model="g.comment" maxlength="60" class="input py-1.5" placeholder="e.g. Exceptional"></td>
+                  <td><input v-model="g.comment" maxlength="60" class="input py-1.5" :placeholder="form.school_type === 'primary' ? 'e.g. Distinction' : 'e.g. Exceptional'"></td>
                   <td class="text-xs tabular-nums text-gray-500">{{ rangeOf(i) }}</td>
                   <td><button type="button" class="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" :disabled="form.grade_scale.length <= 2" title="Remove" @click="form.grade_scale.splice(i, 1)"><Trash2 class="h-4 w-4" /></button></td>
                 </tr>
@@ -104,6 +117,18 @@ const DEFAULT_SCALE = [
   { min: 50, grade: 'D', comment: 'Basic' },
   { min: 0, grade: 'E', comment: 'Elementary' },
 ];
+const PRIMARY_SCALE = [
+  { min: 90, grade: 'D1', comment: 'Distinction' },
+  { min: 80, grade: 'D2', comment: 'Distinction' },
+  { min: 70, grade: 'C3', comment: 'Credit' },
+  { min: 60, grade: 'C4', comment: 'Credit' },
+  { min: 55, grade: 'C5', comment: 'Credit' },
+  { min: 50, grade: 'C6', comment: 'Credit' },
+  { min: 45, grade: 'P7', comment: 'Pass' },
+  { min: 40, grade: 'P8', comment: 'Pass' },
+  { min: 0, grade: 'F9', comment: 'Fail' },
+];
+const SCHOOL_TYPES = [{ value: 'secondary', label: 'Secondary' }, { value: 'primary', label: 'Primary' }];
 const textFields = [
   { key: 'school_name', label: 'School name', max: 255, wide: true },
   { key: 'motto', label: 'Motto', max: 255, wide: true },
@@ -130,7 +155,18 @@ const rangeOf = (i) => {
   return higher.length ? `${min}–${Math.min(...higher) - 0.1}` : `${min}–100`;
 };
 
-const resetScale = () => { form.value.grade_scale = DEFAULT_SCALE.map((g) => ({ ...g })); };
+const scaleFor = (type) => (type === 'primary' ? PRIMARY_SCALE : DEFAULT_SCALE);
+const resetScale = () => { form.value.grade_scale = scaleFor(form.value.school_type).map((g) => ({ ...g })); };
+const sameScale = (a, b) => a.length === b.length && a.every((g, i) => Number(g.min) === b[i].min && g.grade === b[i].grade && (g.comment || '') === b[i].comment);
+/** Switching type also switches the grade scale, unless the school has made its own. */
+function setType(type) {
+  if (form.value.school_type === type) return;
+  const sorted = [...form.value.grade_scale].sort((a, b) => Number(b.min) - Number(a.min));
+  const untouched = sameScale(sorted, scaleFor(form.value.school_type));
+  form.value.school_type = type;
+  if (untouched) resetScale();
+  else showToast(`Grade scale kept as you set it. Use "${type === 'primary' ? 'Use primary D1–F9' : 'Use default A–E'}" to switch it.`);
+}
 const addGrade = () => form.value.grade_scale.push({ min: 0, grade: '', comment: '' });
 
 function pickLogo(ev) {

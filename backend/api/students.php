@@ -275,7 +275,8 @@ function studentSummary(PDO $db): void
             SUM(status = 'active' AND level = 'O-Level') AS o_level,
             SUM(status = 'active' AND level = 'A-Level') AS a_level,
             SUM(status = 'completed_o_level') AS completed_o_level,
-            SUM(status = 'completed_a_level') AS completed_a_level
+            SUM(status = 'completed_a_level') AS completed_a_level,
+            SUM(status = 'left') AS left_school
         FROM students")->fetch(PDO::FETCH_ASSOC);
     sendJson(200, ["success" => true, "data" => array_map("intval", $row)]);
 }

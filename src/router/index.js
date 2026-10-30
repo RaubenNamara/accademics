@@ -66,6 +66,7 @@ const routes = [
         },
       },
       { path: 'hr-dashboard', component: HrDashboard, meta: { zone: 'hr' } },
+      { path: 'academic-dashboard', component: () => import('../views/AcademicDashboard.vue'), meta: { zone: 'academic' } },
       { path: 'teachers', component: Teachers, meta: { zone: 'hr' } },
       { path: 'non-teaching-staff', component: NonTeachingStaff, meta: { zone: 'hr' } },
       { path: 'teaching-analytics', component: TeachingAnalytics, meta: { zone: 'hr' } },

@@ -49,7 +49,10 @@ try {
         hr_respond(true, 'Curriculum topics', cu_topics($db, $_GET));
     }
 
-    hr_require_auth(SF_ACADEMIC_ROLES);
+    $payload = hr_require_auth(SF_ACADEMIC_ROLES);
+    if (in_array((string)($payload['role'] ?? ''), ['admin', 'hr_manager'], true)) {
+        hr_respond(false, 'Classes and subjects are managed by the academic office', null, 403);
+    }
 
     if ($method === 'POST' && $action === 'import') {
         $res = cu_import_seed($db);

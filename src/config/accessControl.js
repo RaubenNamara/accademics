@@ -1,6 +1,10 @@
 /**
- * Role-based access: super_admin (all), admin (HR + school records), teacher (the academic office:
- * academics + school records) and subject_teacher (classroom teachers: their own portal only).
+ * Role-based access. Four kinds of user:
+ *  - super_admin: every page (Schools only for the platform owner).
+ *  - admin: every page except Terms & Years, Schools, Classes & Subjects, System Users and the
+ *    Academic Dashboard.
+ *  - teacher (the academic office): only the academic pages listed in ACADEMIC_OFFICE_ROUTES.
+ *  - subject_teacher (classroom teachers): their own portal only.
  * Shared routes are open to every signed-in role.
  */
 
@@ -14,21 +18,6 @@ export const ROLES = {
 /** Routes open to every signed-in role */
 export const SHARED_ROUTES = ['/change-password'];
 
-/** Staff dashboard (every staff role, not classroom teachers) */
-export const STAFF_ROUTES = ['/hr-dashboard'];
-
-/** Exams, report cards, report settings, lesson-plan review and teacher logins: admin + academic office */
-export const SCHOOL_ROUTES = [
-  '/examinations',
-  '/report-cards',
-  '/report-settings',
-  '/lesson-plans',
-  '/academic-calendar',
-  '/curriculum-setup',
-  '/teaching-assignments'
-];
-
-/** Classroom teacher portal */
 /** Managing schools (SaaS): the platform owner only, i.e. a super admin of the home school */
 export const PLATFORM_ROUTES = ['/platform/schools'];
 
@@ -36,6 +25,7 @@ export function isPlatformOwner(user) {
   return normalizeRole(user?.role) === ROLES.SUPER_ADMIN && user?.school?.is_home !== false;
 }
 
+/** Classroom teacher portal */
 export const PORTAL_ROUTES = [
   '/my/dashboard',
   '/my/timetable',
@@ -46,33 +36,44 @@ export const PORTAL_ROUTES = [
   '/my/leave'
 ];
 
-/** Routes allowed for HR (admin) */
-export const HR_ROUTES = [
-  '/hr-dashboard',
-  '/teachers',
-  '/non-teaching-staff',
-  '/teaching-analytics',
+/** The academic office: its dashboard and the academic modules, nothing else. */
+export const ACADEMIC_OFFICE_ROUTES = [
+  '/academic-dashboard',
+  '/teaching-assignments',
   '/class-teacher-assignments',
-  '/leave',
-  '/departments',
+  '/teaching-analytics',
+  '/timetable',
+  '/lesson-monitoring',
+  '/duty-performance',
+  '/observations',
+  '/lesson-observations',
+  '/class-performance',
+  '/lesson-plans',
+  '/reports',
+  '/examinations',
+  '/report-cards',
+  '/report-settings',
+  '/student-academic-track',
+  '/subject-performance',
+  '/bulk-import-results',
+  '/digital-register',
+  '/classes-management',
+  '/subjects-management',
+  '/curriculum-setup'
+];
+
+/** Pages an admin does not get: Terms & Years, Classes & Subjects, System Users, the Academic Dashboard. */
+export const ADMIN_EXCLUDED_ROUTES = [
+  '/academic-dashboard',
+  '/academic-calendar',
+  '/classes-management',
+  '/subjects-management',
+  '/curriculum-setup',
   '/users'
 ];
 
-/** Routes allowed for teachers (academics) */
-export const ACADEMIC_ROUTES = [
-  '/subject-performance',
-  '/lesson-monitoring',
-  '/observations',
-  '/duty-performance',
-  '/class-performance',
-  '/reports',
-  '/digital-register',
-  '/student-academic-track',
-  '/subjects-management',
-  '/classes-management',
-  '/bulk-import-results',
-  '/timetable'
-];
+/** Whether a route is one of the listed pages or a page under it (e.g. /duty-performance/12). */
+const inList = (route, list) => list.some((p) => route === p || route.startsWith(`${p}/`));
 
 export function normalizeRole(role) {
   if (!role) return '';
@@ -95,21 +96,20 @@ export function canAccessRoute(path, role, user = null) {
   if (!r) return false;
   if (SHARED_ROUTES.includes(route)) return true;
   if (PLATFORM_ROUTES.includes(route)) return isPlatformOwner(user || { role });
-  if (r === ROLES.SUBJECT_TEACHER) return PORTAL_ROUTES.includes(route);
+  if (r === ROLES.SUBJECT_TEACHER) return inList(route, PORTAL_ROUTES);
   // The portal belongs to a teacher record, so other roles never open it.
-  if (PORTAL_ROUTES.includes(route)) return false;
+  if (inList(route, PORTAL_ROUTES)) return false;
   if (r === ROLES.SUPER_ADMIN) return true;
-  if (STAFF_ROUTES.includes(route)) return r === ROLES.ADMIN || r === ROLES.TEACHER;
-  if (SCHOOL_ROUTES.includes(route)) return r === ROLES.ADMIN || r === ROLES.TEACHER;
-  if (r === ROLES.ADMIN) return HR_ROUTES.includes(route);
-  if (r === ROLES.TEACHER) return ACADEMIC_ROUTES.includes(route);
+  if (r === ROLES.ADMIN) return !inList(route, ADMIN_EXCLUDED_ROUTES);
+  if (r === ROLES.TEACHER) return inList(route, ACADEMIC_OFFICE_ROUTES);
   return false;
 }
 
 export function getDefaultRoute(role) {
   const r = normalizeRole(role);
   if (r === ROLES.SUBJECT_TEACHER) return '/my/dashboard';
-  if (r === ROLES.TEACHER || r === ROLES.ADMIN || r === ROLES.SUPER_ADMIN) return '/hr-dashboard';
+  if (r === ROLES.TEACHER) return '/academic-dashboard';
+  if (r === ROLES.ADMIN || r === ROLES.SUPER_ADMIN) return '/hr-dashboard';
   return '/login';
 }
 
@@ -127,19 +127,10 @@ export function getRoleLabel(role, user = null) {
 /**
  * Filter navigation sections/items by role.
  * Items may define `tabs` ([{ to, label, icon }]): several pages under one entry, shown as tabs above the page.
- * Items may define `zone`: 'hr' | 'academic' | 'school' (admin + academic office) | 'staff' (every staff role) | 'portal' (classroom teachers)
+ * An item is shown when its user may open its page (canAccessRoute); `zone: 'platform'` items only to the platform owner.
  */
 export function filterNavSections(sections, role, user = null) {
-  const r = normalizeRole(role);
-  const allowed = (item) => {
-    if (item.zone === 'platform') return isPlatformOwner(user || { role });
-    if (r === ROLES.SUBJECT_TEACHER) return item.zone === 'portal';
-    if (item.zone === 'portal') return false;
-    if (r === ROLES.SUPER_ADMIN || item.zone === 'staff' || item.zone === 'school') return true;
-    if (r === ROLES.ADMIN) return item.zone === 'hr';
-    if (r === ROLES.TEACHER) return item.zone === 'academic';
-    return false;
-  };
+  const allowed = (item) => (item.zone === 'platform' ? isPlatformOwner(user || { role }) : canAccessRoute(item.to, role, user));
 
   return sections
     .map((section) => ({

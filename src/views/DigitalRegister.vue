@@ -23,6 +23,8 @@
 
     <StatCards :cards="summaryCards" />
 
+    <StudentSyncCard v-if="isAdmin" @synced="loadSummary(); loadStudents()" />
+
     <ListToolbar
       :search="searchQuery"
       placeholder="Search name or admission number"
@@ -502,120 +504,128 @@
       </div>
     </div>
 
-    <!-- Student e-file: an executive profile -->
+    <!-- Student e-file: banner, tabs, organised sections -->
     <Teleport to="body">
     <div v-if="showViewModal" class="fixed inset-0 z-[60] flex items-end justify-center bg-gray-900/60 backdrop-blur-sm sm:items-center sm:p-4" @click.self="showViewModal = false">
-      <div class="flex h-[100dvh] w-full max-w-6xl flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:max-h-[94vh] sm:rounded-2xl" role="dialog" aria-modal="true" aria-label="Student e-file">
+      <div class="efile flex h-[100dvh] w-full max-w-6xl flex-col overflow-hidden bg-white shadow-2xl sm:h-[92vh] sm:rounded-2xl" role="dialog" aria-modal="true" aria-label="Student e-file">
         <div v-if="!viewData" class="p-10 text-center text-sm text-gray-500">Loading…</div>
         <template v-else>
-          <!-- Identity -->
-          <header class="efile-hero relative flex flex-col gap-4 border-b border-gray-100 px-5 py-5 sm:flex-row sm:items-center sm:px-7">
-            <div class="flex min-w-0 flex-1 items-center gap-4">
-              <span class="efile-avatar flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-50 text-2xl font-bold text-brand-800 ring-4 ring-white shadow-md">
-                <img v-if="viewData.student.profile_picture" :src="fileUrl(viewData.student.profile_picture)" alt="" class="h-full w-full object-cover">
-                <template v-else>{{ initials(viewData.student.full_name) }}</template>
-              </span>
-              <div class="min-w-0">
-                <h2 class="truncate text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">{{ viewData.student.full_name }}</h2>
-                <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
-                  <span class="rounded-md bg-gray-900 px-2 py-0.5 font-mono font-semibold text-white">{{ viewData.student.admission_number || 'No reg. no' }}</span>
-                  <span class="rounded-md bg-brand-50 px-2 py-0.5 font-semibold text-brand-800 ring-1 ring-brand-100">{{ viewData.student.class }} {{ viewData.student.stream }}</span>
-                  <span v-if="viewData.student.level" class="rounded-md bg-sky-50 px-2 py-0.5 font-semibold text-sky-800 ring-1 ring-sky-100">{{ viewData.student.level }}</span>
-                  <span class="rounded-full px-2 py-0.5 font-semibold" :class="STATUS_STYLE[viewData.student.status || 'active']">{{ STATUS_LABEL[viewData.student.status] || 'In school' }}</span>
+          <!-- Identity banner -->
+          <header class="efile-banner relative flex-shrink-0 px-5 pb-4 pt-5 sm:px-7">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div class="flex min-w-0 flex-1 items-center gap-4">
+                <span class="flex h-[4.5rem] w-[4.5rem] flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/15 text-2xl font-bold text-white ring-2 ring-white/40 shadow-lg backdrop-blur">
+                  <img v-if="viewData.student.profile_picture" :src="fileUrl(viewData.student.profile_picture)" alt="" class="h-full w-full object-cover">
+                  <template v-else>{{ initials(viewData.student.full_name) }}</template>
+                </span>
+                <div class="min-w-0">
+                  <h2 class="truncate text-xl font-bold tracking-tight text-white sm:text-2xl">{{ viewData.student.full_name }}</h2>
+                  <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+                    <span class="efile-chip font-mono">{{ viewData.student.admission_number || 'No reg. no' }}</span>
+                    <span class="efile-chip">{{ viewData.student.class }} {{ viewData.student.stream }}</span>
+                    <span v-if="viewData.student.level" class="efile-chip">{{ viewData.student.level }}</span>
+                    <span class="rounded-full px-2 py-0.5 font-semibold" :class="viewData.student.status === 'left' ? 'bg-amber-300 text-amber-950' : 'bg-white text-brand-800'">{{ STATUS_LABEL[viewData.student.status] || 'In school' }}</span>
+                    <span v-if="viewData.student.status === 'left' && viewData.student.left_at" class="text-white/80">{{ Number(viewData.student.left_by_sync) ? 'No longer in SMIS since' : 'Left on' }} {{ String(viewData.student.left_at).slice(0, 10) }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="flex flex-shrink-0 items-center gap-2">
-              <button type="button" class="efile-btn" @click="showViewModal = false; editStudent(viewData.student)"><Pencil class="h-4 w-4" />Edit</button>
-              <button type="button" class="efile-btn" @click="downloadStudentPDF"><Download class="h-4 w-4" />PDF</button>
-              <button type="button" class="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700" aria-label="Close" @click="showViewModal = false"><X class="h-5 w-5" /></button>
+              <div class="flex flex-shrink-0 items-center gap-2">
+                <button type="button" class="efile-banner-btn" @click="showViewModal = false; editStudent(viewData.student)"><Pencil class="h-4 w-4" />Edit</button>
+                <button type="button" class="efile-banner-btn" @click="downloadStudentPDF"><Download class="h-4 w-4" />PDF</button>
+                <button type="button" class="rounded-lg p-2 text-white/80 hover:bg-white/15 hover:text-white" aria-label="Close" @click="showViewModal = false"><X class="h-5 w-5" /></button>
+              </div>
             </div>
           </header>
 
-          <div class="min-h-0 flex-1 overflow-y-auto bg-gray-50/60 px-5 py-5 sm:px-7">
-            <!-- Key figures -->
-            <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <div class="efile-kpi"><p>Gender</p><strong class="capitalize">{{ viewData.student.gender || '-' }}</strong></div>
-              <div class="efile-kpi"><p>Age</p><strong>{{ ageOf(viewData.student.date_of_birth) }}</strong><span>{{ viewData.student.date_of_birth || 'No date of birth' }}</span></div>
-              <div class="efile-kpi"><p>{{ viewData.student.level === 'A-Level' ? 'Grade' : 'Aggregate · Division' }}</p><strong>{{ viewData.student.level === 'A-Level' ? (viewData.student.division || '-') : [viewData.student.aggregate, viewData.student.division].filter(Boolean).join(' · ') || '-' }}</strong><span>From {{ viewData.student.level === 'A-Level' ? 'O-Level' : 'PLE' }}</span></div>
-              <div class="efile-kpi"><p>Results recorded</p><strong>{{ (viewData.results || []).length }}</strong><span>{{ (viewData.parents || []).length }} parent{{ (viewData.parents || []).length === 1 ? '' : 's' }} on file</span></div>
-            </div>
+          <div class="efile-body min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7">
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <div v-for="k in efileKpis" :key="k.label" class="efile-kpi">
+                  <span class="efile-kpi-icon" :class="k.tone"><component :is="k.icon" class="h-4 w-4" /></span>
+                  <div class="min-w-0">
+                    <p>{{ k.label }}</p>
+                    <strong :class="k.capitalize ? 'capitalize' : ''">{{ k.value }}</strong>
+                    <span class="efile-kpi-note">{{ k.note }}</span>
+                  </div>
+                </div>
+              </div>
 
-            <div v-if="viewData.student.behaviour_notes" class="mt-4 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              <AlertCircle class="mt-0.5 h-4 w-4 flex-shrink-0" />
-              <div><p class="font-semibold">Behaviour notes</p><p class="mt-0.5 whitespace-pre-line">{{ viewData.student.behaviour_notes }}</p></div>
-            </div>
+              <div v-for="n in efileNotes" :key="n.label" class="flex gap-3 rounded-xl px-4 py-3 text-sm ring-1" :class="n.style">
+                <AlertCircle class="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <div><p class="font-semibold">{{ n.label }}</p><p class="mt-0.5 whitespace-pre-line">{{ n.text }}</p></div>
+              </div>
 
-            <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
-              <div class="space-y-4">
-                <!-- Details -->
-                <section class="efile-card">
-                  <h3 class="efile-title"><User class="h-4 w-4" />Details</h3>
-                  <dl class="divide-y divide-gray-100 text-sm">
-                    <div v-for="row in detailRows" :key="row.label" class="flex justify-between gap-4 py-2">
-                      <dt class="text-gray-500">{{ row.label }}</dt>
-                      <dd class="text-right font-medium text-gray-900" :class="row.mono ? 'font-mono text-xs' : ''">{{ row.value || '-' }}</dd>
+              <div class="grid gap-4 lg:grid-cols-5">
+                <section class="efile-card lg:col-span-3">
+                  <h3 class="efile-title"><User class="h-4 w-4" />Personal details</h3>
+                  <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                    <div v-for="row in detailRows" :key="row.label" class="efile-field">
+                      <dt>{{ row.label }}</dt>
+                      <dd :class="row.mono ? 'font-mono' : ''">{{ row.value || '-' }}</dd>
                     </div>
                   </dl>
                 </section>
 
-                <!-- Parents -->
-                <section class="efile-card">
-                  <h3 class="efile-title"><UsersIcon class="h-4 w-4" />Parents & guardians</h3>
-                  <ul v-if="viewData.parents?.length" class="space-y-2.5">
-                    <li v-for="(parent, i) in viewData.parents" :key="i" class="flex gap-3 rounded-xl bg-gray-50 p-3 ring-1 ring-gray-100">
-                      <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-gray-700 ring-1 ring-gray-200">{{ initials(parent.full_name) }}</span>
-                      <div class="min-w-0 text-sm">
-                        <p class="font-semibold text-gray-900">{{ parent.full_name }} <span class="font-normal capitalize text-gray-500">· {{ parent.relationship }}</span></p>
-                        <p class="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-600">
-                          <a v-if="parent.phone" :href="`tel:${parent.phone}`" class="inline-flex items-center gap-1 hover:text-brand-700"><Phone class="h-3 w-3" />{{ parent.phone }}</a>
-                          <a v-if="parent.email" :href="`mailto:${parent.email}`" class="inline-flex items-center gap-1 hover:text-brand-700"><Mail class="h-3 w-3" />{{ parent.email }}</a>
-                          <span v-if="parent.nin">NIN {{ parent.nin }}</span>
+                <section class="efile-card lg:col-span-2">
+                  <h3 class="efile-title"><UsersIcon class="h-4 w-4" />Parents & guardians<span class="ml-auto text-xs font-normal text-gray-400">{{ (viewData.parents || []).length }}</span></h3>
+                  <ul v-if="viewData.parents?.length" class="space-y-2">
+                    <li v-for="(parent, i) in viewData.parents" :key="i" class="flex items-center gap-3 rounded-xl bg-gray-50 p-3 ring-1 ring-gray-100">
+                      <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-white">{{ initials(parent.full_name) }}</span>
+                      <div class="min-w-0 flex-1 text-sm">
+                        <p class="truncate font-semibold text-gray-900">{{ parent.full_name }}</p>
+                        <p class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500">
+                          <span class="capitalize">{{ parent.relationship || 'Guardian' }}</span>
                           <span v-if="parent.address" class="inline-flex items-center gap-1"><MapPin class="h-3 w-3" />{{ parent.address }}</span>
+                          <span v-if="parent.nin">NIN {{ parent.nin }}</span>
                         </p>
+                        <p v-if="parent.email" class="truncate text-xs text-gray-500">{{ parent.email }}</p>
                       </div>
+                      <a v-if="parent.phone" :href="`tel:${parent.phone}`" class="efile-call" :title="`Call ${parent.phone}`"><Phone class="h-3.5 w-3.5" /><span class="hidden sm:inline">{{ parent.phone }}</span></a>
+                      <a v-if="parent.email" :href="`mailto:${parent.email}`" class="efile-icon" title="Email"><Mail class="h-4 w-4" /></a>
                     </li>
                   </ul>
-                  <p v-else class="text-sm text-gray-500">No parent or guardian on file.</p>
-                </section>
-
-                <!-- Documents -->
-                <section v-if="viewData.student.former_school_documents?.length || viewData.student.behaviour_documents?.length" class="efile-card">
-                  <h3 class="efile-title"><FileText class="h-4 w-4" />Documents</h3>
-                  <ul class="space-y-1.5">
-                    <li v-for="(doc, i) in [...(viewData.student.former_school_documents || []).map((d) => ({ ...d, kind: 'Former school' })), ...(viewData.student.behaviour_documents || []).map((d) => ({ ...d, kind: 'Discipline' }))]" :key="i" class="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-gray-50">
-                      <File class="h-4 w-4 flex-shrink-0" :class="doc.kind === 'Discipline' ? 'text-rose-500' : 'text-brand-600'" />
-                      <span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium text-gray-900">{{ getCleanFilename(doc.filename) }}</span><span class="block text-[11px] text-gray-500">{{ doc.kind }}</span></span>
-                      <button v-if="isPDF(doc.filename)" type="button" class="efile-icon" title="View" @click="openPDFViewer(doc.file_path)"><Eye class="h-4 w-4" /></button>
-                      <a :href="fileUrl(doc.file_path)" target="_blank" class="efile-icon" title="Download"><Download class="h-4 w-4" /></a>
-                    </li>
-                  </ul>
+                  <p v-else class="rounded-xl bg-gray-50 px-3 py-6 text-center text-sm text-gray-500">No parent or guardian on file.</p>
                 </section>
               </div>
 
-              <div class="space-y-4">
-                <StudentSubjects :student-id="Number(viewData.student.id)" />
+              <StudentSubjects :student-id="Number(viewData.student.id)" />
 
-                <!-- Results -->
-                <section class="efile-card !p-0 overflow-hidden">
-                  <h3 class="efile-title px-4 pt-4"><BookOpen class="h-4 w-4" />Results</h3>
-                  <div v-if="viewData.results?.length" class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                      <thead><tr class="border-y border-gray-100 bg-gray-50 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500"><th class="px-4 py-2">Year · term</th><th class="px-4 py-2">Exam</th><th class="px-4 py-2">Subject</th><th class="px-4 py-2 text-right">Marks</th><th class="px-4 py-2 text-center">Grade</th></tr></thead>
-                      <tbody class="divide-y divide-gray-100">
-                        <tr v-for="result in viewData.results" :key="result.id" class="hover:bg-gray-50/70">
-                          <td class="whitespace-nowrap px-4 py-2 text-gray-600">{{ result.year }} · T{{ result.term }}</td>
-                          <td class="px-4 py-2 text-gray-600">{{ result.exam_type }}</td>
-                          <td class="px-4 py-2 font-medium text-gray-900">{{ result.subject_name }}</td>
-                          <td class="px-4 py-2 text-right font-semibold tabular-nums text-gray-900">{{ result.marks }}</td>
-                          <td class="px-4 py-2 text-center"><span class="inline-flex min-w-[2rem] justify-center rounded-md px-1.5 py-0.5 text-xs font-bold" :class="getGradeColor(result.grade)">{{ result.grade || '-' }}</span></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  <p v-else class="px-4 pb-4 text-sm text-gray-500">No results recorded yet.</p>
-                </section>
-              </div>
+              <!-- Results, by term and exam -->
+              <h3 class="efile-section"><BookOpen class="h-4 w-4" />Results<span v-if="viewData.results?.length" class="font-normal text-gray-400">{{ viewData.results.length }}</span></h3>
+              <div v-if="!resultGroups.length" class="efile-card py-8 text-center text-sm text-gray-500">No results recorded yet.</div>
+              <section v-for="g in resultGroups" :key="g.key" class="efile-card !p-0 overflow-hidden">
+                <div class="flex flex-wrap items-center gap-3 border-b border-gray-100 px-4 py-3">
+                  <h3 class="text-sm font-semibold text-gray-900">{{ g.label }}</h3>
+                  <span class="text-xs text-gray-500">{{ g.items.length }} subject{{ g.items.length === 1 ? '' : 's' }}</span>
+                  <span class="ml-auto rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-800 ring-1 ring-brand-100">Average <span class="tabular-nums">{{ g.average }}</span></span>
+                </div>
+                <table class="w-full text-sm">
+                  <thead><tr class="bg-gray-50 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500"><th class="px-4 py-2">Subject</th><th class="hidden w-2/5 px-4 py-2 sm:table-cell">Score</th><th class="w-20 px-4 py-2 text-right">Marks</th><th class="w-20 px-4 py-2 text-center">Grade</th></tr></thead>
+                  <tbody class="divide-y divide-gray-100">
+                    <tr v-for="r in g.items" :key="r.id" class="hover:bg-gray-50/70">
+                      <td class="px-4 py-2 font-medium text-gray-900">{{ r.subject_name }}</td>
+                      <td class="hidden px-4 py-2 sm:table-cell">
+                        <div class="h-1.5 overflow-hidden rounded-full bg-gray-100"><div class="h-full rounded-full bg-brand-500" :style="{ width: `${Math.max(0, Math.min(100, Number(r.marks) || 0))}%` }"></div></div>
+                      </td>
+                      <td class="px-4 py-2 text-right font-semibold tabular-nums text-gray-900">{{ fmtMark(r.marks) }}</td>
+                      <td class="px-4 py-2 text-center"><span class="inline-flex min-w-[2rem] justify-center rounded-md px-1.5 py-0.5 text-xs font-bold" :class="getGradeColor(r.grade)">{{ r.grade || '-' }}</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </section>
+
+              <!-- Documents -->
+              <template v-if="efileDocs.length">
+              <h3 class="efile-section"><FileText class="h-4 w-4" />Documents<span class="font-normal text-gray-400">{{ efileDocs.length }}</span></h3>
+              <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <li v-for="(doc, i) in efileDocs" :key="i" class="efile-card flex items-center gap-3 !p-3">
+                  <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl" :class="doc.kind === 'Discipline' ? 'bg-rose-50 text-rose-600' : 'bg-brand-50 text-brand-700'"><File class="h-5 w-5" /></span>
+                  <span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium text-gray-900" :title="getCleanFilename(doc.filename)">{{ getCleanFilename(doc.filename) }}</span><span class="block text-[11px] text-gray-500">{{ doc.kind }}</span></span>
+                  <button v-if="isPDF(doc.filename)" type="button" class="efile-icon" title="View" @click="openPDFViewer(doc.file_path)"><Eye class="h-4 w-4" /></button>
+                  <a :href="fileUrl(doc.file_path)" target="_blank" class="efile-icon" title="Download"><Download class="h-4 w-4" /></a>
+                </li>
+              </ul>
+              </template>
             </div>
           </div>
         </template>
@@ -650,7 +660,7 @@ import { downloadExcel as saveExcel, downloadPdf as savePdf } from '../utils/dow
 import { ref, onMounted, computed, watch } from 'vue';
 import api from '../services/api.js';
 import { classesAPI } from '../services/api';
-import { FileText, Upload, X, Download, File, AlertCircle, User, Calendar, MapPin, Phone, Mail, GraduationCap, BookOpen, Award, Plus, FileSpreadsheet, FolderOpen, Users as UsersIcon, Eye, Pencil, Trash2, School, BookOpenCheck } from 'lucide-vue-next';
+import { FileText, Upload, X, Download, File, AlertCircle, User, Calendar, MapPin, Phone, Mail, GraduationCap, BookOpen, Award, Plus, FileSpreadsheet, FolderOpen, Users as UsersIcon, Eye, Pencil, Trash2, School, BookOpenCheck, UserMinus } from 'lucide-vue-next';
 import StatCards from '../components/ui/StatCards.vue';
 import ListToolbar from '../components/ui/ListToolbar.vue';
 import PagerBar from '../components/ui/PagerBar.vue';
@@ -662,6 +672,8 @@ import StudentSubjects from '../components/students/StudentSubjects.vue';
 import { schoolSettingsAPI, studentAcademicsAPI } from '../services/api.js';
 import { buildStudentProfilePdf, imageAsDataUrl } from '../utils/studentProfilePdf.js';
 import AdmitALevelDialog from '../components/students/AdmitALevelDialog.vue';
+import StudentSyncCard from '../components/students/StudentSyncCard.vue';
+import authStore from '../services/authStore.js';
 
 const students = ref([]);
 const allClasses = ref([]);
@@ -678,6 +690,8 @@ const filters = ref({
   status: 'current'
 });
 const showAdmit = ref(false);
+// Administrators can sync the e-files with SMIS.
+const isAdmin = ['admin', 'super_admin'].includes(authStore.getRole());
 const STATUS_LABEL = { completed_o_level: 'Completed S.4', completed_a_level: 'Completed S.6', left: 'Left' };
 const STATUS_STYLE = {
   active: 'bg-brand-50 text-brand-800 ring-1 ring-brand-100',
@@ -702,10 +716,59 @@ const detailRows = computed(() => {
     { label: 'Reg. no', value: st.admission_number, mono: true },
     { label: 'LIN', value: st.lin, mono: true },
     { label: 'Class', value: [st.class, st.stream].filter(Boolean).join(' ') },
+    { label: 'Level', value: st.level },
+    { label: 'Gender', value: st.gender ? st.gender.charAt(0).toUpperCase() + st.gender.slice(1) : '' },
     { label: 'Date of birth', value: st.date_of_birth },
     { label: 'Enrolled', value: st.enrollment_date },
     { label: 'Former school', value: st.former_school },
   ];
+});
+
+// E-file sections.
+const fmtMark = (v) => (v === null || v === undefined || v === '' ? '-' : String(Math.round(Number(v) * 10) / 10));
+const efileDocs = computed(() => {
+  const st = viewData.value?.student || {};
+  return [...(st.former_school_documents || []).map((d) => ({ ...d, kind: 'Former school' })), ...(st.behaviour_documents || []).map((d) => ({ ...d, kind: 'Discipline' }))];
+});
+/** Results grouped by year, term and exam, newest first, each with its average. */
+const resultGroups = computed(() => {
+  const groups = new Map();
+  (viewData.value?.results || []).forEach((r) => {
+    const key = `${r.year}|${r.term}|${r.exam_type}`;
+    if (!groups.has(key)) groups.set(key, { key, year: Number(r.year) || 0, term: Number(r.term) || 0, exam: r.exam_type || '', items: [] });
+    groups.get(key).items.push(r);
+  });
+  return [...groups.values()]
+    .sort((a, b) => b.year - a.year || b.term - a.term || String(b.exam).localeCompare(String(a.exam)))
+    .map((g) => {
+      const marks = g.items.map((r) => Number(r.marks)).filter((n) => Number.isFinite(n));
+      return {
+        ...g,
+        label: `${g.year} · Term ${g.term}${g.exam ? ` · ${g.exam}` : ''}`,
+        average: marks.length ? fmtMark(marks.reduce((t, n) => t + n, 0) / marks.length) : '-',
+        items: [...g.items].sort((a, b) => String(a.subject_name).localeCompare(String(b.subject_name))),
+      };
+    });
+});
+const primaryGuardian = computed(() => (viewData.value?.parents || []).find((p) => p.phone) || null);
+const efileKpis = computed(() => {
+  const st = viewData.value?.student || {};
+  const aLevel = st.level === 'A-Level';
+  const latest = resultGroups.value[0];
+  return [
+    { label: 'Age', value: ageOf(st.date_of_birth), note: st.date_of_birth || 'No date of birth', icon: Calendar, tone: 'bg-sky-50 text-sky-700' },
+    { label: aLevel ? 'O-Level result' : 'PLE aggregate', value: aLevel ? (st.division || '-') : [st.aggregate, st.division].filter(Boolean).join(' · ') || '-', note: aLevel ? 'Entry grade' : 'Aggregate · division', icon: Award, tone: 'bg-amber-50 text-amber-700' },
+    { label: 'Latest average', value: latest ? latest.average : '-', note: latest ? latest.label : 'No results yet', icon: BookOpen, tone: 'bg-brand-50 text-brand-700' },
+    { label: 'Guardians', value: (viewData.value?.parents || []).length, note: primaryGuardian.value?.phone || 'No phone on file', icon: UsersIcon, tone: 'bg-violet-50 text-violet-700' },
+  ];
+});
+const efileNotes = computed(() => {
+  const st = viewData.value?.student || {};
+  return [
+    { label: 'Behaviour notes', text: st.behaviour_notes, style: 'bg-amber-50 text-amber-900 ring-amber-200' },
+    { label: 'Medical notes', text: st.medical_notes, style: 'bg-rose-50 text-rose-900 ring-rose-200' },
+    { label: 'Special needs', text: st.special_needs, style: 'bg-sky-50 text-sky-900 ring-sky-200' },
+  ].filter((n) => String(n.text || '').trim() !== '');
 });
 const studentActions = (student) => [
   { label: 'View e-file', icon: Eye, onClick: () => viewStudent(student) },
@@ -713,7 +776,7 @@ const studentActions = (student) => [
   { label: 'Delete', icon: Trash2, danger: true, onClick: () => deleteStudent(student) },
 ];
 // Whole-school counts; the cards also filter the list.
-const summary = ref({ active: 0, o_level: 0, a_level: 0, completed_o_level: 0 });
+const summary = ref({ active: 0, o_level: 0, a_level: 0, completed_o_level: 0, left_school: 0 });
 const loadSummary = async () => {
   try {
     const res = await api.get('students.php?action=summary');
@@ -728,10 +791,11 @@ const summaryCards = computed(() => {
     loadStudents();
   };
   return [
-    { label: 'Students', value: summary.value.active.toLocaleString(), icon: UsersIcon },
+    { label: 'In school', value: summary.value.active.toLocaleString(), note: 'Current students', icon: UsersIcon, onClick: pick('status', 'active'), active: filters.value.status === 'active' },
     { label: 'O-Level', value: summary.value.o_level.toLocaleString(), icon: School, tone: 'sky', onClick: pick('level', 'O-Level'), active: filters.value.level === 'O-Level' },
     { label: 'A-Level', value: summary.value.a_level.toLocaleString(), icon: BookOpenCheck, tone: 'amber', onClick: pick('level', 'A-Level'), active: filters.value.level === 'A-Level' },
     { label: 'Completed S.4', value: summary.value.completed_o_level.toLocaleString(), note: 'Awaiting A-Level', icon: GraduationCap, tone: 'gray', onClick: pick('status', 'completed_o_level'), active: filters.value.status === 'completed_o_level' },
+    { label: 'Left school', value: (summary.value.left_school || 0).toLocaleString(), note: 'Changed school', icon: UserMinus, tone: 'red', onClick: pick('status', 'left'), active: filters.value.status === 'left' },
   ];
 });
 const onAdmitted = (message) => {
@@ -1441,20 +1505,32 @@ const downloadStudents = async (format, scope) => {
 
 <style scoped>
 /* Student e-file profile */
-.efile-hero { background: radial-gradient(520px 180px at 100% 0%, rgba(16, 185, 129, 0.12), transparent 70%), #fff; }
-.efile-btn { @apply inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50; }
-.efile-kpi { @apply rounded-xl bg-white px-4 py-3 ring-1 ring-gray-200; }
+.efile-banner {
+  background:
+    radial-gradient(420px 160px at 100% 0%, rgba(167, 243, 208, 0.28), transparent 70%),
+    linear-gradient(135deg, #064e3b 0%, #047857 55%, #059669 100%);
+}
+.efile-chip { @apply rounded-md bg-white/15 px-2 py-0.5 font-semibold text-white ring-1 ring-white/25; }
+.efile-banner-btn { @apply inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-sm font-semibold text-white ring-1 ring-white/30 transition hover:bg-white/25; }
+.efile-body { background: #f6f8f7; }
+.efile-section { @apply flex items-center gap-2 pt-2 text-sm font-semibold text-gray-900; }
+.efile-section svg { @apply text-brand-600; }
+.efile-kpi { @apply flex items-center gap-3 rounded-xl bg-white px-4 py-3 ring-1 ring-gray-200; }
+.efile-kpi-icon { @apply flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg; }
 .efile-kpi p { @apply text-[11px] font-medium text-gray-500; }
-.efile-kpi strong { @apply mt-0.5 block truncate text-lg font-bold text-gray-900; }
-.efile-kpi span { @apply block truncate text-[11px] text-gray-400; }
+.efile-kpi strong { @apply block truncate text-lg font-bold leading-tight text-gray-900; }
+.efile-kpi-note { @apply block truncate text-[11px] text-gray-400; }
 .efile-card { @apply rounded-xl bg-white p-4 ring-1 ring-gray-200; }
 .efile-title { @apply mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900; }
 .efile-title svg { @apply text-brand-600; }
+.efile-field { @apply min-w-0 border-b border-gray-100 pb-2; }
+.efile-field dt { @apply text-[11px] font-medium uppercase tracking-wide text-gray-400; }
+.efile-field dd { @apply mt-0.5 truncate text-sm font-semibold text-gray-900; }
+.efile-call { @apply inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg bg-brand-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700; }
 .efile-icon { @apply flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-gray-500 transition hover:bg-brand-50 hover:text-brand-700; }
-html.dark .efile-hero { background: radial-gradient(520px 180px at 100% 0%, rgba(16, 185, 129, 0.14), transparent 70%), var(--d-surface); }
+html.dark .efile-body { background: var(--d-bg, #0b1210); }
 html.dark .efile-kpi, html.dark .efile-card { background-color: var(--d-surface); --tw-ring-color: var(--d-line); }
-html.dark .efile-avatar { --tw-ring-color: var(--d-line); }
-html.dark .efile-btn { background-color: var(--d-raised); border-color: var(--d-line-strong); color: var(--d-text-2); }
+html.dark .efile-field { border-color: var(--d-line); }
 
 .filter-label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500; }
 .tool-btn { @apply inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50; }
@@ -1462,13 +1538,28 @@ html.dark .efile-btn { background-color: var(--d-raised); border-color: var(--d-
 
 <style scoped>
 /* dark mode: generated by scripts/build-dark-overrides.cjs */
+html.dark .efile-chip {
+  background-color: var(--d-surface);
+}
+html.dark .efile-banner-btn {
+  background-color: var(--d-surface);
+}
+html.dark .efile-banner-btn:hover {
+  background-color: var(--d-surface);
+}
+html.dark .efile-section {
+  color: var(--d-text);
+}
+html.dark .efile-section svg {
+  color: #86efac;
+}
 html.dark .efile-kpi p {
   color: var(--d-muted);
 }
 html.dark .efile-kpi strong {
   color: var(--d-text);
 }
-html.dark .efile-kpi span {
+html.dark .efile-kpi-note {
   color: var(--d-faint);
 }
 html.dark .efile-card {
@@ -1480,6 +1571,12 @@ html.dark .efile-title {
 }
 html.dark .efile-title svg {
   color: #86efac;
+}
+html.dark .efile-field dt {
+  color: var(--d-faint);
+}
+html.dark .efile-field dd {
+  color: var(--d-text);
 }
 html.dark .efile-icon {
   color: var(--d-muted);

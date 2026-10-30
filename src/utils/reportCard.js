@@ -79,15 +79,16 @@ function studentBox(doc, y, card, data) {
   return doc.lastAutoTable.finalY + 4;
 }
 
-// Every assessment the learner did, converted (AOIs out of 20, exams out of 80), then the
-// AOI average, the exam average and the final mark out of 100.
+// Every assessment the learner did, converted (each AOI out of 10, exams out of 80), then the
+// AOI score (best two, out of 20), the exam score (out of 80) and the final mark out of 100.
+// Primary schools have no AOIs: the exams make the whole 100, so the AOI and exam-part columns go.
 function marksTable(doc, y, card, data) {
-  const head = [['Subject', ...data.exams.map((e) => `${e.name}\n/${fmt(e.out_of)}`), 'AOI\n/20', 'Exams\n/80', 'Final\n/100', 'Grade', 'Descriptor', 'Teacher']];
+  const primary = data.scheme?.school_type === 'primary';
+  const head = [['Subject', ...data.exams.map((e) => (e.counts === false ? `${e.name}\n(not counted)` : `${e.name}\n/${fmt(e.out_of)}`)), ...(primary ? [] : ['AOI\n/20', 'Exams\n/80']), 'Final\n/100', 'Grade', 'Descriptor', 'Teacher']];
   const body = card.subjects.map((r) => [
     r.subject,
     ...data.exams.map((e) => fmt(r.scores?.[e.id])),
-    fmt(r.aoi),
-    fmt(r.exam),
+    ...(primary ? [] : [fmt(r.aoi), fmt(r.exam)]),
     fmt(r.final),
     r.grade || '',
     r.comment || '',
@@ -96,11 +97,13 @@ function marksTable(doc, y, card, data) {
   if (!body.length) body.push([{ content: 'No marks have been entered for this student yet.', colSpan: head[0].length, styles: { halign: 'center', textColor: MUTED } }]);
   const narrow = data.exams.length > 4;
   const examCols = Object.fromEntries(data.exams.map((_, i) => [i + 1, { halign: 'center', cellWidth: narrow ? 10.5 : 13 }]));
-  const n = data.exams.length + 2; // the converted-score columns plus the AOI and exam averages
-  Object.assign(examCols, {
-    [data.exams.length + 1]: { halign: 'center', cellWidth: 12, fillColor: [240, 249, 255] },
-    [data.exams.length + 2]: { halign: 'center', cellWidth: 12, fillColor: [236, 253, 245] },
-  });
+  const n = data.exams.length + (primary ? 0 : 2); // the converted-score columns plus the AOI and exam averages
+  if (!primary) {
+    Object.assign(examCols, {
+      [data.exams.length + 1]: { halign: 'center', cellWidth: 12, fillColor: [240, 249, 255] },
+      [data.exams.length + 2]: { halign: 'center', cellWidth: 12, fillColor: [236, 253, 245] },
+    });
+  }
   autoTable(doc, {
     startY: y,
     head,
@@ -122,7 +125,10 @@ function marksTable(doc, y, card, data) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(...MUTED);
-  doc.text('Each AOI is out of 20 and each exam out of 80. Final = average of AOIs + average of exams (out of 100); a subject with only AOIs or only exams is scaled to 100. A blank means not done.', MARGIN, keyY, { maxWidth: doc.internal.pageSize.getWidth() - 2 * MARGIN });
+  const basis = { MOT: 'the mid term', EOT: 'the end of term' }[data.scheme?.exam_basis] || 'the mid term and end of term averaged';
+  doc.text(primary
+    ? `The final mark (out of 100) comes from ${basis}. A blank means not done.`
+    : `Each AOI is out of 10 and the best two make 20; the 80 comes from ${basis}. A subject with only AOIs or only exams is scaled to 100. A blank means not done.`, MARGIN, keyY, { maxWidth: doc.internal.pageSize.getWidth() - 2 * MARGIN });
   return keyY + 7;
 }
 

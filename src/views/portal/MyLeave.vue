@@ -76,7 +76,10 @@
               <p class="mt-0.5 text-sm text-gray-600">{{ dateRange(r) }} · {{ num(r.days) }} day{{ Number(r.days) === 1 ? '' : 's' }}<template v-if="r.status === 'approved' && r.end_date >= today"> · <span :class="leaveTiming(r, today).tone">{{ leaveTiming(r, today).label }}</span></template></p>
               <p v-if="r.reason" class="mt-0.5 line-clamp-2 text-xs text-gray-500">{{ r.reason }}</p>
             </div>
-            <button v-if="r.status === 'pending'" type="button" class="inline-flex flex-shrink-0 items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-red-50 hover:text-red-600" :disabled="busy" @click="cancel(r)"><Undo2 class="h-3.5 w-3.5" />Withdraw</button>
+            <div class="flex flex-shrink-0 items-center gap-1">
+              <button type="button" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800" @click="viewing = r"><Eye class="h-3.5 w-3.5" />View</button>
+              <button v-if="r.status === 'pending'" type="button" class="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-red-50 hover:text-red-600" :disabled="busy" @click="cancel(r)"><Undo2 class="h-3.5 w-3.5" />Withdraw</button>
+            </div>
           </li>
         </ul>
       </section>
@@ -93,19 +96,55 @@
       @close="showForm = false"
       @submit="submit"
     />
+
+    <!-- One request, in full -->
+    <Teleport to="body">
+      <div v-if="viewing" class="fixed inset-0 z-[60] flex items-end justify-center bg-gray-900/60 backdrop-blur-sm sm:items-center sm:p-4" @click.self="viewing = null">
+        <div class="w-full max-w-lg overflow-hidden bg-white shadow-2xl sm:rounded-2xl" role="dialog" aria-modal="true" aria-labelledby="leave-view-title">
+          <header class="flex items-start gap-3 border-b border-gray-100 px-5 py-4">
+            <span class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ring-1" :class="leaveType(viewing.leave_type).tile"><component :is="leaveType(viewing.leave_type).icon" class="h-5 w-5" /></span>
+            <div class="min-w-0 flex-1">
+              <h2 id="leave-view-title" class="text-lg font-semibold text-gray-900">{{ leaveType(viewing.leave_type).label }} leave</h2>
+              <span class="status-pill mt-1" :class="leaveStatus(viewing.status).pill"><span class="h-1.5 w-1.5 rounded-full" :class="leaveStatus(viewing.status).dot"></span>{{ viewing.status === 'pending' ? 'Waiting for HR' : leaveStatus(viewing.status).label }}</span>
+            </div>
+            <button type="button" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" aria-label="Close" @click="viewing = null"><X class="h-5 w-5" /></button>
+          </header>
+          <div class="space-y-4 px-5 py-4">
+            <dl class="grid grid-cols-2 gap-3 text-sm">
+              <div class="rounded-xl bg-gray-50 px-3.5 py-2.5"><dt class="text-xs text-gray-500">From</dt><dd class="font-semibold text-gray-900">{{ longDate(viewing.start_date) }}</dd></div>
+              <div class="rounded-xl bg-gray-50 px-3.5 py-2.5"><dt class="text-xs text-gray-500">To</dt><dd class="font-semibold text-gray-900">{{ longDate(viewing.end_date) }}</dd></div>
+              <div class="rounded-xl bg-gray-50 px-3.5 py-2.5"><dt class="text-xs text-gray-500">Days</dt><dd class="font-semibold text-gray-900">{{ num(viewing.days) }} day{{ Number(viewing.days) === 1 ? '' : 's' }}</dd></div>
+              <div class="rounded-xl bg-gray-50 px-3.5 py-2.5"><dt class="text-xs text-gray-500">Requested</dt><dd class="font-semibold text-gray-900">{{ viewing.created_at ? longDate(viewing.created_at) : '-' }}</dd></div>
+            </dl>
+            <div>
+              <p class="text-xs font-medium text-gray-500">Your message</p>
+              <p class="mt-1 whitespace-pre-line rounded-xl border border-gray-200 bg-white px-3.5 py-3 text-sm leading-relaxed text-gray-800">{{ viewing.reason || 'No message was written.' }}</p>
+            </div>
+            <p v-if="viewing.status !== 'pending' && viewing.status !== 'cancelled'" class="text-sm text-gray-600">
+              {{ leaveStatus(viewing.status).label }}<template v-if="viewing.approved_by_name"> by <strong class="text-gray-900">{{ viewing.approved_by_name }}</strong></template><template v-if="viewing.approved_at"> on {{ longDate(viewing.approved_at) }}</template>.
+            </p>
+            <p v-else-if="viewing.status === 'pending'" class="text-sm text-amber-800">HR has not decided yet. You can withdraw it while it is waiting.</p>
+          </div>
+          <footer class="flex justify-end gap-2 border-t border-gray-100 bg-gray-50/70 px-5 py-3">
+            <button v-if="viewing.status === 'pending'" type="button" class="btn-secondary text-red-600" :disabled="busy" @click="cancel(viewing); viewing = null"><Undo2 class="h-4 w-4" />Withdraw</button>
+            <button type="button" class="btn-primary" @click="viewing = null">Close</button>
+          </footer>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { CircleAlert, PlaneTakeoff, Undo2 } from 'lucide-vue-next';
+import { CircleAlert, Eye, PlaneTakeoff, Undo2, X } from 'lucide-vue-next';
 import ToastBanner from '../../components/hr/ToastBanner.vue';
 import LeaveRequestDialog from '../../components/leave/LeaveRequestDialog.vue';
 import { teacherPortalAPI } from '../../services/api.js';
 import { useToast } from '../../composables/useToast.js';
 import { apiError } from '../../utils/timetable.js';
-import { dateRange, dayOfMonth, leaveStatus, leaveTiming, leaveType, monthShort, todayISO } from '../../utils/leaveMeta.js';
+import { dateRange, dayOfMonth, leaveStatus, leaveTiming, leaveType, longDate, monthShort, todayISO } from '../../utils/leaveMeta.js';
 
 const FILTERS = [{ value: 'all', label: 'All' }, { value: 'pending', label: 'Waiting' }, { value: 'approved', label: 'Approved' }];
 
@@ -122,6 +161,8 @@ const today = todayISO();
 
 const num = (v) => Number(v || 0).toString();
 const usedPct = (b) => (Number(b.entitled_days) ? Math.min(100, Math.round((Number(b.used_days) / Number(b.entitled_days)) * 100)) : 0);
+// The request opened with View.
+const viewing = ref(null);
 const shown = computed(() => (data.value?.requests || []).filter((r) => filter.value === 'all' || r.status === filter.value));
 // Leave happening now, or the next approved leave.
 const current = computed(() => (data.value?.requests || [])

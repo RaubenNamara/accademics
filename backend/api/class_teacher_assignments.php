@@ -69,7 +69,7 @@ try {
     }
 
     if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
-        hr_require_auth(['admin', 'hr_manager', 'academic_office']);
+        hr_require_auth(['admin', 'hr_manager', 'academic_office', 'teacher']);
     }
 
     if ($method === 'POST') {

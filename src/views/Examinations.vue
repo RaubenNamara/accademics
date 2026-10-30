@@ -23,11 +23,21 @@
     <div class="card flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
       <div
         class="flex flex-wrap items-center gap-2 text-sm"
-        title="Each AOI is out of 20 and the AOIs are averaged; BOT, mid term and end of term are each out of 80 and averaged. A learner with only AOIs or only exams so far is scaled to 100."
+        :title="primary ? 'Primary: teachers enter marks out of 100 and the mid term, the end of term, or both averaged make the final mark. No AOIs.' : 'Teachers enter marks out of 100. Each AOI converts to 10 and the best two make 20. The 80 comes from the mid term, the end of term, or both averaged. A learner with only AOIs or only exams so far is scaled to 100.'"
       >
-        <span class="rounded-lg bg-sky-50 px-2.5 py-1 text-sky-800 ring-1 ring-sky-100">AOIs <strong class="tabular-nums">20</strong></span>
-        <span class="text-gray-400">+</span>
-        <span class="rounded-lg bg-brand-50 px-2.5 py-1 text-brand-800 ring-1 ring-brand-100">Exams <strong class="tabular-nums">80</strong></span>
+        <span v-if="primary" class="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-100">Primary</span>
+        <template v-else>
+          <span class="rounded-lg bg-sky-50 px-2.5 py-1 text-sky-800 ring-1 ring-sky-100">Best 2 AOIs <strong class="tabular-nums">10 + 10</strong></span>
+          <span class="text-gray-400">+</span>
+        </template>
+        <span class="flex items-center gap-1.5 rounded-lg bg-brand-50 py-1 pl-2.5 pr-1 text-brand-800 ring-1 ring-brand-100">
+          <strong class="tabular-nums">{{ examShare }}</strong> from
+          <select v-model="examBasis" class="rounded-md border-0 bg-white py-0.5 pl-2 pr-7 text-sm font-semibold text-brand-800 ring-1 ring-brand-200 focus:ring-2 focus:ring-brand-500" :aria-label="`Where the ${examShare} comes from`" :disabled="savingBasis" @change="saveBasis">
+            <option value="both">MOT + EOT</option>
+            <option value="MOT">Mid term only</option>
+            <option value="EOT">End of term only</option>
+          </select>
+        </span>
         <span class="text-gray-400">=</span>
         <span class="rounded-lg bg-gray-900 px-2.5 py-1 text-white">Final <strong class="tabular-nums">100</strong></span>
       </div>
@@ -61,7 +71,7 @@
               </td>
               <td><span class="code-badge">{{ e.exam_type }}</span></td>
               <td class="tabular-nums">{{ num(e.max_marks) }}</td>
-              <td class="tabular-nums">{{ e.exam_type === 'AOI' ? '/20 (AOI)' : '/80 (exam)' }}</td>
+              <td class="tabular-nums" :class="counts(e.exam_type) ? '' : 'text-gray-400'">{{ countsAs(e.exam_type) }}</td>
               <td>{{ e.class_level === 'all' ? 'All classes' : e.class_level }}</td>
               <td><span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="statusStyle[e.status]">{{ statusLabel[e.status] }}</span></td>
               <td class="tabular-nums">{{ e.marks_entered }}</td>
@@ -144,10 +154,10 @@
           <label class="block">
             <span class="mb-1 block text-sm font-medium text-gray-700">Type</span>
             <select v-model="form.exam_type" class="input" @change="typeDefaults">
-              <option v-for="t in types" :key="t.value" :value="t.value">{{ t.label }}</option>
+              <option v-for="t in typeOptions" :key="t.value" :value="t.value">{{ t.label }}</option>
             </select>
           </label>
-          <label class="block">
+          <label v-if="!primary" class="block">
             <span class="mb-1 block text-sm font-medium text-gray-700">Who sits it</span>
             <select v-model="form.class_level" class="input">
               <option value="all">All classes</option>
@@ -162,7 +172,7 @@
           </label>
           <div class="block">
             <span class="mb-1 block text-sm font-medium text-gray-700">Counts in the final mark as</span>
-            <p class="rounded-xl bg-gray-50 px-3.5 py-2.5 text-sm text-gray-800 ring-1 ring-gray-200">{{ form.exam_type === 'AOI' ? 'Out of 20 (AOI part)' : 'Out of 80 (exam part)' }}</p>
+            <p class="rounded-xl bg-gray-50 px-3.5 py-2.5 text-sm text-gray-800 ring-1 ring-gray-200">{{ countsAs(form.exam_type) }}</p>
           </div>
           <label class="block sm:col-span-2">
             <span class="mb-1 block text-sm font-medium text-gray-700">Notes for teachers (optional)</span>
@@ -170,7 +180,7 @@
           </label>
         </div>
         <p class="mt-3 rounded-xl bg-gray-50 px-3 py-2 text-xs text-gray-600">
-          Teachers enter marks out of {{ form.max_marks || '…' }}. {{ form.exam_type === 'AOI' ? 'Each AOI is converted to 20, and a learner\'s AOIs are averaged.' : 'Each exam is converted to 80, and a learner\'s exams are averaged.' }} Final mark = AOIs (20) + exams (80).
+          Teachers enter marks out of {{ form.max_marks || '…' }}. {{ form.exam_type === 'AOI' ? 'Each AOI converts to 10; the best two AOIs make 20.' : counts(form.exam_type) ? (primary ? 'It counts towards the final mark (averaged with the other counted exam when both count).' : 'It converts to 80 (averaged with the other counted exam when both count).') : 'It is recorded on the report card but does not count in the final mark.' }}{{ primary ? '' : ' Final mark = AOIs (20) + exams (80).' }}
         </p>
         <p v-if="formError" class="mt-3 text-sm text-red-600">{{ formError }}</p>
         <div class="mt-5 flex justify-end gap-2">
@@ -207,7 +217,7 @@ const progressFilter = ref('');
 const sheet = ref(null);
 
 const types = [
-  { value: 'AOI', label: 'AOI (Activity of Integration)', max: 3 },
+  { value: 'AOI', label: 'AOI (Activity of Integration)', max: 100 },
   { value: 'BOT', label: 'Beginning of Term', max: 100 },
   { value: 'MOT', label: 'Mid Term', max: 100 },
   { value: 'EOT', label: 'End of Term', max: 100 },
@@ -220,6 +230,28 @@ const statusStyle = {
   closed: 'bg-slate-200 text-slate-700',
 };
 const num = (v) => Number(v).toString();
+
+// Where the 80 comes from (admin setting): mid term, end of term, or both averaged.
+const examBasis = ref('both');
+const savingBasis = ref(false);
+// Primary schools (Report Settings): no AOIs, the exams make the whole 100.
+const primary = ref(false);
+const examShare = computed(() => (primary.value ? 100 : 80));
+const typeOptions = computed(() => (primary.value ? types.filter((t) => t.value !== 'AOI') : types));
+const counts = (type) => (type === 'AOI' ? !primary.value : examBasis.value === 'both' ? ['MOT', 'EOT'].includes(type) : type === examBasis.value);
+const countsAs = (type) => (type === 'AOI' ? (primary.value ? 'Not counted' : '/10 (best 2 AOIs)') : counts(type) ? `/${examShare.value} (exam)` : 'Not counted');
+async function saveBasis() {
+  savingBasis.value = true;
+  try {
+    const res = await examsAPI.setScheme(examBasis.value);
+    showToast(res.message);
+  } catch (e) {
+    showToast(apiError(e).message, 'error');
+    await load();
+  } finally {
+    savingBasis.value = false;
+  }
+}
 
 const marksEntered = computed(() => exams.value.reduce((t, e) => t + Number(e.marks_entered), 0));
 const openCount = computed(() => exams.value.filter((e) => e.status === 'open').length);
@@ -235,7 +267,10 @@ async function load() {
   if (!sessionId.value) return;
   loading.value = true;
   try {
-    exams.value = (await examsAPI.list(sessionId.value)).data.exams;
+    const res = (await examsAPI.list(sessionId.value)).data;
+    exams.value = res.exams;
+    if (res.scheme?.exam_basis) examBasis.value = res.scheme.exam_basis;
+    primary.value = res.scheme?.school_type === 'primary';
   } catch (e) {
     showToast(apiError(e).message, 'error');
   } finally {
@@ -248,7 +283,7 @@ function openForm(e = null) {
   formError.value = '';
   form.value = e
     ? { id: e.id, name: e.name, exam_type: e.exam_type, max_marks: Number(e.max_marks), class_level: e.class_level, notes: e.notes || '' }
-    : { name: '', exam_type: 'AOI', max_marks: 3, class_level: 'all', notes: '' };
+    : { name: '', exam_type: primary.value ? 'EOT' : 'AOI', max_marks: 100, class_level: 'all', notes: '' };
 }
 function typeDefaults() {
   if (form.value.id) return;
@@ -321,6 +356,8 @@ watch(sessionId, () => { progress.value = null; sheet.value = null; load(); });
 onMounted(async () => {
   try {
     await loadSessions();
+    // The term may already be known from another page, so the sessionId watcher never fires.
+    await load();
   } catch (e) {
     showToast(apiError(e).message, 'error');
   }

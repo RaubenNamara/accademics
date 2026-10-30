@@ -1131,6 +1131,7 @@ export const examsAPI = {
   list: async (sessionId) => (await api.get(`exams.php?${qs({ academic_session_id: sessionId })}`)).data,
   save: async (data) => (await api.post('exams.php', data)).data,
   setStatus: async (id, status) => (await api.post('exams.php?action=status', { id, status })).data,
+  setScheme: async (examBasis) => (await api.post('exams.php?action=scheme', { exam_basis: examBasis })).data,
   remove: async (id, confirm = false) => (await api.delete(`exams.php?${qs({ id, confirm: confirm ? 1 : '' })}`)).data,
   sheet: async (examId, classId, subjectId) => (await api.get(`exams.php?${qs({ action: 'sheet', exam_id: examId, class_id: classId, subject_id: subjectId })}`)).data,
   saveMarks: async (data) => (await api.post('exams.php?action=marks', data)).data,
@@ -1185,6 +1186,16 @@ export const studentAcademicsAPI = {
   saveSubjects: async (studentId, subjectIds) => (await api.post('student_academics.php?action=subjects', { student_id: studentId, subject_ids: subjectIds })).data,
   awaiting: async (q = '') => (await api.get(`student_academics.php?${qs({ action: 'awaiting', q })}`)).data,
   admitALevel: async (data) => (await api.post('student_academics.php?action=admit-a-level', data)).data
+};
+
+export const academicDashboardAPI = {
+  get: async () => (await api.get('academic_dashboard.php')).data
+};
+
+export const studentSyncAPI = {
+  status: async () => (await api.get('student_sync.php')).data,
+  details: async (id) => (await api.get(`student_sync.php?${qs({ id })}`)).data,
+  run: async () => (await api.post('student_sync.php', {}, { timeout: 300000 })).data
 };
 
 export const curriculumAPI = {

@@ -46,13 +46,16 @@ try {
     }
     $data = hr_request_data();
 
+    // Terms & Years (opening/closing terms, subjects by level): the super admin only.
+    $payload = hr_require_auth(['super_admin']);
+    if (($payload['role'] ?? '') !== 'super_admin') {
+        hr_respond(false, 'Only the super admin can change terms and years', null, 403);
+    }
+
     if ($action === 'compulsory') {
-        hr_require_auth(SF_ACADEMIC_ROLES);
         hr_respond(true, 'Subjects by level saved', ac_save_level_subjects($db, $data));
     }
 
-    // Opening and closing terms is for administrators.
-    $payload = hr_require_auth(['admin']);
     $by = (string)($payload['full_name'] ?? $payload['email'] ?? 'Administrator');
 
     if ($action === 'close') {

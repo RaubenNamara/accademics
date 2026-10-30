@@ -10,16 +10,22 @@
             <template v-else>Your teaching at a glance.</template>
           </p>
         </div>
-        <div class="flex flex-wrap gap-2">
-          <RouterLink to="/my/lesson-plans" class="btn-hero"><NotebookPen class="h-4 w-4" />Lesson plans</RouterLink>
-          <RouterLink to="/my/marks" class="btn-hero-primary"><PenLine class="h-4 w-4" />Enter marks</RouterLink>
-        </div>
       </div>
     </div>
 
     <div v-if="error" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
 
-    <StatCards :cards="stats" />
+    <!-- Teacher portal: one tile per part of the teacher's work -->
+    <section aria-label="Teacher portal">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+        <RouterLink v-for="t in tiles" :key="t.to" :to="t.to" class="portal-tile card group flex flex-col p-5">
+          <span class="flex h-12 w-12 items-center justify-center rounded-xl transition group-hover:scale-105" :class="t.icon"><component :is="t.Icon" class="h-6 w-6" :stroke-width="1.8" /></span>
+          <span class="mt-4 text-[17px] font-bold tracking-tight text-gray-900">{{ t.title }}</span>
+          <span class="mt-1 text-sm leading-relaxed text-gray-500">{{ t.text }}</span>
+          <span v-if="t.badge" class="mt-3 inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="t.badgeTone">{{ t.badge }}</span>
+        </RouterLink>
+      </div>
+    </section>
 
     <!-- Marks to enter -->
     <section class="card overflow-hidden">
@@ -123,9 +129,8 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { CalendarCheck, CalendarDays, ChevronRight, CircleCheck, NotebookPen, PenLine } from 'lucide-vue-next';
+import { CalendarCheck, CalendarDays, ChevronRight, CircleCheck, NotebookPen, PenLine, PlaneTakeoff, TrendingUp } from 'lucide-vue-next';
 import ToastBanner from '../../components/hr/ToastBanner.vue';
-import StatCards from '../../components/ui/StatCards.vue';
 import MyLeaveCard from '../../components/portal/MyLeaveCard.vue';
 import authStore from '../../services/authStore.js';
 import { teacherPortalAPI } from '../../services/api.js';
@@ -157,22 +162,32 @@ const mySubjects = computed(() => {
 });
 const subjectNames = computed(() => mySubjects.value.map((s) => s.subject_name).join(', '));
 
-const stats = computed(() => {
+// The portal tiles, each with a badge only when there is something worth knowing.
+const BADGE = {
+  amber: 'bg-amber-50 text-amber-800 ring-1 ring-amber-200',
+  red: 'bg-rose-50 text-rose-700 ring-1 ring-rose-200',
+  green: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+  gray: 'bg-gray-100 text-gray-600',
+};
+const tiles = computed(() => {
   const m = me.value;
   const plans = m?.plans || {};
   const att = m?.attendance || {};
   const toDo = progress.value.reduce((t, e) => t + e.subjects.reduce((n, s) => n + (s.classes - s.complete), 0), 0);
+  const plansTotal = Object.values(plans).reduce((t, n) => t + Number(n), 0);
+  const today = (m?.today_lessons || []).filter((e) => (e.entry_type || 'lesson') === 'lesson').length;
+  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
   return [
-    { label: 'Exams open', value: String(m?.open_exams ?? '-'), note: m?.open_exams ? `${toDo} class sheet${toDo === 1 ? '' : 's'} to finish` : 'Nothing to enter now', icon: PenLine, tone: m?.open_exams ? 'amber' : 'gray' },
-    { label: 'My classes', value: String(m?.mark_scope?.length ?? '-'), note: `${mySubjects.value.length} subject${mySubjects.value.length === 1 ? '' : 's'}`, icon: CalendarDays, tone: 'sky' },
-    {
-      label: 'Lesson plans',
-      value: String(Object.values(plans).reduce((t, n) => t + Number(n), 0)),
-      note: plans.returned ? `${plans.returned} returned for changes` : `${plans.submitted || 0} awaiting review`,
-      icon: NotebookPen,
-      tone: plans.returned ? 'red' : 'brand',
-    },
-    { label: 'Lessons recorded', value: String(att.lessons ?? '-'), note: Number(att.lost) ? `${att.lost} min lost this term` : 'This term', icon: CalendarCheck, tone: 'gray' },
+    { to: '/my/marks', title: 'Enter Marks', text: 'Enter marks for the classes assigned to you.', Icon: PenLine, icon: 'bg-teal-50 text-teal-600',
+      badge: m?.open_exams ? (toDo ? `${plural(toDo, 'sheet')} to finish` : 'All sheets done') : (m ? 'No exam open' : ''), badgeTone: toDo ? BADGE.amber : m?.open_exams ? BADGE.green : BADGE.gray },
+    { to: '/my/lesson-plans', title: 'Lesson Plans', text: 'Write plans and send them for review.', Icon: NotebookPen, icon: 'bg-sky-50 text-sky-600',
+      badge: plans.returned ? `${plans.returned} returned` : plansTotal ? plural(plansTotal, 'plan') : '', badgeTone: plans.returned ? BADGE.red : BADGE.gray },
+    { to: '/my/timetable', title: 'My Timetable', text: 'Your weekly teaching schedule.', Icon: CalendarDays, icon: 'bg-amber-50 text-amber-600',
+      badge: m ? (today ? `${plural(today, 'lesson')} today` : 'No lessons today') : '', badgeTone: today ? BADGE.green : BADGE.gray },
+    { to: '/my/attendance', title: 'Lesson Attendance', text: 'Your recorded lessons and any time lost.', Icon: CalendarCheck, icon: 'bg-emerald-50 text-emerald-600',
+      badge: Number(att.lost) ? `${att.lost} min lost` : att.lessons ? plural(Number(att.lessons), 'lesson') : '', badgeTone: Number(att.lost) ? BADGE.amber : BADGE.gray },
+    { to: '/my/performance', title: 'My Performance', text: 'Duty scores, observations and attendance.', Icon: TrendingUp, icon: 'bg-violet-50 text-violet-600', badge: '', badgeTone: '' },
+    { to: '/my/leave', title: 'My Leave', text: 'Apply for leave and track your requests.', Icon: PlaneTakeoff, icon: 'bg-rose-50 text-rose-500', badge: '', badgeTone: '' },
   ];
 });
 
@@ -186,3 +201,10 @@ onMounted(async () => {
   }
 });
 </script>
+
+<style scoped>
+.portal-tile { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+.portal-tile:hover { transform: translateY(-3px); box-shadow: var(--glass-shadow-lift); }
+.portal-tile:focus-visible { outline: 2px solid rgb(16 185 129); outline-offset: 2px; }
+html.dark .portal-tile span.text-gray-900 { color: var(--d-text); }
+</style>

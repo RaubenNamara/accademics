@@ -43,7 +43,7 @@ try {
             ORDER BY FIELD(e.exam_type,'BOT','AOI','MOT','EOT','OTHER'), e.id");
         $stmt->execute([':s' => $sid]);
         $exams = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        hr_respond(true, 'Exams', ['exams' => $exams, 'academic_session_id' => $sid]);
+        hr_respond(true, 'Exams', ['exams' => $exams, 'academic_session_id' => $sid, 'scheme' => sf_scheme($db)]);
     }
 
     if ($method === 'GET' && $action === 'sheet') {
@@ -53,7 +53,9 @@ try {
         if ($teacherId && !sf_teaches($db, $teacherId, (int)$exam['academic_session_id'], $classId, $subjectId)) {
             throw new TtException('You can only enter marks for the classes assigned to you this term', 403);
         }
-        hr_respond(true, 'Mark sheet', ['exam' => $exam] + sf_mark_sheet($db, $exam, $classId, $subjectId));
+        $scheme = sf_scheme($db);
+        $scheme['counts'] = sf_counts_to_final((string)$exam['exam_type'], $scheme['exam_basis'], $scheme['school_type'] === 'primary');
+        hr_respond(true, 'Mark sheet', ['exam' => $exam, 'scheme' => $scheme] + sf_mark_sheet($db, $exam, $classId, $subjectId));
     }
 
     if ($method === 'GET' && $action === 'progress') {
@@ -94,6 +96,16 @@ try {
         hr_respond(false, 'Only academic staff can set up exams', null, 403);
     }
 
+    // Where the 80 comes from: mid term, end of term or both. Administrators only.
+    if ($method === 'POST' && $action === 'scheme') {
+        if (!in_array($role, ['admin', 'super_admin', 'academic_office'], true)) {
+            hr_respond(false, 'Only an administrator can change the marking scheme', null, 403);
+        }
+        $basis = sf_save_exam_basis($db, (string)($data['exam_basis'] ?? ''));
+        $label = ['MOT' => 'the mid term', 'EOT' => 'the end of term', 'both' => 'the mid term and end of term averaged'][$basis];
+        hr_respond(true, (sf_is_primary($db) ? 'The final mark' : 'The 80') . " now comes from $label", ['scheme' => sf_scheme($db)]);
+    }
+
     if ($method === 'POST' && $action === 'status') {
         $exam = sf_exam($db, (int)($data['id'] ?? 0)) ?? throw new TtException('Exam not found', 404);
         $status = (string)($data['status'] ?? '');
@@ -114,8 +126,9 @@ try {
         $name = mb_substr(trim((string)($data['name'] ?? '')), 0, 150);
         $type = (string)($data['exam_type'] ?? 'EOT');
         $max = $data['max_marks'] ?? null;
-        // The share in the final mark comes from the type: AOIs out of 20, exams out of 80.
-        $weight = in_array($type, SF_EXAM_TYPES, true) ? sf_component_out_of($type) : 0;
+        // The share in the final mark comes from the type: each AOI out of 10, exams out of 80.
+        $primary = sf_is_primary($db);
+        $weight = in_array($type, SF_EXAM_TYPES, true) ? sf_component_out_of($type, $primary) : 0;
         $level = (string)($data['class_level'] ?? 'all');
         $errors = [];
         if ($name === '') {
@@ -123,6 +136,8 @@ try {
         }
         if (!in_array($type, SF_EXAM_TYPES, true)) {
             $errors['exam_type'] = 'Choose a type';
+        } elseif ($primary && $type === 'AOI') {
+            $errors['exam_type'] = 'Primary schools have no AOIs. Choose mid term or end of term.';
         }
         if (!is_numeric($max) || (float)$max <= 0 || (float)$max > 1000) {
             $errors['max_marks'] = 'Out of must be between 1 and 1000';

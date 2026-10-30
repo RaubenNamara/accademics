@@ -55,7 +55,7 @@
         <div>
           <h2 class="card-title">{{ data.class.full_class_name }} · {{ data.session?.session_name }}</h2>
           <p class="text-xs text-gray-500">
-            {{ data.students.length }} student(s) · exams: {{ data.exams.map((e) => `${e.name} (/${e.out_of})`).join(', ') || 'none yet' }} · final = AOIs /20 + exams /80
+            {{ data.students.length }} student(s) · exams: {{ data.exams.map((e) => `${e.name} (/${e.out_of})`).join(', ') || 'none yet' }} · final = {{ data.scheme?.school_type === 'primary' ? '' : 'best 2 AOIs /20 + ' }}{{ { MOT: 'mid term', EOT: 'end of term' }[data.scheme?.exam_basis] || 'MOT + EOT' }} /{{ data.scheme?.exam_out_of ?? 80 }}
           </p>
         </div>
         <div v-if="mode === 'bulk' && data.students.length" class="flex gap-2">

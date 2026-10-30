@@ -46,6 +46,18 @@ function api_guard_fail(int $status, string $message): void
     exit;
 }
 
+/**
+ * Classes, subjects and the curriculum are set up by the academic office and the super admin:
+ * an admin (or HR) may read them but not change them.
+ */
+function api_guard_academic_setup_write(array $payload): void
+{
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true) && in_array((string)($payload['role'] ?? ''), ['admin', 'hr_manager'], true)) {
+        api_guard_fail(403, 'Classes and subjects are managed by the academic office');
+    }
+}
+
 function api_guard(array $roles = []): array
 {
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
