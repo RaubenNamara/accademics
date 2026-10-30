@@ -162,6 +162,7 @@
             <span class="min-w-0 flex-1">
               <span class="block truncate text-sm font-semibold text-gray-900">{{ s.first_name }} {{ s.last_name }}</span>
               <span class="block truncate text-xs capitalize text-gray-500">{{ (s.staff_type || 'teaching').replace('_', ' ') }}<template v-if="s.department_name"> · {{ s.department_name }}</template></span>
+              <span v-if="s.created_at" class="mt-0.5 flex items-center gap-1 text-[11px] text-gray-400" :title="`Added ${addedAt(s.created_at)}`"><Clock class="h-3 w-3" />{{ addedAt(s.created_at) }}</span>
             </span>
             <span class="h-2 w-2 flex-shrink-0 rounded-full" :class="s.status === 'active' ? 'bg-emerald-500' : s.status === 'on_leave' ? 'bg-amber-500' : 'bg-gray-300'" :title="String(s.status || '').replace('_', ' ')"></span>
           </li>
@@ -197,6 +198,11 @@ const can = (path) => canAccessRoute(path, authStore.user?.role, authStore.user)
 const fmt = (n) => Number(n || 0).toLocaleString();
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 const initials = (name) => String(name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+// '30 Oct 2026, 14:05' (the time this staff member was added)
+const addedAt = (when) => {
+  const d = new Date(String(when).replace(' ', 'T'));
+  return Number.isNaN(d.getTime()) ? String(when) : d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
 const backDate = (end) => {
   const d = new Date(`${end}T00:00:00`);
   d.setDate(d.getDate() + 1);
