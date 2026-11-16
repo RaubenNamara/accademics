@@ -117,6 +117,12 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
+  // A saved token whose user is missing or has no known role has no home page,
+  // and /login would bounce it back to /login forever (a blank screen). Sign it out.
+  if (authStore.isAuthenticated() && getDefaultRoute(getUserRole(authStore.user)) === '/login') {
+    authStore.clearAuth();
+  }
+
   const isAuthenticated = authStore.isAuthenticated();
   const role = getUserRole(authStore.user);
   const home = isAuthenticated ? getDefaultRoute(role) : '/login';

@@ -99,7 +99,7 @@
               </td>
               <td class="px-4 py-3">
                 <p class="tabular-nums font-semibold text-gray-900">{{ group.avg_score || 0 }}</p>
-                <p class="text-xs text-gray-500">Rating {{ group.avg_rating || 0 }}</p>
+                <p class="text-xs text-gray-500">Rating {{ group.avg_rating || 0 }} · {{ group.observations.length }} round{{ group.observations.length === 1 ? '' : 's' }}</p>
               </td>
               <td class="hidden px-4 py-3 lg:table-cell">
                 <span class="whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="getCategoryBadgeClass(group.overall_category)">{{ group.overall_category || '-' }}</span>
@@ -424,6 +424,7 @@
               <div class="card border-white/80 p-5">
                 <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Average Score</p>
                 <p class="mt-3 text-2xl font-bold text-slate-900">{{ selectedRecord.averageScore || 0 }}</p>
+                <p class="mt-1 text-xs text-slate-500">All rounds, {{ averageScopeLabel }}</p>
               </div>
 
               <div class="card border-white/80 p-5">
@@ -432,7 +433,7 @@
               </div>
 
               <div class="card border-white/80 p-5">
-                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Best Category</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Category (from average)</p>
                 <div class="mt-3 inline-flex rounded-2xl px-4 py-2 text-lg font-bold" :class="getCategoryBadgeClass(selectedRecord.overall_category)">
                   {{ selectedRecord.overall_category || '-' }}
                 </div>
@@ -443,53 +444,50 @@
               <div class="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <h3 class="text-lg font-bold text-slate-900">Observation History</h3>
-                  <p class="mt-1 text-sm text-slate-500">All classes, streams, terms, years and rounds for this teacher.</p>
+                  <p class="mt-1 text-sm text-slate-500">Rounds grouped by term, each with its term average.</p>
                 </div>
               </div>
 
-              <div class="overflow-x-auto">
-                <table class="min-w-[1100px] w-full divide-y divide-slate-200">
-                  <thead class="bg-slate-50">
-                    <tr class="text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                      <th class="px-4 py-3">Subject</th>
-                      <th class="px-4 py-3">Class</th>
-                      <th class="px-4 py-3">Stream</th>
-                      <th class="px-4 py-3">Term</th>
-                      <th class="px-4 py-3">Year</th>
-                      <th class="px-4 py-3">Round</th>
-                      <th class="px-4 py-3">Total Score</th>
-                      <th class="px-4 py-3">Rating</th>
-                      <th class="px-4 py-3">Category</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-100 bg-white">
-                    <tr
-                      v-for="obs in (selectedRecord.observations || [])"
-                      :key="obs.id"
-                      class="hover:bg-slate-50"
-                    >
-                      <td class="px-4 py-3 text-sm font-medium text-slate-800">{{ obs.subject || '-' }}</td>
-                      <td class="px-4 py-3 text-sm font-medium text-slate-800">{{ obs.class || '-' }}</td>
-                      <td class="px-4 py-3 text-sm font-medium text-slate-800">{{ obs.stream || '-' }}</td>
-                      <td class="px-4 py-3 text-sm font-medium text-slate-800">Term {{ obs.term || '-' }}</td>
-                      <td class="px-4 py-3 text-sm font-medium text-slate-800">{{ obs.year || '-' }}</td>
-                      <td class="px-4 py-3 text-sm font-medium text-slate-800">Round {{ obs.round || 1 }}</td>
-                      <td class="px-4 py-3 text-sm font-bold text-slate-800">{{ Number(obs.total_score || 0).toFixed(2) }}</td>
-                      <td class="px-4 py-3 text-sm font-bold text-brand-600">{{ Number(obs.calculated_rating || 0).toFixed(2) }}</td>
-                      <td class="px-4 py-3">
-                        <span class="inline-flex rounded-xl px-3 py-1.5 text-xs font-bold" :class="getCategoryBadgeClass(obs.performance_category)">
-                          {{ obs.performance_category || '-' }}
-                        </span>
-                      </td>
-                    </tr>
+              <p v-if="!selectedRecord.terms || selectedRecord.terms.length === 0" class="py-8 text-center text-sm text-slate-500">
+                No observation history found.
+              </p>
 
-                    <tr v-if="!selectedRecord.observations || selectedRecord.observations.length === 0">
-                      <td colspan="9" class="px-4 py-8 text-center text-sm text-slate-500">
-                        No observation history found.
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div v-for="t in (selectedRecord.terms || [])" :key="t.key" class="mb-4 overflow-hidden rounded-xl border border-slate-200 last:mb-0">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-4 py-2.5">
+                  <p class="text-sm font-bold text-slate-900">Term {{ t.term }} · {{ t.year }} <span class="font-medium text-slate-500">({{ t.count }} round{{ t.count === 1 ? '' : 's' }})</span></p>
+                  <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <span class="font-semibold text-slate-700">Term average {{ t.score }} · rating {{ t.rating }}</span>
+                    <span class="rounded-full px-2.5 py-0.5 font-semibold" :class="getCategoryBadgeClass(t.category)">{{ t.category }}</span>
+                  </div>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full min-w-[640px] divide-y divide-slate-100 bg-white">
+                    <thead>
+                      <tr class="text-left text-xs font-bold uppercase tracking-wider text-slate-500">
+                        <th class="px-4 py-2.5">Round</th>
+                        <th class="px-4 py-2.5">Subject</th>
+                        <th class="px-4 py-2.5">Class</th>
+                        <th class="px-4 py-2.5">Score</th>
+                        <th class="px-4 py-2.5">Rating</th>
+                        <th class="px-4 py-2.5">Category</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      <tr v-for="obs in t.observations" :key="obs.id" class="hover:bg-slate-50">
+                        <td class="px-4 py-2.5 text-sm font-medium text-slate-800">Round {{ obs.round || 1 }}</td>
+                        <td class="px-4 py-2.5 text-sm text-slate-800">{{ obs.subject || '-' }}</td>
+                        <td class="px-4 py-2.5 text-sm text-slate-800">{{ obs.class || '-' }} {{ obs.stream || '' }}</td>
+                        <td class="px-4 py-2.5 text-sm font-bold text-slate-800">{{ Number(obs.total_score || 0).toFixed(1) }}</td>
+                        <td class="px-4 py-2.5 text-sm font-bold text-brand-600">{{ Number(obs.calculated_rating || 0).toFixed(2) }}</td>
+                        <td class="px-4 py-2.5">
+                          <span class="inline-flex rounded-xl px-3 py-1 text-xs font-bold" :class="getCategoryBadgeClass(obs.performance_category)">
+                            {{ obs.performance_category || '-' }}
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
 
@@ -723,16 +721,25 @@ const summaryCards = computed(() => {
   ];
 });
 
-const rankCategory = (category) => {
-  switch (category) {
-    case 'Outstanding': return 5;
-    case 'Very Good': return 4;
-    case 'Good': return 3;
-    case 'Fair': return 2;
-    case 'Below Expectation': return 1;
-    default: return 0;
-  }
+const categoryForRating = (rating) => {
+  if (rating >= 3.5) return 'Outstanding';
+  if (rating >= 3.0) return 'Very Good';
+  if (rating >= 2.5) return 'Good';
+  if (rating >= 2.0) return 'Fair';
+  return 'Below Expectation';
 };
+
+/** Average score (out of 100), rating (out of 4) and the category that average earns. */
+const averageOf = (observations) => {
+  const valid = (observations || []).filter((o) => o.total_score !== null && o.total_score !== undefined && o.total_score !== '');
+  if (!valid.length) return { score: 0, rating: 0, category: '-', count: 0 };
+  const score = valid.reduce((sum, o) => sum + Number(o.total_score || 0), 0) / valid.length;
+  const rating = valid.reduce((sum, o) => sum + Number(o.calculated_rating || (Number(o.total_score || 0) / 25)), 0) / valid.length;
+  return { score: score.toFixed(1), rating: rating.toFixed(2), category: categoryForRating(Number(rating.toFixed(2))), count: valid.length };
+};
+
+const averageScopeLabel = computed(() =>
+  filterTerm.value === 'all' ? `all terms of ${filterYear.value}` : `Term ${filterTerm.value}, ${filterYear.value}`);
 
 const groupedRecords = computed(() => {
   const grouped = {};
@@ -759,20 +766,24 @@ const groupedRecords = computed(() => {
   });
 
   Object.values(grouped).forEach(group => {
-    const valid = group.observations.filter(item => item.total_score !== null && item.total_score !== undefined);
-    const totalRounds = valid.length;
-    const totalScore = valid.reduce((sum, item) => sum + Number(item.total_score || 0), 0);
-    const totalRating = valid.reduce((sum, item) => sum + (Number(item.calculated_rating || (Number(item.total_score || 0) / 25))), 0);
+    // Oldest first: by year, term, then round.
+    group.observations.sort((a, b) =>
+      (Number(a.year) - Number(b.year)) || (Number(a.term) - Number(b.term)) || (Number(a.round || 1) - Number(b.round || 1)));
 
-    group.avg_score = totalRounds > 0 ? (totalScore / totalRounds).toFixed(0) : 0;
-    group.avg_rating = totalRounds > 0 ? (totalRating / totalRounds).toFixed(1) : 0;
+    // The average covers every round loaded: one term when a term is filtered, all terms otherwise.
+    const overall = averageOf(group.observations);
+    group.avg_score = overall.score;
+    group.avg_rating = overall.rating;
+    group.overall_category = overall.category;
 
-    const best = group.observations.reduce((acc, item) => {
-      if (!acc) return item;
-      return rankCategory(item.performance_category) > rankCategory(acc.performance_category) ? item : acc;
-    }, null);
-
-    group.overall_category = best?.performance_category || '-';
+    // Each term on its own, with the average of its rounds.
+    const terms = {};
+    group.observations.forEach((obs) => {
+      const key = `${obs.year}-${obs.term}`;
+      if (!terms[key]) terms[key] = { key, year: obs.year, term: obs.term, observations: [] };
+      terms[key].observations.push(obs);
+    });
+    group.terms = Object.values(terms).map((t) => ({ ...t, ...averageOf(t.observations) }));
   });
 
   return Object.values(grouped);
@@ -929,8 +940,11 @@ const openAddModal = (group = null) => {
       form.value.term = latest.term || 1;
       form.value.year = latest.year || new Date().getFullYear();
 
-      const maxRound = Math.max(...(group.observations || []).map(o => Number(o.round || 1)));
-      form.value.round = Math.min((maxRound || 0) + 1, 4);
+      // Next round within that same term and year (rounds start again each term).
+      const sameTerm = (group.observations || []).filter(o =>
+        Number(o.term) === Number(form.value.term) && Number(o.year) === Number(form.value.year));
+      const maxRound = sameTerm.length ? Math.max(...sameTerm.map(o => Number(o.round || 1))) : 0;
+      form.value.round = Math.min(maxRound + 1, 4);
 
       if (latest.class) {
         loadStreamsByClass(latest.class);

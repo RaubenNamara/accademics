@@ -326,7 +326,7 @@ export const lessonCompensationsAPI = {
 export const lessonObservationAPI = {
   getAll: async (year, term, search = '', classFilter = '', streamFilter = '') => {
     const response = await api.get(
-      `lesson-observations.php?action=list&year=${encodeURIComponent(year ?? '')}&term=${encodeURIComponent(term ?? '')}&search=${encodeURIComponent(search ?? '')}&class=${encodeURIComponent(classFilter ?? '')}&stream=${encodeURIComponent(streamFilter ?? '')}`
+      `lesson-observations.php?action=list&year=${encodeURIComponent(year ?? '')}&term=${encodeURIComponent(term ?? '')}&search=${encodeURIComponent(search ?? '')}&class=${encodeURIComponent(classFilter ?? '')}&stream=${encodeURIComponent(streamFilter ?? '')}&limit=5000`
     );
     return response.data;
   },
