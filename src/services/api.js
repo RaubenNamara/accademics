@@ -337,9 +337,10 @@ export const lessonObservationAPI = {
   },
 
   update: async (id, data) => {
-    const response = await api.put(
+    // The endpoint takes updates as POST, with the id in the body.
+    const response = await api.post(
       `lesson-observations.php?action=update&id=${id}`,
-      data
+      { ...data, id }
     );
     return response.data;
   },

@@ -331,7 +331,7 @@
             <div class="flex items-center justify-end gap-3">
               <button
                 type="button"
-                @click="showModal = false"
+                @click="closeForm"
                 class="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md"
               >
                 Cancel
@@ -461,7 +461,7 @@
                   </div>
                 </div>
                 <div class="overflow-x-auto">
-                  <table class="w-full min-w-[640px] divide-y divide-slate-100 bg-white">
+                  <table class="w-full min-w-[760px] divide-y divide-slate-100 bg-white">
                     <thead>
                       <tr class="text-left text-xs font-bold uppercase tracking-wider text-slate-500">
                         <th class="px-4 py-2.5">Round</th>
@@ -470,6 +470,7 @@
                         <th class="px-4 py-2.5">Score</th>
                         <th class="px-4 py-2.5">Rating</th>
                         <th class="px-4 py-2.5">Category</th>
+                        <th class="px-4 py-2.5 text-right"><span class="sr-only">Actions</span></th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -483,6 +484,23 @@
                           <span class="inline-flex rounded-xl px-3 py-1 text-xs font-bold" :class="getCategoryBadgeClass(obs.performance_category)">
                             {{ obs.performance_category || '-' }}
                           </span>
+                        </td>
+                        <td class="px-4 py-2.5">
+                          <div class="flex justify-end gap-1.5">
+                            <button
+                              type="button"
+                              class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                              :title="`Edit Term ${obs.term} Round ${obs.round || 1}`"
+                              @click="editRound(obs)"
+                            ><Pencil class="h-3.5 w-3.5" />Edit</button>
+                            <button
+                              type="button"
+                              class="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                              :title="`Delete Term ${obs.term} Round ${obs.round || 1}`"
+                              :disabled="deletingId === obs.id"
+                              @click="deleteRound(obs)"
+                            ><Trash2 class="h-3.5 w-3.5" />{{ deletingId === obs.id ? 'Deleting...' : 'Delete' }}</button>
+                          </div>
                         </td>
                       </tr>
                     </tbody>
@@ -554,7 +572,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { lessonObservationAPI, teachersAPI, classesAPI, subjectsNewAPI } from '../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -706,8 +724,8 @@ const initials = (name) => String(name || '?').split(/s+/).filter(Boolean).slice
 const groupActions = (group) => [
   { label: 'View', icon: Eye, onClick: () => viewRecord(group) },
   { label: 'Add round', icon: PlusCircle, onClick: () => addRoundForTeacher(group) },
-  { label: 'Edit', icon: Pencil, onClick: () => editRecord(group.observations[0]) },
-  { label: 'Delete', icon: Trash2, danger: true, onClick: () => deleteRecord(group.observations[0].id) },
+  // A teacher has several rounds, so each is edited or deleted from its own row in View.
+  { label: 'Edit or delete rounds', icon: Pencil, onClick: () => viewRecord(group) },
 ];
 const summaryCards = computed(() => {
   const scores = records.value.map((r) => Number(r.total_score)).filter((n) => !Number.isNaN(n));
@@ -922,6 +940,7 @@ const openAddModal = (group = null) => {
     areas_for_improvement: ''
   };
   error.value = '';
+  returnToTeacher.value = null;
 
   if (group) {
     const latest = [...(group.observations || [])].sort((a, b) => {
@@ -935,24 +954,76 @@ const openAddModal = (group = null) => {
 
     if (latest) {
       form.value.subject_id = latest.subject_id || '';
-      form.value.class_id = latest.class || '';
-      form.value.stream_id = latest.stream_id || '';
-      form.value.term = latest.term || 1;
-      form.value.year = latest.year || new Date().getFullYear();
+      form.value.term = Number(latest.term) || 1;
+      form.value.year = Number(latest.year) || new Date().getFullYear();
+      setClassAndStream(latest.class, latest.stream_id);
 
       // Next round within that same term and year (rounds start again each term).
       const sameTerm = (group.observations || []).filter(o =>
         Number(o.term) === Number(form.value.term) && Number(o.year) === Number(form.value.year));
       const maxRound = sameTerm.length ? Math.max(...sameTerm.map(o => Number(o.round || 1))) : 0;
       form.value.round = Math.min(maxRound + 1, 4);
-
-      if (latest.class) {
-        loadStreamsByClass(latest.class);
-      }
     }
   }
 
   showModal.value = true;
+};
+
+/**
+ * The Class list holds class names and the class watcher clears the stream, so pick the
+ * class first, let the watcher run, load that class's streams, then pick the stream.
+ */
+const setClassAndStream = async (className, streamId) => {
+  form.value.class_id = className || '';
+  await nextTick();
+  if (className) await loadStreamsByClass(className);
+  form.value.stream_id = streamId ? Number(streamId) : '';
+};
+
+// When the form was opened from a teacher's View, go back to it afterwards.
+const returnToTeacher = ref(null);
+const deletingId = ref(null);
+
+const reopenView = () => {
+  const teacherId = returnToTeacher.value;
+  returnToTeacher.value = null;
+  if (!teacherId) return;
+  const group = groupedRecords.value.find((g) => String(g.teacher_id) === String(teacherId));
+  if (group) viewRecord(group);
+};
+
+const closeForm = () => {
+  showModal.value = false;
+  reopenView();
+};
+
+const editRound = (obs) => {
+  returnToTeacher.value = obs.teacher_id;
+  showViewModal.value = false;
+  editRecord(obs);
+};
+
+const deleteRound = async (obs) => {
+  const label = `Term ${obs.term}, ${obs.year}, Round ${obs.round || 1} (score ${Number(obs.total_score || 0).toFixed(1)})`;
+  if (!confirm(`Delete this observation round?\n\n${label}\n\nThis cannot be undone.`)) return;
+
+  deletingId.value = obs.id;
+  try {
+    const result = await lessonObservationAPI.delete(obs.id);
+    if (!result.success) {
+      alert(result.message || result.error || 'Failed to delete the round. Please try again.');
+      return;
+    }
+    await loadData();
+    // Show the teacher's remaining rounds, or close when none are left.
+    const group = groupedRecords.value.find((g) => String(g.teacher_id) === String(obs.teacher_id));
+    if (group) viewRecord(group);
+    else showViewModal.value = false;
+  } catch (err) {
+    alert(err?.response?.data?.message || err?.response?.data?.error || 'Failed to delete the round. Please try again.');
+  } finally {
+    deletingId.value = null;
+  }
 };
 
 const addRoundForTeacher = (group) => {
@@ -971,14 +1042,16 @@ const viewRecord = (group) => {
 
 const editRecord = (record) => {
   editingId.value = record.id;
+  error.value = '';
+  teacherSearch.value = '';
   form.value = {
     teacher_id: record.teacher_id,
     subject_id: record.subject_id || '',
-    class_id: record.class_id || '',
-    stream_id: record.stream_id || '',
-    year: record.year,
-    term: record.term,
-    round: record.round || 1,
+    class_id: '',
+    stream_id: '',
+    year: Number(record.year) || new Date().getFullYear(),
+    term: Number(record.term) || 1,
+    round: Number(record.round) || 1,
     total_score: record.total_score || 0,
     calculated_rating: record.calculated_rating || 0,
     performance_category: record.performance_category || '',
@@ -986,6 +1059,7 @@ const editRecord = (record) => {
     general_comment: record.general_comment || '',
     areas_for_improvement: record.areas_for_improvement || ''
   };
+  setClassAndStream(record.class, record.stream_id);
   showModal.value = true;
 };
 
@@ -1022,31 +1096,15 @@ const saveRecord = async () => {
     if (result.success) {
       showModal.value = false;
       await loadData();
+      reopenView();
     } else {
       const errorMsg = result.message || result.data?.message || result.error || JSON.stringify(result);
       error.value = `Failed to save: ${errorMsg}`;
     }
   } catch (err) {
-    error.value = err.message || (err?.response?.data?.message || 'An error occurred while saving');
+    error.value = err?.response?.data?.message || err?.response?.data?.error || err.message || 'An error occurred while saving';
   } finally {
     saving.value = false;
-  }
-};
-
-const deleteRecord = async (id) => {
-  if (!confirm('Are you sure you want to delete this lesson observation?')) return;
-
-  try {
-    const result = await lessonObservationAPI.delete(id);
-
-    if (result.success) {
-      await loadData();
-    } else {
-      alert(result.message || 'Failed to delete record. Please try again.');
-    }
-  } catch (error) {
-    console.error('Failed to delete record:', error);
-    alert((error?.response?.data?.message || 'Failed to delete record. Please try again.'));
   }
 };
 
