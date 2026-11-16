@@ -53,7 +53,28 @@
       </template>
       <template #actions>
         <button type="button" class="tool-btn" :disabled="loading" title="Refresh" @click="loadData"><RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" /><span class="hidden lg:inline">Refresh</span></button>
-        <button type="button" class="tool-btn" :disabled="records.length === 0" title="Download PDF" @click="downloadPDF"><FileText class="h-4 w-4" /><span class="hidden lg:inline">PDF</span></button>
+        <div>
+          <button ref="pdfBtn" type="button" class="tool-btn" :disabled="records.length === 0 || pdfBusy" title="Download PDF" :aria-expanded="pdfMenuOpen" @click="togglePdfMenu"><FileText class="h-4 w-4" /><span class="hidden lg:inline">{{ pdfBusy ? 'Preparing...' : 'PDF' }}</span><ChevronDown class="h-3.5 w-3.5" /></button>
+          <!-- On body, so the cards below cannot cover it. -->
+          <Teleport v-if="pdfMenuOpen" to="body">
+            <div class="fixed inset-0 z-[60]" @click="pdfMenuOpen = false"></div>
+            <div class="fixed z-[61] w-64 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 text-left shadow-lg" :style="pdfMenuStyle">
+              <button type="button" class="block w-full px-4 py-2.5 text-left hover:bg-gray-50" @click="exportPdf('best')">
+                <span class="block text-sm font-semibold text-gray-900">Best 20 teachers</span>
+                <span class="block text-xs text-gray-500">Top 20 by average score</span>
+              </button>
+              <button type="button" class="block w-full px-4 py-2.5 text-left hover:bg-gray-50" @click="exportPdf('all')">
+                <span class="block text-sm font-semibold text-gray-900">All teachers</span>
+                <span class="block text-xs text-gray-500">Every teacher observed, ranked</span>
+              </button>
+              <button type="button" class="block w-full px-4 py-2.5 text-left hover:bg-gray-50" @click="exportPdf('rounds')">
+                <span class="block text-sm font-semibold text-gray-900">Every round</span>
+                <span class="block text-xs text-gray-500">One line per observation round</span>
+              </button>
+              <p class="border-t border-gray-100 px-4 py-2 text-[11px] text-gray-500">Uses the filters shown: {{ averageScopeLabel }}{{ filterClass ? `, ${filterClass}` : '' }}</p>
+            </div>
+          </Teleport>
+        </div>
       </template>
     </ListToolbar>
 
@@ -572,12 +593,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue';
 import { lessonObservationAPI, teachersAPI, classesAPI, subjectsNewAPI } from '../services/api';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { useGlobalTerm } from '../composables/useGlobalTerm.js';
-import { Plus, RefreshCw, FileText, ClipboardList, Eye, Pencil, Trash2, Users as UsersIcon, Gauge, Star, PlusCircle } from 'lucide-vue-next';
+import { Plus, RefreshCw, FileText, ClipboardList, Eye, Pencil, Trash2, Users as UsersIcon, Gauge, Star, PlusCircle, ChevronDown } from 'lucide-vue-next';
+import { downloadPdf } from '../utils/downloads.js';
 import StatCards from '../components/ui/StatCards.vue';
 import ListToolbar from '../components/ui/ListToolbar.vue';
 import RowActionsMenu from '../components/RowActionsMenu.vue';
@@ -1108,62 +1128,131 @@ const saveRecord = async () => {
   }
 };
 
-const downloadPDF = () => {
-  const doc = new jsPDF();
+const pdfMenuOpen = ref(false);
+const pdfBusy = ref(false);
+const pdfBtn = ref(null);
+const pdfMenuStyle = ref({});
 
-  doc.setFontSize(18);
-  doc.text('Lesson Observations Report', 14, 22);
-
-  doc.setFontSize(11);
-  doc.setTextColor(100);
-  doc.text(`Year: ${filterYear.value} | Term: ${filterTerm.value}`, 14, 30);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 36);
-
-  const tableData = records.value.map(record => [
-    record.teacher_name,
-    record.subject,
-    record.class,
-    record.stream,
-    `Term ${record.term}`,
-    `Round ${record.round || 1}`,
-    `${record.total_score || 0} / 100`,
-    `${record.calculated_rating || 0} / 4.0`,
-    record.performance_category || '-'
-  ]);
-
-  autoTable(doc, {
-    head: [['Teacher', 'Subject', 'Class', 'Stream', 'Term', 'Round', 'Total Score', 'Rating', 'Category']],
-    body: tableData,
-    startY: 45,
-    styles: {
-      fontSize: 9,
-      cellPadding: 3
-    },
-    headStyles: {
-      fillColor: [5, 150, 105],
-      textColor: 255,
-      fontStyle: 'bold'
-    },
-    alternateRowStyles: {
-      fillColor: [245, 245, 245]
-    },
-    margin: { top: 10, right: 10, bottom: 10, left: 10 }
-  });
-
-  const pageCount = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(150);
-    doc.text(
-      `Page ${i} of ${pageCount}`,
-      doc.internal.pageSize.width / 2,
-      doc.internal.pageSize.height - 10,
-      { align: 'center' }
-    );
+// Opens under the PDF button, right edges lined up, kept inside the screen.
+const togglePdfMenu = () => {
+  if (pdfMenuOpen.value) { pdfMenuOpen.value = false; return; }
+  const r = pdfBtn.value?.getBoundingClientRect();
+  if (r) {
+    const width = 256;
+    const left = Math.max(8, Math.min(r.right - width, window.innerWidth - width - 8));
+    pdfMenuStyle.value = { top: `${r.bottom + 4}px`, left: `${left}px` };
   }
+  pdfMenuOpen.value = true;
+};
+const closePdfMenu = () => { pdfMenuOpen.value = false; };
+window.addEventListener('scroll', closePdfMenu, { passive: true });
+window.addEventListener('resize', closePdfMenu);
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', closePdfMenu);
+  window.removeEventListener('resize', closePdfMenu);
+});
 
-  doc.save(`lesson-observations-${filterYear.value}-term-${filterTerm.value}.pdf`);
+/** Teachers ranked by average score (then more rounds, then name), using the rounds now loaded. */
+const rankedTeachers = () => [...groupedRecords.value]
+  .sort((a, b) =>
+    (Number(b.avg_score) - Number(a.avg_score))
+    || (b.observations.length - a.observations.length)
+    || String(a.teacher_name || '').localeCompare(String(b.teacher_name || '')))
+  .map((g, i) => ({ ...g, rank: i + 1 }));
+
+const exportPdf = async (kind) => {
+  pdfMenuOpen.value = false;
+  if (!records.value.length) return;
+  pdfBusy.value = true;
+  try {
+    const scope = [
+      filterTerm.value === 'all' ? `All terms, ${filterYear.value}` : `Term ${filterTerm.value}, ${filterYear.value}`,
+      filterClass.value ? `Class ${filterClass.value}` : '',
+      filterSearch.value ? `Search "${filterSearch.value}"` : '',
+    ].filter(Boolean).join(' · ');
+    const scopeFile = filterTerm.value === 'all' ? `${filterYear.value}-all-terms` : `${filterYear.value}-term-${filterTerm.value}`;
+
+    const ranked = rankedTeachers();
+    const overall = averageOf(records.value);
+    const top = ranked.filter((g) => ['Outstanding', 'Very Good'].includes(g.overall_category)).length;
+    const summary = [
+      { label: 'Teachers observed', value: ranked.length },
+      { label: 'Rounds', value: records.value.length },
+      { label: 'Average score', value: overall.score },
+      { label: 'Very good or better', value: top },
+    ];
+
+    if (kind === 'rounds') {
+      const rows = [...records.value]
+        .sort((a, b) => String(a.teacher_name || '').localeCompare(String(b.teacher_name || ''))
+          || (Number(a.year) - Number(b.year)) || (Number(a.term) - Number(b.term)) || (Number(a.round || 1) - Number(b.round || 1)))
+        .map((r) => ({
+          teacher: r.teacher_name || '-',
+          subject: r.subject || '-',
+          class: `${r.class || ''} ${r.stream || ''}`.trim() || '-',
+          term: `Term ${r.term}, ${r.year}`,
+          round: `Round ${r.round || 1}`,
+          score: Number(r.total_score || 0).toFixed(1),
+          rating: Number(r.calculated_rating || 0).toFixed(2),
+          category: r.performance_category || '-',
+        }));
+      await downloadPdf({
+        title: 'Lesson Observations: Every Round',
+        subtitle: scope,
+        filename: `lesson-observations-rounds-${scopeFile}`,
+        summary,
+        columns: [
+          { key: 'teacher', label: 'Teacher' }, { key: 'subject', label: 'Subject' }, { key: 'class', label: 'Class' },
+          { key: 'term', label: 'Term' }, { key: 'round', label: 'Round' },
+          { key: 'score', label: 'Score /100', align: 'right' }, { key: 'rating', label: 'Rating /4', align: 'right' },
+          { key: 'category', label: 'Category' },
+        ],
+        rows,
+      });
+      return;
+    }
+
+    const list = kind === 'best' ? ranked.slice(0, 20) : ranked;
+    const showTerms = filterTerm.value === 'all';
+    const rows = list.map((g) => ({
+      rank: g.rank,
+      teacher: g.teacher_name || '-',
+      subject: g.subject || '-',
+      class: `${g.class || ''} ${g.stream || ''}`.trim() || '-',
+      rounds: g.observations.length,
+      terms: (g.terms || []).map((t) => `T${t.term}: ${t.score}`).join('  '),
+      score: g.avg_score,
+      rating: g.avg_rating,
+      category: g.overall_category || '-',
+    }));
+    const columns = [
+      { key: 'rank', label: '#', align: 'right' },
+      { key: 'teacher', label: 'Teacher' },
+      { key: 'subject', label: 'Subject' },
+      { key: 'class', label: 'Class' },
+      { key: 'rounds', label: 'Rounds', align: 'right' },
+      ...(showTerms ? [{ key: 'terms', label: 'Term averages' }] : []),
+      { key: 'score', label: 'Average /100', align: 'right' },
+      { key: 'rating', label: 'Rating /4', align: 'right' },
+      { key: 'category', label: 'Category' },
+    ];
+    await downloadPdf({
+      title: kind === 'best'
+        ? `Lesson Observations: Best ${Math.min(20, ranked.length)} Teachers`
+        : 'Lesson Observations: All Teachers',
+      subtitle: `${scope} · ranked by average score of all rounds`,
+      filename: kind === 'best' ? `lesson-observations-best-20-${scopeFile}` : `lesson-observations-all-teachers-${scopeFile}`,
+      summary,
+      landscape: true,
+      columns,
+      rows,
+    });
+  } catch (err) {
+    console.error('PDF export failed:', err);
+    alert('Could not create the PDF. Please try again.');
+  } finally {
+    pdfBusy.value = false;
+  }
 };
 
 onMounted(() => {
