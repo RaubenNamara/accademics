@@ -478,8 +478,9 @@ export const reportsAPI = {
   },
 
   // Best teachers over Duty Performance, Lesson Observations and Lesson Monitoring.
-  getCombinedBest: async (year, term = '') => {
-    const response = await api.get(`reports.php?type=combined-best&year=${encodeURIComponent(year)}&term=${encodeURIComponent(term ?? '')}`);
+  getCombinedBest: async (year, term = '', weights = {}) => {
+    const w = (k, d) => encodeURIComponent(weights[k] ?? d);
+    const response = await api.get(`reports.php?type=combined-best&year=${encodeURIComponent(year)}&term=${encodeURIComponent(term ?? '')}&w_obs=${w('observation', 1)}&w_mon=${w('monitoring', 1)}&w_duty=${w('duty', 1)}`);
     return response.data;
   },
 

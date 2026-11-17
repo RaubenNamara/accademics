@@ -304,7 +304,16 @@ switch($reportType) {
         break;
         
     case 'combined-best':
-        $data = combined_best_teachers($db, (int)$year, ($term === null || $term === '' || $term === 'all') ? null : (int)$term);
+        // How much each area counts (observation, time kept, duty). Default equal: the plain average.
+        // Any numbers work (1/1/1, 2/1/1, 40/30/30); they are scaled to percentages.
+        $w = [
+            'observation' => max(0, (float)($_GET['w_obs'] ?? 1)),
+            'monitoring' => max(0, (float)($_GET['w_mon'] ?? 1)),
+            'duty' => max(0, (float)($_GET['w_duty'] ?? 1)),
+        ];
+        $sum = array_sum($w);
+        $w = $sum > 0 ? array_map(fn($v) => $v * 100 / $sum, $w) : ['observation' => 100 / 3, 'monitoring' => 100 / 3, 'duty' => 100 / 3];
+        $data = combined_best_teachers($db, (int)$year, ($term === null || $term === '' || $term === 'all') ? null : (int)$term, $w);
         break;
 
     default:
@@ -314,116 +323,136 @@ switch($reportType) {
 }
 
 /**
- * Best teachers over three modules, each a mark out of 100 for the period (a term, or the whole year):
- *   duty         the average Duty Performance percentage
- *   observation  the average score of all Lesson Observation rounds
- *   monitoring   the teacher's place in the lesson-monitoring order: teachers with at least
- *                MIN_LESSONS lessons recorded come first, then those with fewer; inside each group
- *                fewer minutes lost is better (then more lessons). First place 100, last place 0.
- * Combined = the average of the marks the teacher has. Teachers with all three marks rank first,
- * then those with two, then one; inside that, the higher combined mark first.
+ * Best teachers over Lesson Observations, Lesson Monitoring and Duty Performance for a period
+ * (one term, or the whole year). Kept simple so any teacher can check it by hand:
+ *
+ * 1. Enough evidence: ranked only with MIN_LESSONS lessons recorded (10 in a term, 30 in a year), MIN_OBS observation round(s)
+ *    and MIN_DUTY duty record(s). Everyone else is listed as "not ranked yet", with the reason.
+ * 2. Marks out of 100: observation = average of all rounds; duty = average duty percentage;
+ *    time kept = (minutes recorded - minutes lost) / minutes recorded x 100.
+ * 3. Total = weighted average of the three marks (default equal: the plain average).
+ * 4. Highest total first; equal totals (to one decimal) share the position. Bands by position.
  */
-function combined_best_teachers(PDO $db, int $year, ?int $term): array
+function combined_best_teachers(PDO $db, int $year, ?int $term, array $weights): array
 {
-    $MIN_LESSONS = 30;
+    // Lessons needed to be ranked: 10 in one term, 30 over the whole year.
+    $MIN_LESSONS = $term === null ? 30 : 10;
+    $MIN_OBS = 1;
+    $MIN_DUTY = 1;
+
     $termSql = $term === null ? '' : ' AND term = :term';
-    $bind = fn(PDOStatement $s) => $s->execute($term === null ? [':year' => $year] : [':year' => $year, ':term' => $term]);
+    $params = $term === null ? [':year' => $year] : [':year' => $year, ':term' => $term];
+    $fetch = function (string $sql) use ($db, $params) {
+        $s = $db->prepare($sql);
+        $s->execute($params);
+        return $s->fetchAll(PDO::FETCH_ASSOC);
+    };
 
     $teachers = [];
     foreach ($db->query("SELECT id, full_name, subject, department, is_active FROM teachers")->fetchAll(PDO::FETCH_ASSOC) as $t) {
         $teachers[(int)$t['id']] = $t;
     }
-    $row = function (int $id) use (&$teachers) {
-        $t = $teachers[$id] ?? null;
-        return [
-            'teacher_id' => $id,
-            'teacher_name' => $t['full_name'] ?? "Teacher #$id",
-            'subject' => $t['subject'] ?? '',
-            'department' => $t['department'] ?? '',
-            'duty' => null, 'duty_records' => 0,
-            'observation' => null, 'observation_rounds' => 0,
-            'monitoring' => null, 'lessons' => 0, 'minutes_lost' => 0, 'monitoring_group' => null, 'monitoring_place' => null,
-        ];
-    };
-    $out = [];
-
-    $s = $db->prepare("SELECT teacher_id, AVG(percentage) AS avg_pct, COUNT(*) AS n FROM duty_performance WHERE year = :year{$termSql} GROUP BY teacher_id");
-    $bind($s);
-    foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) {
-        $id = (int)$r['teacher_id'];
-        $out[$id] = $out[$id] ?? $row($id);
-        $out[$id]['duty'] = round((float)$r['avg_pct'], 1);
-        $out[$id]['duty_records'] = (int)$r['n'];
-    }
-
-    $s = $db->prepare("SELECT teacher_id, AVG(total_score) AS avg_score, COUNT(*) AS n FROM lesson_observations WHERE year = :year{$termSql} AND total_score IS NOT NULL GROUP BY teacher_id");
-    $bind($s);
-    foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) {
-        $id = (int)$r['teacher_id'];
-        $out[$id] = $out[$id] ?? $row($id);
-        $out[$id]['observation'] = round((float)$r['avg_score'], 1);
-        $out[$id]['observation_rounds'] = (int)$r['n'];
-    }
-
-    $s = $db->prepare("SELECT teacher_id, COUNT(*) AS lessons, COALESCE(SUM(minutes_lost), 0) AS lost FROM teacher_lesson_attendance WHERE year = :year{$termSql} GROUP BY teacher_id");
-    $bind($s);
-    $monitored = [];
-    foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) {
-        $id = (int)$r['teacher_id'];
-        $out[$id] = $out[$id] ?? $row($id);
-        $out[$id]['lessons'] = (int)$r['lessons'];
-        $out[$id]['minutes_lost'] = (int)$r['lost'];
-        $out[$id]['monitoring_group'] = (int)$r['lessons'] >= $MIN_LESSONS ? 'full' : 'few';
-        $monitored[] = $id;
-    }
-
-    // Monitoring order: the 30+ group first, then fewer minutes lost, then more lessons.
-    usort($monitored, function ($a, $b) use ($out) {
-        $ga = $out[$a]['monitoring_group'] === 'full' ? 0 : 1;
-        $gb = $out[$b]['monitoring_group'] === 'full' ? 0 : 1;
-        return [$ga, $out[$a]['minutes_lost'], -$out[$a]['lessons']] <=> [$gb, $out[$b]['minutes_lost'], -$out[$b]['lessons']];
-    });
-    // Equal teachers share their average place, so they get the same mark.
-    $n = count($monitored);
-    for ($i = 0; $i < $n;) {
-        $j = $i;
-        $key = fn($id) => [$out[$id]['monitoring_group'], $out[$id]['minutes_lost'], $out[$id]['lessons']];
-        while ($j + 1 < $n && $key($monitored[$j + 1]) === $key($monitored[$i])) $j++;
-        $place = ($i + $j) / 2 + 1; // 1-based
-        for ($k = $i; $k <= $j; $k++) {
-            $id = $monitored[$k];
-            $out[$id]['monitoring_place'] = $i + 1;
-            $out[$id]['monitoring'] = $n <= 1 ? 100.0 : round(100 * ($n - $place) / ($n - 1), 1);
+    $rows = [];
+    $row = function (int $id) use (&$rows, $teachers) {
+        if (!isset($rows[$id])) {
+            $t = $teachers[$id] ?? null;
+            $rows[$id] = [
+                'teacher_id' => $id,
+                'teacher_name' => $t['full_name'] ?? "Teacher #$id",
+                'subject' => $t['subject'] ?? '',
+                'department' => $t['department'] ?? '',
+                'observation' => null, 'obs_n' => 0,
+                'duty' => null, 'duty_n' => 0,
+                'lessons' => 0, 'minutes_recorded' => 0, 'minutes_lost' => 0, 'time_kept' => null,
+            ];
         }
-        $i = $j + 1;
+    };
+
+    foreach ($fetch("SELECT teacher_id, AVG(total_score) a, COUNT(*) n FROM lesson_observations WHERE year = :year{$termSql} AND total_score IS NOT NULL GROUP BY teacher_id") as $r) {
+        $id = (int)$r['teacher_id'];
+        $row($id);
+        $rows[$id]['observation'] = (float)$r['a'];
+        $rows[$id]['obs_n'] = (int)$r['n'];
+    }
+    foreach ($fetch("SELECT teacher_id, AVG(percentage) a, COUNT(*) n FROM duty_performance WHERE year = :year{$termSql} GROUP BY teacher_id") as $r) {
+        $id = (int)$r['teacher_id'];
+        $row($id);
+        $rows[$id]['duty'] = (float)$r['a'];
+        $rows[$id]['duty_n'] = (int)$r['n'];
+    }
+    // A lesson's recorded minutes: its planned length, or the time taught when no length was saved.
+    foreach ($fetch("SELECT teacher_id, COUNT(*) lessons, COALESCE(SUM(minutes_lost), 0) lost,
+                            COALESCE(SUM(CASE WHEN expected_minutes > 0 THEN expected_minutes ELSE actual_minutes + minutes_lost END), 0) recorded
+                     FROM teacher_lesson_attendance WHERE year = :year{$termSql} GROUP BY teacher_id") as $r) {
+        $id = (int)$r['teacher_id'];
+        $row($id);
+        $rec = (int)$r['recorded'];
+        $lost = (int)$r['lost'];
+        $rows[$id]['lessons'] = (int)$r['lessons'];
+        $rows[$id]['minutes_recorded'] = $rec;
+        $rows[$id]['minutes_lost'] = $lost;
+        $rows[$id]['time_kept'] = $rec > 0 ? max(0, min(100, 100 * ($rec - $lost) / $rec)) : null;
     }
 
     // Leave out staff no longer active.
-    $out = array_filter($out, fn($r) => !isset($teachers[$r['teacher_id']]) || (int)$teachers[$r['teacher_id']]['is_active'] === 1);
+    $rows = array_filter($rows, fn($r) => !isset($teachers[$r['teacher_id']]) || (int)$teachers[$r['teacher_id']]['is_active'] === 1);
 
-    foreach ($out as &$r) {
-        $marks = array_values(array_filter([$r['duty'], $r['observation'], $r['monitoring']], fn($v) => $v !== null));
-        $r['parts'] = count($marks);
-        $r['combined'] = $marks ? round(array_sum($marks) / count($marks), 1) : null;
+    $w = $weights;
+    $ranked = [];
+    $notRanked = [];
+    foreach ($rows as $r) {
+        $missing = [];
+        if ($r['lessons'] < $MIN_LESSONS) {
+            $missing[] = $r['lessons'] ? "only {$r['lessons']} lessons recorded (needs {$MIN_LESSONS})" : 'no lessons recorded';
+        } elseif ($r['time_kept'] === null) {
+            $missing[] = 'no lesson minutes recorded';
+        }
+        if ($r['obs_n'] < $MIN_OBS) $missing[] = 'no lesson observation';
+        if ($r['duty_n'] < $MIN_DUTY) $missing[] = 'no duty record';
+
+        if ($missing) {
+            $r['missing'] = $missing;
+            $notRanked[] = $r;
+            continue;
+        }
+        $r['total'] = ($w['observation'] * $r['observation'] + $w['monitoring'] * $r['time_kept'] + $w['duty'] * $r['duty']) / 100;
+        $ranked[] = $r;
+    }
+
+    // Highest total first; on equal totals, the higher observation, then fewer minutes lost.
+    usort($ranked, fn($a, $b) => [round($b['total'], 1), $b['observation'], -$b['minutes_lost']] <=> [round($a['total'], 1), $a['observation'], -$a['minutes_lost']]
+        ?: strcmp($a['teacher_name'], $b['teacher_name']));
+
+    $N = count($ranked);
+    $band = function (int $pos) use ($N) {
+        if ($pos <= max(1, (int)ceil($N * 0.10))) return 'Top 10%';
+        if ($pos <= max(1, (int)ceil($N * 0.25))) return 'Top 25%';
+        if ($pos <= (int)ceil($N * 0.50)) return 'Above middle';
+        return 'Below middle';
+    };
+    foreach ($ranked as $i => &$r) {
+        // Equal totals (to one decimal) share the position.
+        $r['position'] = ($i > 0 && round($ranked[$i - 1]['total'], 1) === round($r['total'], 1)) ? $ranked[$i - 1]['position'] : $i + 1;
+        $r['band'] = $band($r['position']);
+        foreach (['observation', 'duty', 'time_kept', 'total'] as $k) $r[$k] = round($r[$k], 1);
     }
     unset($r);
-
-    $list = array_values($out);
-    usort($list, fn($a, $b) => [$b['parts'], $b['combined'], $b['lessons']] <=> [$a['parts'], $a['combined'], $a['lessons']]
-        ?: strcmp($a['teacher_name'], $b['teacher_name']));
-    foreach ($list as $i => &$r) $r['rank'] = $i + 1;
+    foreach ($notRanked as &$r) {
+        foreach (['observation', 'duty', 'time_kept'] as $k) $r[$k] = $r[$k] === null ? null : round($r[$k], 1);
+    }
     unset($r);
+    usort($notRanked, fn($a, $b) => count($a['missing']) <=> count($b['missing']) ?: strcmp($a['teacher_name'], $b['teacher_name']));
 
     return [
-        'teachers' => $list,
-        'monitored_teachers' => $n,
-        'min_lessons' => $MIN_LESSONS,
-        'counts' => [
-            'all_three' => count(array_filter($list, fn($r) => $r['parts'] === 3)),
-            'with_duty' => count(array_filter($list, fn($r) => $r['duty'] !== null)),
-            'with_observation' => count(array_filter($list, fn($r) => $r['observation'] !== null)),
-            'with_monitoring' => count(array_filter($list, fn($r) => $r['monitoring'] !== null)),
+        'teachers' => $ranked,
+        'not_ranked' => $notRanked,
+        'settings' => [
+            'weights' => $w,
+            'min_lessons' => $MIN_LESSONS,
+            'min_observations' => $MIN_OBS,
+            'min_duty' => $MIN_DUTY,
         ],
+        'counts' => ['ranked' => $N, 'not_ranked' => count($notRanked)],
     ];
 }
 

@@ -95,6 +95,27 @@
             <option :value="0">All teachers</option>
           </select>
         </label>
+        <div v-if="reportType === 'combined-best'" class="sm:col-span-2 lg:col-span-4">
+          <span class="field-label">How much each counts (1 each = plain average)</span>
+          <div class="grid grid-cols-3 gap-3 sm:max-w-xl">
+            <label class="block">
+              <span class="mb-1 block text-xs text-gray-600">Observation</span>
+              <input v-model.number="weights.observation" type="number" min="0" step="1" class="field-input">
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-xs text-gray-600">Time kept</span>
+              <input v-model.number="weights.monitoring" type="number" min="0" step="1" class="field-input">
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-xs text-gray-600">Duty</span>
+              <input v-model.number="weights.duty" type="number" min="0" step="1" class="field-input">
+            </label>
+          </div>
+          <p class="mt-1 text-xs" :class="weightsTotal > 0 ? 'text-gray-500' : 'font-semibold text-red-600'">
+            {{ weightsTotal > 0 ? `Total = ${weightsSentence(weights)}` : 'Give at least one area a number above 0.' }}
+            <button v-if="!isDefaultWeights" type="button" class="ml-1 font-semibold text-brand-700 underline" @click="weights = { ...DEFAULT_WEIGHTS }">Use the plain average</button>
+          </p>
+        </div>
         <label v-if="reportType === 'best-teachers'" class="block">
           <span class="field-label">Award</span>
           <select v-model="awardType" class="field-input">
@@ -105,7 +126,7 @@
       </div>
       <footer class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/60 px-4 py-3 sm:px-5">
         <p class="text-sm text-gray-600">{{ currentReportLabel }}</p>
-        <button type="button" class="tool-btn-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="loading" @click="generateReport">
+        <button type="button" class="tool-btn-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="loading || (reportType === 'combined-best' && !(weightsTotal > 0))" @click="generateReport">
           <RefreshCw v-if="loading" class="h-4 w-4 animate-spin" /><Play v-else class="h-4 w-4" />{{ loading ? 'Generating…' : 'Generate report' }}
         </button>
       </footer>
@@ -226,52 +247,63 @@
         
         <!-- Best teachers over three modules -->
         <div v-if="reportType === 'combined-best' && reportData.teachers">
-          <div class="mb-4 rounded-xl border border-gray-200 bg-gray-50/70 p-4 text-sm text-gray-700">
-            <p class="font-semibold text-gray-900">How the ranking works</p>
-            <ul class="mt-1.5 list-disc space-y-1 pl-5">
-              <li><strong>Duty</strong>: the teacher's average Duty Performance percentage.</li>
-              <li><strong>Observation</strong>: the average score of all Lesson Observation rounds.</li>
-              <li><strong>Monitoring</strong>: teachers with {{ reportData.min_lessons }} or more lessons recorded come first, then those with fewer; in each group, fewer minutes lost is better. The mark is the teacher's place in that order (first 100, last 0) out of {{ reportData.monitored_teachers }} teachers monitored.</li>
-              <li><strong>Combined</strong>: the average of the marks the teacher has. Teachers with all three marks come first, then two, then one.</li>
-            </ul>
-            <p class="mt-2 text-xs text-gray-500">
-              {{ reportData.counts.all_three }} with all three marks · {{ reportData.counts.with_duty }} with duty · {{ reportData.counts.with_observation }} with observations · {{ reportData.counts.with_monitoring }} with lesson monitoring
-            </p>
-          </div>
-          <p v-if="!reportData.teachers.length" class="py-8 text-center text-sm text-gray-500">No duty, observation or lesson monitoring marks for this period.</p>
+          <p class="mb-4 rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-700 ring-1 ring-gray-200">
+            <strong>Total</strong> = {{ weightsSentence(reportData.settings.weights) }}.
+            <span class="text-gray-500">Time kept = lesson minutes recorded minus minutes lost, as a %. Ranked with {{ reportData.settings.min_lessons }}+ lessons, an observation and a duty record.</span>
+          </p>
+
+          <p v-if="!reportData.teachers.length" class="rounded-xl border border-dashed border-gray-300 py-8 text-center text-sm text-gray-500">
+            No teacher has all three marks for this period yet.
+          </p>
           <div v-else class="overflow-x-auto">
-            <table class="w-full text-sm">
+            <table class="w-full min-w-[640px] text-sm">
               <thead class="bg-slate-100">
                 <tr>
-                  <th class="px-3 py-3 text-right font-semibold text-slate-700">#</th>
+                  <th class="px-3 py-3 text-right font-semibold text-slate-700">Pos.</th>
                   <th class="px-3 py-3 text-left font-semibold text-slate-700">Teacher</th>
-                  <th class="px-3 py-3 text-right font-semibold text-slate-700">Duty</th>
                   <th class="px-3 py-3 text-right font-semibold text-slate-700">Observation</th>
-                  <th class="px-3 py-3 text-right font-semibold text-slate-700">Lessons</th>
-                  <th class="px-3 py-3 text-right font-semibold text-slate-700">Min. lost</th>
-                  <th class="px-3 py-3 text-right font-semibold text-slate-700">Monitoring</th>
-                  <th class="px-3 py-3 text-right font-semibold text-slate-700">Combined</th>
-                  <th class="px-3 py-3 text-left font-semibold text-slate-700">Marks</th>
+                  <th class="px-3 py-3 text-right font-semibold text-slate-700">Time kept %</th>
+                  <th class="px-3 py-3 text-right font-semibold text-slate-700">Duty</th>
+                  <th class="px-3 py-3 text-right font-semibold text-slate-700">Total</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="r in combinedRows" :key="r.teacher_id" class="border-t border-slate-100">
-                  <td class="px-3 py-2.5 text-right font-semibold tabular-nums text-slate-500">{{ r.rank }}</td>
+                  <td class="px-3 py-2.5 text-right font-bold tabular-nums text-slate-700">{{ r.position }}</td>
                   <td class="px-3 py-2.5">
-                    <p class="font-semibold text-gray-900">{{ r.teacher_name }}</p>
-                    <p class="text-xs text-gray-500">{{ r.subject || r.department || '' }}</p>
+                    <span class="font-semibold text-gray-900">{{ r.teacher_name }}</span>
+                    <span class="ml-2 rounded-full px-2 py-0.5 text-[11px] font-semibold" :class="bandClass(r.band)">{{ r.band }}</span>
                   </td>
-                  <td class="px-3 py-2.5 text-right tabular-nums">{{ mark(r.duty) }}</td>
-                  <td class="px-3 py-2.5 text-right tabular-nums">{{ mark(r.observation) }}</td>
-                  <td class="px-3 py-2.5 text-right tabular-nums" :class="r.monitoring_group === 'few' ? 'text-amber-700' : ''" :title="r.monitoring_group === 'few' ? `Fewer than ${reportData.min_lessons} lessons recorded` : ''">{{ r.monitoring === null ? '-' : r.lessons }}</td>
-                  <td class="px-3 py-2.5 text-right tabular-nums">{{ r.monitoring === null ? '-' : r.minutes_lost }}</td>
-                  <td class="px-3 py-2.5 text-right tabular-nums">{{ mark(r.monitoring) }}</td>
-                  <td class="px-3 py-2.5 text-right text-base font-bold tabular-nums text-brand-700">{{ mark(r.combined) }}</td>
-                  <td class="px-3 py-2.5 text-xs text-gray-500">{{ r.parts }} of 3</td>
+                  <td class="px-3 py-2.5 text-right tabular-nums" :title="`${r.obs_n} observation round(s)`">{{ mark(r.observation) }}</td>
+                  <td class="px-3 py-2.5 text-right tabular-nums" :title="`${r.lessons} lessons, ${r.minutes_lost} of ${r.minutes_recorded} minutes lost`">{{ mark(r.time_kept) }}</td>
+                  <td class="px-3 py-2.5 text-right tabular-nums" :title="`${r.duty_n} duty record(s)`">{{ mark(r.duty) }}</td>
+                  <td class="px-3 py-2.5 text-right text-base font-bold tabular-nums text-brand-700">{{ mark(r.total) }}</td>
                 </tr>
               </tbody>
             </table>
-            <p class="mt-3 text-xs text-gray-500">Lessons in amber: fewer than {{ reportData.min_lessons }} recorded, so the teacher is placed after everyone with {{ reportData.min_lessons }} or more in lesson monitoring.</p>
+          </div>
+
+          <div v-if="reportData.not_ranked.length" class="mt-6">
+            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h4 class="font-semibold text-slate-900">Not ranked yet ({{ reportData.not_ranked.length }})</h4>
+              <button type="button" class="tool-btn" @click="downloadNotRankedPdf"><FileText class="h-4 w-4" />PDF</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[520px] text-sm">
+                <thead class="bg-slate-100">
+                  <tr>
+                    <th class="px-3 py-2.5 text-left font-semibold text-slate-700">Teacher</th>
+                    <th class="px-3 py-2.5 text-left font-semibold text-slate-700">Missing</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="r in reportData.not_ranked" :key="r.teacher_id" class="border-t border-slate-100">
+                    <td class="px-3 py-2 font-medium text-gray-900">{{ r.teacher_name }}</td>
+                    <td class="px-3 py-2 text-amber-800">{{ r.missing.join(', ') }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -593,7 +625,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { reportsAPI, teachersAPI } from '../services/api.js';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -632,6 +664,39 @@ const combinedRows = computed(() => {
   return combinedLimit.value ? list.slice(0, combinedLimit.value) : list;
 });
 const mark = (v) => (v === null || v === undefined ? '-' : Number(v).toFixed(1));
+
+// How much each area counts in the total; equal by default (the plain average). Remembered on this device.
+const WEIGHTS_KEY = 'reports.combinedWeights.v2';
+const DEFAULT_WEIGHTS = { observation: 1, monitoring: 1, duty: 1 };
+const loadWeights = () => {
+  try {
+    const w = JSON.parse(localStorage.getItem(WEIGHTS_KEY) || 'null');
+    if (w && ['observation', 'monitoring', 'duty'].every((k) => Number.isFinite(w[k]) && w[k] >= 0)) return w;
+  } catch { /* not available */ }
+  return { ...DEFAULT_WEIGHTS };
+};
+const weights = ref(loadWeights());
+const weightsTotal = computed(() => ['observation', 'monitoring', 'duty'].reduce((s, k) => s + Math.max(0, Number(weights.value[k]) || 0), 0));
+const isDefaultWeights = computed(() => Object.keys(DEFAULT_WEIGHTS).every((k) => Number(weights.value[k]) === DEFAULT_WEIGHTS[k]));
+watch(weights, (w) => { try { localStorage.setItem(WEIGHTS_KEY, JSON.stringify(w)); } catch { /* not available */ } }, { deep: true });
+
+/** "the average of observation, time kept and duty" when equal, else "observation 50% + time kept 25% + duty 25%". */
+const weightsSentence = (w) => {
+  const o = Math.max(0, Number(w.observation) || 0);
+  const m = Math.max(0, Number(w.monitoring) || 0);
+  const d = Math.max(0, Number(w.duty) || 0);
+  const sum = o + m + d;
+  if (!sum) return '-';
+  if (Math.abs(o - m) < 1e-6 && Math.abs(m - d) < 1e-6) return 'the average of observation, time kept and duty';
+  const pct = (v) => `${Math.round((v * 1000) / sum) / 10}%`;
+  return [o && `observation ${pct(o)}`, m && `time kept ${pct(m)}`, d && `duty ${pct(d)}`].filter(Boolean).join(' + ');
+};
+const bandClass = (band) => ({
+  'Top 10%': 'bg-emerald-100 text-emerald-800',
+  'Top 25%': 'bg-brand-100 text-brand-800',
+  'Above middle': 'bg-sky-100 text-sky-800',
+  'Below middle': 'bg-gray-100 text-gray-700',
+}[band] || 'bg-gray-100 text-gray-700');
 const years = Array.from({length: 5}, (_, i) => new Date().getFullYear() - 2 + i);
 const teachersList = ref([]);
 const reportData = ref(null);
@@ -642,7 +707,12 @@ const reportTitle = computed(() => {
     weekly: 'Weekly Lesson Monitoring Report',
     termly: 'Termly Comprehensive Report',
     yearly: 'Yearly Summary Report',
-    'combined-best': combinedLimit.value ? `Best ${combinedLimit.value} Teachers: Duty, Observations and Lesson Monitoring` : 'All Teachers: Duty, Observations and Lesson Monitoring',
+    // Best 20 when 20 or more are ranked; otherwise the number actually ranked.
+    'combined-best': (() => {
+      const ranked = reportData.value?.teachers?.length;
+      const n = combinedLimit.value && ranked !== undefined ? Math.min(combinedLimit.value, ranked) : combinedLimit.value;
+      return n ? `Best ${n} Teachers: Duty, Observations and Lesson Monitoring` : 'All Teachers: Duty, Observations and Lesson Monitoring';
+    })(),
     'best-teachers': 'Best Teachers Report',
     printable: 'Single Teacher Report',
     top20: 'Top 20 Teachers - Highest Minutes Lost',
@@ -694,7 +764,7 @@ const generateReport = async () => {
         result = await reportsAPI.getYearly(selectedYear.value);
         break;
       case 'combined-best':
-        result = await reportsAPI.getCombinedBest(selectedYear.value, selectedTerm.value);
+        result = await reportsAPI.getCombinedBest(selectedYear.value, selectedTerm.value, weights.value);
         break;
       case 'best-teachers':
         result = await reportsAPI.getBestTeachers(selectedYear.value, selectedTerm.value, awardType.value);
@@ -766,46 +836,48 @@ const printReport = () => {
   printWindow.print();
 };
 
-/** The combined ranking uses the school's branded layout, like the module reports. */
+/** The ranking and the not-ranked list, in the school's branded layout. */
+const combinedScope = () => (selectedTerm.value ? `Term ${selectedTerm.value}, ${selectedYear.value}` : `All terms, ${selectedYear.value}`);
+const combinedFileScope = () => `${selectedYear.value}${selectedTerm.value ? `-term-${selectedTerm.value}` : '-all-terms'}`;
+
 const downloadCombinedPdf = async () => {
   const d = reportData.value;
-  const scope = selectedTerm.value ? `Term ${selectedTerm.value}, ${selectedYear.value}` : `All terms, ${selectedYear.value}`;
   await downloadPdf({
     title: reportTitle.value.replace(': Duty, Observations and Lesson Monitoring', ''),
-    subtitle: `${scope} · Duty, Lesson Observations and Lesson Monitoring (${d.min_lessons}+ lessons first, then fewest minutes lost)`,
-    filename: `best-teachers-combined-${selectedYear.value}${selectedTerm.value ? `-term-${selectedTerm.value}` : '-all-terms'}`,
-    landscape: true,
-    summary: [
-      { label: 'Teachers ranked', value: d.teachers.length },
-      { label: 'With all three marks', value: d.counts.all_three },
-      { label: 'With duty marks', value: d.counts.with_duty },
-      { label: 'With observations', value: d.counts.with_observation },
-      { label: 'With lesson monitoring', value: d.counts.with_monitoring },
-    ],
+    subtitle: `${combinedScope()} · Total = ${weightsSentence(d.settings.weights)}`,
+    filename: `best-teachers-${combinedFileScope()}`,
     columns: [
-      { key: 'rank', label: '#', align: 'right' },
+      { key: 'pos', label: 'Pos.', align: 'right' },
       { key: 'teacher', label: 'Teacher' },
-      { key: 'subject', label: 'Subject' },
+      { key: 'band', label: 'Band' },
+      { key: 'obs', label: 'Observation', align: 'right' },
+      { key: 'kept', label: 'Time kept %', align: 'right' },
       { key: 'duty', label: 'Duty', align: 'right' },
-      { key: 'observation', label: 'Observation', align: 'right' },
-      { key: 'lessons', label: 'Lessons', align: 'right' },
-      { key: 'lost', label: 'Min. lost', align: 'right' },
-      { key: 'monitoring', label: 'Monitoring', align: 'right' },
-      { key: 'combined', label: 'Combined', align: 'right' },
-      { key: 'parts', label: 'Marks' },
+      { key: 'total', label: 'Total', align: 'right' },
     ],
     rows: combinedRows.value.map((r) => ({
-      rank: r.rank,
+      pos: r.position,
       teacher: r.teacher_name,
-      subject: r.subject || r.department || '',
+      band: r.band,
+      obs: mark(r.observation),
+      kept: mark(r.time_kept),
       duty: mark(r.duty),
-      observation: mark(r.observation),
-      lessons: r.monitoring === null ? '-' : `${r.lessons}${r.monitoring_group === 'few' ? '*' : ''}`,
-      lost: r.monitoring === null ? '-' : r.minutes_lost,
-      monitoring: mark(r.monitoring),
-      combined: mark(r.combined),
-      parts: `${r.parts} of 3`,
+      total: mark(r.total),
     })),
+  });
+};
+
+const downloadNotRankedPdf = async () => {
+  const d = reportData.value;
+  await downloadPdf({
+    title: 'Teachers Not Ranked Yet',
+    subtitle: `${combinedScope()} · ranking needs ${d.settings.min_lessons}+ lessons, an observation and a duty record`,
+    filename: `teachers-not-ranked-yet-${combinedFileScope()}`,
+    columns: [
+      { key: 'teacher', label: 'Teacher' },
+      { key: 'missing', label: 'Missing' },
+    ],
+    rows: d.not_ranked.map((r) => ({ teacher: r.teacher_name, missing: r.missing.join(', ') })),
   });
 };
 
