@@ -86,6 +86,15 @@
             <option v-for="t in teachersList" :key="t.id" :value="t.id">{{ t.full_name }}</option>
           </select>
         </label>
+        <label v-if="reportType === 'combined-best'" class="block">
+          <span class="field-label">Show</span>
+          <select v-model="combinedLimit" class="field-input">
+            <option :value="20">Best 20</option>
+            <option :value="30">Best 30</option>
+            <option :value="50">Best 50</option>
+            <option :value="0">All teachers</option>
+          </select>
+        </label>
         <label v-if="reportType === 'best-teachers'" class="block">
           <span class="field-label">Award</span>
           <select v-model="awardType" class="field-input">
@@ -215,6 +224,57 @@
           </div>
         </div>
         
+        <!-- Best teachers over three modules -->
+        <div v-if="reportType === 'combined-best' && reportData.teachers">
+          <div class="mb-4 rounded-xl border border-gray-200 bg-gray-50/70 p-4 text-sm text-gray-700">
+            <p class="font-semibold text-gray-900">How the ranking works</p>
+            <ul class="mt-1.5 list-disc space-y-1 pl-5">
+              <li><strong>Duty</strong>: the teacher's average Duty Performance percentage.</li>
+              <li><strong>Observation</strong>: the average score of all Lesson Observation rounds.</li>
+              <li><strong>Monitoring</strong>: teachers with {{ reportData.min_lessons }} or more lessons recorded come first, then those with fewer; in each group, fewer minutes lost is better. The mark is the teacher's place in that order (first 100, last 0) out of {{ reportData.monitored_teachers }} teachers monitored.</li>
+              <li><strong>Combined</strong>: the average of the marks the teacher has. Teachers with all three marks come first, then two, then one.</li>
+            </ul>
+            <p class="mt-2 text-xs text-gray-500">
+              {{ reportData.counts.all_three }} with all three marks · {{ reportData.counts.with_duty }} with duty · {{ reportData.counts.with_observation }} with observations · {{ reportData.counts.with_monitoring }} with lesson monitoring
+            </p>
+          </div>
+          <p v-if="!reportData.teachers.length" class="py-8 text-center text-sm text-gray-500">No duty, observation or lesson monitoring marks for this period.</p>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-100">
+                <tr>
+                  <th class="px-3 py-3 text-right font-semibold text-slate-700">#</th>
+                  <th class="px-3 py-3 text-left font-semibold text-slate-700">Teacher</th>
+                  <th class="px-3 py-3 text-right font-semibold text-slate-700">Duty</th>
+                  <th class="px-3 py-3 text-right font-semibold text-slate-700">Observation</th>
+                  <th class="px-3 py-3 text-right font-semibold text-slate-700">Lessons</th>
+                  <th class="px-3 py-3 text-right font-semibold text-slate-700">Min. lost</th>
+                  <th class="px-3 py-3 text-right font-semibold text-slate-700">Monitoring</th>
+                  <th class="px-3 py-3 text-right font-semibold text-slate-700">Combined</th>
+                  <th class="px-3 py-3 text-left font-semibold text-slate-700">Marks</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="r in combinedRows" :key="r.teacher_id" class="border-t border-slate-100">
+                  <td class="px-3 py-2.5 text-right font-semibold tabular-nums text-slate-500">{{ r.rank }}</td>
+                  <td class="px-3 py-2.5">
+                    <p class="font-semibold text-gray-900">{{ r.teacher_name }}</p>
+                    <p class="text-xs text-gray-500">{{ r.subject || r.department || '' }}</p>
+                  </td>
+                  <td class="px-3 py-2.5 text-right tabular-nums">{{ mark(r.duty) }}</td>
+                  <td class="px-3 py-2.5 text-right tabular-nums">{{ mark(r.observation) }}</td>
+                  <td class="px-3 py-2.5 text-right tabular-nums" :class="r.monitoring_group === 'few' ? 'text-amber-700' : ''" :title="r.monitoring_group === 'few' ? `Fewer than ${reportData.min_lessons} lessons recorded` : ''">{{ r.monitoring === null ? '-' : r.lessons }}</td>
+                  <td class="px-3 py-2.5 text-right tabular-nums">{{ r.monitoring === null ? '-' : r.minutes_lost }}</td>
+                  <td class="px-3 py-2.5 text-right tabular-nums">{{ mark(r.monitoring) }}</td>
+                  <td class="px-3 py-2.5 text-right text-base font-bold tabular-nums text-brand-700">{{ mark(r.combined) }}</td>
+                  <td class="px-3 py-2.5 text-xs text-gray-500">{{ r.parts }} of 3</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="mt-3 text-xs text-gray-500">Lessons in amber: fewer than {{ reportData.min_lessons }} recorded, so the teacher is placed after everyone with {{ reportData.min_lessons }} or more in lesson monitoring.</p>
+          </div>
+        </div>
+
         <!-- Best Teachers Report -->
         <div v-if="reportType === 'best-teachers'">
           <div v-if="reportData.awards && reportData.awards.length > 0" class="mb-6">
@@ -538,13 +598,15 @@ import { reportsAPI, teachersAPI } from '../services/api.js';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useGlobalTerm } from '../composables/useGlobalTerm.js';
-import { CalendarDays, CalendarRange, CalendarCheck, Trophy, UserRound, TrendingDown, TrendingUp, School, Building2, RefreshCw, Play, Printer, FileText } from 'lucide-vue-next';
+import { CalendarDays, CalendarRange, CalendarCheck, Trophy, Medal, UserRound, TrendingDown, TrendingUp, School, Building2, RefreshCw, Play, Printer, FileText } from 'lucide-vue-next';
+import { downloadPdf } from '../utils/downloads.js';
 
 const REPORT_GROUPS = [
   { label: 'Lesson monitoring and performance', items: [
     { value: 'weekly', label: 'Weekly lesson monitoring', hint: 'Lessons, time lost and compensation', icon: CalendarDays },
     { value: 'termly', label: 'Termly comprehensive', hint: 'All modules for one term', icon: CalendarRange },
     { value: 'yearly', label: 'Yearly summary', hint: 'The whole year at a glance', icon: CalendarCheck },
+    { value: 'combined-best', label: 'Best teachers (combined)', hint: 'Duty, observations and lesson monitoring', icon: Medal },
     { value: 'best-teachers', label: 'Best teachers', hint: 'Weekly or termly awards', icon: Trophy },
     { value: 'printable', label: 'Single teacher', hint: 'One teacher, ready to print', icon: UserRound },
   ] },
@@ -564,6 +626,12 @@ const selectedTeacher = ref('');
 const selectedDay = ref('');
 const selectedCompensationStatus = ref('');
 const awardType = ref('week');
+const combinedLimit = ref(20);
+const combinedRows = computed(() => {
+  const list = reportData.value?.teachers || [];
+  return combinedLimit.value ? list.slice(0, combinedLimit.value) : list;
+});
+const mark = (v) => (v === null || v === undefined ? '-' : Number(v).toFixed(1));
 const years = Array.from({length: 5}, (_, i) => new Date().getFullYear() - 2 + i);
 const teachersList = ref([]);
 const reportData = ref(null);
@@ -574,6 +642,7 @@ const reportTitle = computed(() => {
     weekly: 'Weekly Lesson Monitoring Report',
     termly: 'Termly Comprehensive Report',
     yearly: 'Yearly Summary Report',
+    'combined-best': combinedLimit.value ? `Best ${combinedLimit.value} Teachers: Duty, Observations and Lesson Monitoring` : 'All Teachers: Duty, Observations and Lesson Monitoring',
     'best-teachers': 'Best Teachers Report',
     printable: 'Single Teacher Report',
     top20: 'Top 20 Teachers - Highest Minutes Lost',
@@ -623,6 +692,9 @@ const generateReport = async () => {
         break;
       case 'yearly':
         result = await reportsAPI.getYearly(selectedYear.value);
+        break;
+      case 'combined-best':
+        result = await reportsAPI.getCombinedBest(selectedYear.value, selectedTerm.value);
         break;
       case 'best-teachers':
         result = await reportsAPI.getBestTeachers(selectedYear.value, selectedTerm.value, awardType.value);
@@ -694,9 +766,53 @@ const printReport = () => {
   printWindow.print();
 };
 
+/** The combined ranking uses the school's branded layout, like the module reports. */
+const downloadCombinedPdf = async () => {
+  const d = reportData.value;
+  const scope = selectedTerm.value ? `Term ${selectedTerm.value}, ${selectedYear.value}` : `All terms, ${selectedYear.value}`;
+  await downloadPdf({
+    title: reportTitle.value.replace(': Duty, Observations and Lesson Monitoring', ''),
+    subtitle: `${scope} · Duty, Lesson Observations and Lesson Monitoring (${d.min_lessons}+ lessons first, then fewest minutes lost)`,
+    filename: `best-teachers-combined-${selectedYear.value}${selectedTerm.value ? `-term-${selectedTerm.value}` : '-all-terms'}`,
+    landscape: true,
+    summary: [
+      { label: 'Teachers ranked', value: d.teachers.length },
+      { label: 'With all three marks', value: d.counts.all_three },
+      { label: 'With duty marks', value: d.counts.with_duty },
+      { label: 'With observations', value: d.counts.with_observation },
+      { label: 'With lesson monitoring', value: d.counts.with_monitoring },
+    ],
+    columns: [
+      { key: 'rank', label: '#', align: 'right' },
+      { key: 'teacher', label: 'Teacher' },
+      { key: 'subject', label: 'Subject' },
+      { key: 'duty', label: 'Duty', align: 'right' },
+      { key: 'observation', label: 'Observation', align: 'right' },
+      { key: 'lessons', label: 'Lessons', align: 'right' },
+      { key: 'lost', label: 'Min. lost', align: 'right' },
+      { key: 'monitoring', label: 'Monitoring', align: 'right' },
+      { key: 'combined', label: 'Combined', align: 'right' },
+      { key: 'parts', label: 'Marks' },
+    ],
+    rows: combinedRows.value.map((r) => ({
+      rank: r.rank,
+      teacher: r.teacher_name,
+      subject: r.subject || r.department || '',
+      duty: mark(r.duty),
+      observation: mark(r.observation),
+      lessons: r.monitoring === null ? '-' : `${r.lessons}${r.monitoring_group === 'few' ? '*' : ''}`,
+      lost: r.monitoring === null ? '-' : r.minutes_lost,
+      monitoring: mark(r.monitoring),
+      combined: mark(r.combined),
+      parts: `${r.parts} of 3`,
+    })),
+  });
+};
+
 const downloadPDF = () => {
   if (!reportData.value) return;
-  
+  if (reportType.value === 'combined-best') { downloadCombinedPdf(); return; }
+
   const doc = new jsPDF();
   let yPos = 20;
   

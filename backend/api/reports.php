@@ -303,10 +303,128 @@ switch($reportType) {
         $data['few_classes'] = $stmt->fetchAll();
         break;
         
+    case 'combined-best':
+        $data = combined_best_teachers($db, (int)$year, ($term === null || $term === '' || $term === 'all') ? null : (int)$term);
+        break;
+
     default:
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Invalid report type']);
         exit();
+}
+
+/**
+ * Best teachers over three modules, each a mark out of 100 for the period (a term, or the whole year):
+ *   duty         the average Duty Performance percentage
+ *   observation  the average score of all Lesson Observation rounds
+ *   monitoring   the teacher's place in the lesson-monitoring order: teachers with at least
+ *                MIN_LESSONS lessons recorded come first, then those with fewer; inside each group
+ *                fewer minutes lost is better (then more lessons). First place 100, last place 0.
+ * Combined = the average of the marks the teacher has. Teachers with all three marks rank first,
+ * then those with two, then one; inside that, the higher combined mark first.
+ */
+function combined_best_teachers(PDO $db, int $year, ?int $term): array
+{
+    $MIN_LESSONS = 30;
+    $termSql = $term === null ? '' : ' AND term = :term';
+    $bind = fn(PDOStatement $s) => $s->execute($term === null ? [':year' => $year] : [':year' => $year, ':term' => $term]);
+
+    $teachers = [];
+    foreach ($db->query("SELECT id, full_name, subject, department, is_active FROM teachers")->fetchAll(PDO::FETCH_ASSOC) as $t) {
+        $teachers[(int)$t['id']] = $t;
+    }
+    $row = function (int $id) use (&$teachers) {
+        $t = $teachers[$id] ?? null;
+        return [
+            'teacher_id' => $id,
+            'teacher_name' => $t['full_name'] ?? "Teacher #$id",
+            'subject' => $t['subject'] ?? '',
+            'department' => $t['department'] ?? '',
+            'duty' => null, 'duty_records' => 0,
+            'observation' => null, 'observation_rounds' => 0,
+            'monitoring' => null, 'lessons' => 0, 'minutes_lost' => 0, 'monitoring_group' => null, 'monitoring_place' => null,
+        ];
+    };
+    $out = [];
+
+    $s = $db->prepare("SELECT teacher_id, AVG(percentage) AS avg_pct, COUNT(*) AS n FROM duty_performance WHERE year = :year{$termSql} GROUP BY teacher_id");
+    $bind($s);
+    foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $id = (int)$r['teacher_id'];
+        $out[$id] = $out[$id] ?? $row($id);
+        $out[$id]['duty'] = round((float)$r['avg_pct'], 1);
+        $out[$id]['duty_records'] = (int)$r['n'];
+    }
+
+    $s = $db->prepare("SELECT teacher_id, AVG(total_score) AS avg_score, COUNT(*) AS n FROM lesson_observations WHERE year = :year{$termSql} AND total_score IS NOT NULL GROUP BY teacher_id");
+    $bind($s);
+    foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $id = (int)$r['teacher_id'];
+        $out[$id] = $out[$id] ?? $row($id);
+        $out[$id]['observation'] = round((float)$r['avg_score'], 1);
+        $out[$id]['observation_rounds'] = (int)$r['n'];
+    }
+
+    $s = $db->prepare("SELECT teacher_id, COUNT(*) AS lessons, COALESCE(SUM(minutes_lost), 0) AS lost FROM teacher_lesson_attendance WHERE year = :year{$termSql} GROUP BY teacher_id");
+    $bind($s);
+    $monitored = [];
+    foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $id = (int)$r['teacher_id'];
+        $out[$id] = $out[$id] ?? $row($id);
+        $out[$id]['lessons'] = (int)$r['lessons'];
+        $out[$id]['minutes_lost'] = (int)$r['lost'];
+        $out[$id]['monitoring_group'] = (int)$r['lessons'] >= $MIN_LESSONS ? 'full' : 'few';
+        $monitored[] = $id;
+    }
+
+    // Monitoring order: the 30+ group first, then fewer minutes lost, then more lessons.
+    usort($monitored, function ($a, $b) use ($out) {
+        $ga = $out[$a]['monitoring_group'] === 'full' ? 0 : 1;
+        $gb = $out[$b]['monitoring_group'] === 'full' ? 0 : 1;
+        return [$ga, $out[$a]['minutes_lost'], -$out[$a]['lessons']] <=> [$gb, $out[$b]['minutes_lost'], -$out[$b]['lessons']];
+    });
+    // Equal teachers share their average place, so they get the same mark.
+    $n = count($monitored);
+    for ($i = 0; $i < $n;) {
+        $j = $i;
+        $key = fn($id) => [$out[$id]['monitoring_group'], $out[$id]['minutes_lost'], $out[$id]['lessons']];
+        while ($j + 1 < $n && $key($monitored[$j + 1]) === $key($monitored[$i])) $j++;
+        $place = ($i + $j) / 2 + 1; // 1-based
+        for ($k = $i; $k <= $j; $k++) {
+            $id = $monitored[$k];
+            $out[$id]['monitoring_place'] = $i + 1;
+            $out[$id]['monitoring'] = $n <= 1 ? 100.0 : round(100 * ($n - $place) / ($n - 1), 1);
+        }
+        $i = $j + 1;
+    }
+
+    // Leave out staff no longer active.
+    $out = array_filter($out, fn($r) => !isset($teachers[$r['teacher_id']]) || (int)$teachers[$r['teacher_id']]['is_active'] === 1);
+
+    foreach ($out as &$r) {
+        $marks = array_values(array_filter([$r['duty'], $r['observation'], $r['monitoring']], fn($v) => $v !== null));
+        $r['parts'] = count($marks);
+        $r['combined'] = $marks ? round(array_sum($marks) / count($marks), 1) : null;
+    }
+    unset($r);
+
+    $list = array_values($out);
+    usort($list, fn($a, $b) => [$b['parts'], $b['combined'], $b['lessons']] <=> [$a['parts'], $a['combined'], $a['lessons']]
+        ?: strcmp($a['teacher_name'], $b['teacher_name']));
+    foreach ($list as $i => &$r) $r['rank'] = $i + 1;
+    unset($r);
+
+    return [
+        'teachers' => $list,
+        'monitored_teachers' => $n,
+        'min_lessons' => $MIN_LESSONS,
+        'counts' => [
+            'all_three' => count(array_filter($list, fn($r) => $r['parts'] === 3)),
+            'with_duty' => count(array_filter($list, fn($r) => $r['duty'] !== null)),
+            'with_observation' => count(array_filter($list, fn($r) => $r['observation'] !== null)),
+            'with_monitoring' => count(array_filter($list, fn($r) => $r['monitoring'] !== null)),
+        ],
+    ];
 }
 
 http_response_code(200);

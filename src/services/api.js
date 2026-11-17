@@ -477,6 +477,12 @@ export const reportsAPI = {
     return response.data;
   },
 
+  // Best teachers over Duty Performance, Lesson Observations and Lesson Monitoring.
+  getCombinedBest: async (year, term = '') => {
+    const response = await api.get(`reports.php?type=combined-best&year=${encodeURIComponent(year)}&term=${encodeURIComponent(term ?? '')}`);
+    return response.data;
+  },
+
   getClassesMostLost: async (year, term = null) => {
     const formData = new FormData();
     formData.append('type', 'class-top');
